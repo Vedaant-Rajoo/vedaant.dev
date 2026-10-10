@@ -1,0 +1,87 @@
+/* Tokens first, so they form the lowest layer and any later layer may override one on :root. */
+@import "./tokens.css";
+/* Scan src/ only; words in docs, comments and scripts would otherwise become utilities. */
+@import "tailwindcss" source("../");
+
+/* Utilities read the tokens by reference (design doc §4.5): a token re-declared on a subtree is honoured. */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-sunken: var(--c-sunken);
+  --color-fg: var(--c-fg);
+  --color-fg-2: var(--c-fg-2);
+  --color-fg-3: var(--c-fg-3);
+  --color-line: var(--c-line);
+  --color-line-2: var(--c-line-2);
+  --color-live: var(--c-live);
+  --color-mark: var(--c-mark);
+  --color-focus: var(--c-focus);
+
+  --font-sans: var(--ff-sans);
+  --font-mono: var(--ff-mono);
+
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--lh-snug);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: var(--lh-body);
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--lh-body);
+  --text-lg: var(--fs-lg);
+  --text-lg--line-height: var(--lh-snug);
+  --text-lg--letter-spacing: var(--ls-snug);
+  --text-xl: var(--fs-xl);
+  --text-xl--line-height: var(--lh-snug);
+  --text-xl--letter-spacing: var(--ls-snug);
+  --text-2xl: var(--fs-2xl);
+  --text-2xl--line-height: var(--lh-tight);
+  --text-2xl--letter-spacing: var(--ls-tight);
+  --text-3xl: var(--fs-3xl);
+  --text-3xl--line-height: var(--lh-tight);
+  --text-3xl--letter-spacing: var(--ls-tight);
+
+  --spacing: var(--sp-unit);
+  --container-col: var(--w-col);
+  --container-wide: var(--w-wide);
+  --radius-sm: var(--r-1);
+  --radius: var(--r-2);
+  --radius-lg: var(--r-3);
+  --ease-out: var(--ez-out);
+  --ease-in-out: var(--ez-in-out);
+  --ease-in: var(--ez-in);
+}
+
+/* Base styles (design doc §4.6); the page, not body, sets its width. */
+@layer base {
+  html {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font: var(--fw-body) var(--fs-base) / var(--lh-body) var(--ff-sans);
+  }
+  body {
+    padding-inline: var(--sp-gutter);
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: var(--r-1);
+  }
+  ::selection {
+    background: var(--c-mark);
+    color: var(--c-fg);
+  }
+  code,
+  kbd,
+  time,
+  .meta {
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+  }
+}
