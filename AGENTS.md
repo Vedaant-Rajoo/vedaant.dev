@@ -45,3 +45,43 @@ for context; never commit it or copy secrets out of it.
   scripts or build tools from inside it.
 - `.local/plans/`: plans and specs.
 - `.local/memory/`: notes, decisions, and context worth keeping across sessions.
+
+# Design
+
+Source of truth: the MVP pages in `.local/design/ledger/extracted/pages/`
+(scope `21-*`, gates `07-*`). `.local/design/ledger/ledger_design_system.md`
+only names tokens and components; where it differs, the pages win.
+
+- Tailwind is v4 via `@tailwindcss/vite`, never the doc's v3 config. At most 12
+  dependencies and 20 components; share a component only on its second use.
+- Style only through the tokens in `src/styles/tokens.css`, named as in the
+  doc's §4.2, with no arbitrary values: literal durations escape the
+  reduced-motion reset. Mockup markup and inline styles show intent, not code.
+- Contrast in both themes, hex fallbacks included: body ≥15:1, secondary ≥8:1,
+  meta ≥4.5:1, live text ≥4.6:1, non-text ≥3:1. Measure after token edits; the
+  doc's light `--c-live` and light hex `--c-fg-2` fail.
+- `--c-live` (green) marks only live state. No icon set; use text glyphs.
+- Home has no photo, CTA button, social-icon row or © line, and nothing on it
+  expands.
+- Separate with 1px `--c-line` and whitespace, not cards or shadows. Set width
+  per page (40rem; 56rem on `/projects` and `/now`), not on `body`.
+- The clock is the theme button: it cycles light → dark → system, never by time
+  of day. A `<script is:inline>` in `<head>` restores `data-theme` from
+  localStorage before paint; system means no attribute.
+- Content lives in `src/content/` and `src/data/`, never in components.
+- Pages are prerendered and complete with JS off: live widgets show their
+  build-time value, never a spinner or error text.
+- The browser fetches only the site's own `/api/*`, from one `<presence-hub>`
+  per page; never a third-party API or WebSocket.
+- Read secrets only through `astro:env/server`; `import.meta.env` inlines them
+  at build. The build must pass with every API down, from committed snapshots.
+- Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
+  transitions. Try CSS first, then a plain `<script>` or a custom element.
+- LCP ≤1.2s; CLS 0, live-state changes included. Never animate the LCP element
+  (the home name).
+- Load fonts with the Astro Fonts API, not `@fontsource` imports. Preload only
+  Geist sans; at most 2 font requests on first paint and 90 KB total.
+- Targets ≥44px, no horizontal scroll at 320px, and the nav wraps instead of
+  collapsing into a hamburger.
+- After UI changes, run `bun run check` and `bun run build`, then view light,
+  dark and system themes, reduced motion and JS off.
