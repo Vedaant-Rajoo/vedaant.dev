@@ -34,3 +34,14 @@ Commits use scoped subjects, as in Linux, Git, Go, and nixpkgs:
 - bad: `chore: prune gitignore entries` (`chore` is not a path; use `gitignore:`)
 - bad: `Brewfile, fish: add direnv` (scopes are lowercase: `brewfile, fish:`)
 - bad: `fish: Added a keybind.` (capitalized, past tense, trailing period)
+
+# Local workspace
+
+`.local/` is gitignored scratch space shared by the owner and agents. Read it
+for context; never commit it or copy secrets out of it.
+
+- `.local/design/`: Claude Design exports (HTML, zips, screenshots). Treat them
+  as reference input: extract each zip into its own new folder and never run
+  scripts or build tools from inside it.
+- `.local/plans/`: plans and specs.
+- `.local/memory/`: notes, decisions, and context worth keeping across sessions.
