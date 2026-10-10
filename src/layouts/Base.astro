@@ -1,0 +1,33 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  class: string;
+}
+
+const { title, class: className } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="color-scheme" content="light dark" />
+    {/* The browser reads theme-color outside CSS, where no token reaches: these repeat the
+        --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
+    <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <a
+      href="#content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:bg-bg focus:p-3"
+    >skip to content</a>
+    <div class:list={['mx-auto', className]}>
+      <main id="content" tabindex="-1"><slot /></main>
+    </div>
+  </body>
+</html>
