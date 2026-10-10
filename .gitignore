@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Astro
+dist/
+.astro/
+
+# Cloudflare
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Claude Code local
+.claude/settings.local.json
+.claude/plans/
