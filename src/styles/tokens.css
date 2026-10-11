@@ -17,8 +17,10 @@
     --c-focus: light-dark(oklch(55% 0.18 255), oklch(75% 0.14 255));
 
     /* Type: ratio 1.2, base 1rem, fluid from xl */
-    --ff-sans: "Geist", system-ui, -apple-system, sans-serif;
-    --ff-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, D24's stack.
+       The var() fallbacks repeat D24's stacks from astro.config.mjs for a page without <Font />. */
+    --ff-sans: var(--ff-geist, system-ui, -apple-system, sans-serif);
+    --ff-mono: var(--ff-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
     --fs-xs: 0.75rem;
     --fs-sm: 0.875rem;
     --fs-base: 1rem;

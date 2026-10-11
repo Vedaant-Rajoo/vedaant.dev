@@ -1,7 +1,42 @@
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'astro/config';
+import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
+  // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
+  // per family, so the build needs no network (NFR-L1). The fallbacks are D24's stacks, repeated in
+  // tokens.css; Astro puts a metric-matched face before them and defaults to font-display: swap.
+  fonts: [
+    {
+      provider: fontProviders.local(),
+      name: 'Geist',
+      cssVariable: '--ff-geist',
+      fallbacks: ['system-ui', '-apple-system', 'sans-serif'],
+      options: {
+        variants: [
+          {
+            src: ['./src/assets/fonts/geist-latin-wght-normal.woff2'],
+            weight: '100 900',
+            style: 'normal',
+          },
+        ],
+      },
+    },
+    {
+      provider: fontProviders.local(),
+      name: 'Geist Mono',
+      cssVariable: '--ff-geist-mono',
+      fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      options: {
+        variants: [
+          {
+            src: ['./src/assets/fonts/geist-mono-latin-wght-normal.woff2'],
+            weight: '100 900',
+            style: 'normal',
+          },
+        ],
+      },
+    },
+  ],
   vite: {
     plugins: [tailwindcss()],
     // The first versions with light-dark(). Below this floor Vite's Lightning CSS minifier

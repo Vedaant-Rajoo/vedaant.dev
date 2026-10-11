@@ -1,4 +1,5 @@
 ---
+import { Font } from 'astro:assets';
 import '../styles/global.css';
 
 interface Props {
@@ -20,6 +21,8 @@ const { title, class: className } = Astro.props;
         --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
     <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
+    <Font cssVariable="--ff-geist" preload />
+    <Font cssVariable="--ff-geist-mono" />
   </head>
   <body>
     <a
