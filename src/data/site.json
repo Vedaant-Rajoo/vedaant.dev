@@ -1,5 +1,11 @@
 {
   "name": "vee",
   "timeZone": "Asia/Kolkata",
-  "resume": { "updated": "2026-09-17" }
+  "resume": { "updated": "2026-09-17" },
+  "email": "vedaant12345@gmail.com",
+  "socials": {
+    "github": "https://github.com/vedaant-rajoo",
+    "linkedin": "https://linkedin.com/in/vedaant-rajoo"
+  },
+  "source": "https://github.com/vedaant-rajoo/vedaant.dev"
 }

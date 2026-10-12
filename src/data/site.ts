@@ -12,9 +12,19 @@ const timeZone = z.string().refine((zone) => {
   return !/^[+-]/.test(zone);
 }, 'Invalid input: expected an IANA time zone');
 
+// https only: z.url() alone also accepts javascript: and mailto: URLs.
+const https = z.url({ protocol: /^https$/ });
+
 // Parsed at build: a bad field fails `astro build` with a message that names site.json.
 const result = z
-  .object({ name: z.string().min(1), timeZone, resume: z.object({ updated: z.iso.date() }) })
+  .object({
+    name: z.string().min(1),
+    timeZone,
+    resume: z.object({ updated: z.iso.date() }),
+    email: z.email(),
+    socials: z.object({ github: https, linkedin: https }),
+    source: https,
+  })
   .safeParse(data);
 if (!result.success) {
   throw new Error(`src/data/site.json is invalid:\n${z.prettifyError(result.error)}`);

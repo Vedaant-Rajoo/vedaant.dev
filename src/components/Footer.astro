@@ -1,0 +1,50 @@
+---
+import { site } from '../data/site';
+
+// The build date in the owner's zone (D44). Exported, so Astro runs it once per build, as in
+// Clock.astro, and every page of a build shows the same date.
+export const built = Object.fromEntries(
+  new Intl.DateTimeFormat('en', {
+    timeZone: site.timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts()
+    .map(({ type, value }) => [type, value]),
+);
+const updated = `${built.year}-${built.month}-${built.day}`;
+// An ISO date is midnight UTC, so read its month in UTC; 'en', because Node's en-GB writes "Sept".
+const month = (date: string) =>
+  new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(new Date(date));
+const link = 'underline decoration-line-2 transition-colors hover:decoration-fg';
+// The nav's 44px box (D40). Its inner span keeps the text one run: flex drops spaces between items.
+const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
+---
+
+<footer class="flex flex-col gap-2 border-t border-line pt-6 pb-12">
+  <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
+    <a href={`mailto:${site.email}`} class={box}>
+      <span>email <span aria-hidden="true">→</span></span>
+    </a>
+    <a href="/resume.pdf" class={box}>
+      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{month(site.resume.updated)} {site.resume.updated.slice(2, 4)}</time> <span aria-hidden="true">↗</span></span>
+    </a>
+    {
+      Object.entries(site.socials).map(([name, href]) => (
+        <a href={href} rel="me" class={box}>
+          <span>{name} <span aria-hidden="true">↗</span></span>
+        </a>
+      ))
+    }
+  </p>
+  <p class="meta text-xs text-fg-3">
+    built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
+  </p>
+</footer>
+
+<style>
+  footer {
+    margin-block-start: var(--sp-section);
+  }
+</style>

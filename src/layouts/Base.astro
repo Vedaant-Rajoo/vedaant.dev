@@ -1,5 +1,6 @@
 ---
 import { Font } from 'astro:assets';
+import Footer from '../components/Footer.astro';
 import Nav from '../components/Nav.astro';
 import '../styles/global.css';
 
@@ -33,6 +34,7 @@ const { title, class: className } = Astro.props;
     <div class:list={['mx-auto', className]}>
       <Nav />
       <main id="content" tabindex="-1"><slot /></main>
+      <Footer />
     </div>
   </body>
 </html>
