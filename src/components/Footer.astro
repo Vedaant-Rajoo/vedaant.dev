@@ -24,7 +24,7 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
 
 <footer class="flex flex-col gap-2 border-t border-line pt-6 pb-12">
   <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
-    <a href={`mailto:${site.email}`} class={box}>
+    <a href={`mailto:${site.email}`} class={box} data-copy>
       <span>email <span aria-hidden="true">→</span></span>
     </a>
     <a href="/resume.pdf" class={box}>
@@ -41,7 +41,54 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
   <p class="meta text-xs text-fg-3">
     built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
   </p>
+  <span id="copy-status" class="sr-only" aria-live="polite"></span>
 </footer>
+
+<script>
+  // FR-CT-1: with JS, a click on an email link copies the address instead of opening the mail
+  // client, and the link reads "copied" for 1.5 s. A click with a modifier key, a browser without
+  // the Clipboard API and a failed copy open the mailto: link as before.
+  const status = document.getElementById('copy-status') as HTMLElement;
+  let announcer: HTMLAnchorElement | undefined;
+  for (const link of document.querySelectorAll<HTMLAnchorElement>('a[data-copy]')) {
+    const address = decodeURIComponent(link.pathname);
+    const text = link.firstElementChild as HTMLElement;
+    const label = [...text.childNodes];
+    let clicks = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    link.addEventListener('click', (event) => {
+      if (!navigator.clipboard || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      event.preventDefault();
+      const click = ++clicks;
+      navigator.clipboard.writeText(address).then(
+        () => {
+          // "copied" is narrower than "email →": the span keeps its width, so nothing moves.
+          text.style.width = `${text.getBoundingClientRect().width}px`;
+          text.textContent = 'copied';
+          status.textContent = 'copied';
+          announcer = link;
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            text.replaceChildren(...label);
+            text.style.width = '';
+            // One region serves every link: only the link that wrote it last empties it.
+            if (announcer === link) {
+              status.textContent = '';
+            }
+          }, 1500);
+        },
+        () => {
+          // A failed copy opens the mail client, unless a later click on this link replaced it.
+          if (click === clicks) {
+            location.href = link.href;
+          }
+        },
+      );
+    });
+  }
+</script>
 
 <style>
   footer {
