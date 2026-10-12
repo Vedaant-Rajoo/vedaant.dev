@@ -13,7 +13,9 @@ const timeZone = z.string().refine((zone) => {
 }, 'Invalid input: expected an IANA time zone');
 
 // Parsed at build: a bad field fails `astro build` with a message that names site.json.
-const result = z.object({ name: z.string().min(1), timeZone }).safeParse(data);
+const result = z
+  .object({ name: z.string().min(1), timeZone, resume: z.object({ updated: z.iso.date() }) })
+  .safeParse(data);
 if (!result.success) {
   throw new Error(`src/data/site.json is invalid:\n${z.prettifyError(result.error)}`);
 }

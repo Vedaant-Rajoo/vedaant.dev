@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "test -f public/resume.pdf || { echo 'public/resume.pdf is missing' >&2; exit 1; }",
     "build": "astro build",
     "preview": "astro preview",
     "check": "biome check",
