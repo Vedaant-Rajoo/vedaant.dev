@@ -93,3 +93,24 @@
     font-feature-settings: var(--mono-features);
   }
 }
+
+/* The theme reveal (FR-SH-2, design doc §6 part 3). theme.ts sets --vt-x and --vt-y, the clock's
+   centre, and --vt-r, a radius that reaches the farthest corner, in percentages of the viewport.
+   The new snapshot sits on top and grows as a circle over the old one; neither fades. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+  animation: theme-reveal var(--d-sig) var(--ez-in-out);
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+  }
+}
