@@ -23,6 +23,23 @@ const { title, class: className } = Astro.props;
         --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
     <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
+    {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
+        first paint (FR-SH-3), and its theme-color meta applies whatever the OS prefers. */}
+    <script is:inline>
+      try {
+        const stored = localStorage.getItem('theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'system';
+        const root = document.documentElement;
+        root.dataset.themePref = theme;
+        if (theme !== 'system') {
+          root.dataset.theme = theme;
+          const [light, dark] = document.querySelectorAll('meta[name="theme-color"]');
+          light.media = theme === 'light' ? 'all' : 'not all';
+          dark.media = theme === 'dark' ? 'all' : 'not all';
+        }
+      } catch {}
+    </script>
+    <noscript><style is:inline>#theme-toggle { display: none; }</style></noscript>
     <Font cssVariable="--ff-geist" preload />
     <Font cssVariable="--ff-geist-mono" />
   </head>

@@ -23,4 +23,27 @@ const offset = parts.timeZoneName.slice(3) || '+00:00';
 const datetime = `${parts.year}-${parts.month}-${parts.day}T${time}${offset}`;
 ---
 
-<time datetime={datetime} class="flex min-h-11 items-center px-1.5">{time}</time>
+{/* With JS off the noscript time shows, and Base.astro's noscript style hides the button. */}
+<noscript><time datetime={datetime} class="flex min-h-11 items-center px-1.5">{time}</time></noscript>
+<button
+  id="theme-toggle"
+  type="button"
+  class="flex min-h-11 cursor-pointer items-center gap-2 px-1.5 font-mono transition-colors hover:text-fg-2"
+>
+  <time datetime={datetime}>{time}</time>
+</button>
+<script src="../scripts/theme.ts"></script>
+
+<style>
+  /* ◐ system, ☀ light, ☾ dark, from the head script's data-theme-pref; \FE0E asks for the text
+     form of ☀, which some systems draw as an emoji. */
+  button::after {
+    content: "◐";
+  }
+  :global([data-theme-pref="light"]) button::after {
+    content: "☀\FE0E";
+  }
+  :global([data-theme-pref="dark"]) button::after {
+    content: "☾";
+  }
+</style>
