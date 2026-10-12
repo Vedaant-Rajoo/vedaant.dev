@@ -1,0 +1,26 @@
+---
+import { site } from '../data/site';
+
+// HH:MM in the owner's zone at build time; with JS off a page shows when it was built (FR-SH-2).
+// Exported, so Astro runs it once per build, not per page, and every page shows the same time.
+export const parts = Object.fromEntries(
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: site.timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZoneName: 'longOffset',
+  })
+    .formatToParts()
+    .map(({ type, value }) => [type, value]),
+);
+const time = `${parts.hour}:${parts.minute}`;
+// longOffset reads "GMT+05:30"; if an ICU prints a zero offset as bare "GMT", keep "+00:00".
+const offset = parts.timeZoneName.slice(3) || '+00:00';
+const datetime = `${parts.year}-${parts.month}-${parts.day}T${time}${offset}`;
+---
+
+<time datetime={datetime} class="flex min-h-11 items-center px-1.5">{time}</time>
