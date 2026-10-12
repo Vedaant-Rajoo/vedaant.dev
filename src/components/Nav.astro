@@ -1,0 +1,31 @@
+---
+import { site } from '../data/site';
+
+const words = ['projects', 'writing', 'now'];
+const path = Astro.url.pathname;
+---
+
+<header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5">
+  <a href="/" class="flex min-h-11 min-w-11 items-center font-medium">{site.name}</a>
+  <nav aria-label="Site" class="flex flex-wrap gap-2 text-sm">
+    {
+      words.map((word) => {
+        const href = `/${word}`;
+        // /projects, its built form /projects/ and /projects/<slug> (p13) all mark projects.
+        const current = path === href || path.startsWith(`${href}/`);
+        return (
+          <a
+            href={href}
+            aria-current={current ? 'page' : undefined}
+            class:list={[
+              'flex min-h-11 min-w-11 items-center justify-center px-1.5 transition-colors',
+              current ? 'text-fg' : 'text-fg-2 hover:text-fg',
+            ]}
+          >
+            {word}
+          </a>
+        );
+      })
+    }
+  </nav>
+</header>

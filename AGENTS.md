@@ -83,5 +83,7 @@ only names tokens and components; where it differs, the pages win.
   Geist sans; at most 2 font requests on first paint and 90 KB total.
 - Targets ≥44px, no horizontal scroll at 320px, and the nav wraps instead of
   collapsing into a hamburger.
+- The nav words are `projects · writing · now`, not the spec's four: no word
+  may link to a 404 at launch, so `shelf` joins with `/shelf` in 1.1.
 - After UI changes, run `bun run check` and `bun run build`, then view light,
   dark and system themes, reduced motion and JS off.

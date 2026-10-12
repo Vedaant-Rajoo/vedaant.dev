@@ -1,5 +1,6 @@
 ---
 import { Font } from 'astro:assets';
+import Nav from '../components/Nav.astro';
 import '../styles/global.css';
 
 interface Props {
@@ -30,6 +31,7 @@ const { title, class: className } = Astro.props;
       class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:bg-bg focus:p-3"
     >skip to content</a>
     <div class:list={['mx-auto', className]}>
+      <Nav />
       <main id="content" tabindex="-1"><slot /></main>
     </div>
   </body>

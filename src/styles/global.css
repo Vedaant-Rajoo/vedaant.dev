@@ -5,6 +5,8 @@
 
 /* Utilities read the tokens by reference (design doc §4.5): a token re-declared on a subtree is honoured. */
 @theme inline {
+  /* Tailwind's palette is reset, so only the token colours below compile (D25). */
+  --color-*: initial;
   --color-bg: var(--c-bg);
   --color-surface: var(--c-surface);
   --color-sunken: var(--c-sunken);
@@ -19,6 +21,9 @@
 
   --font-sans: var(--ff-sans);
   --font-mono: var(--ff-mono);
+  --font-weight-normal: var(--fw-body);
+  --font-weight-medium: var(--fw-medium);
+  --font-weight-semibold: var(--fw-strong);
 
   --text-xs: var(--fs-xs);
   --text-xs--line-height: var(--lh-snug);
@@ -48,6 +53,9 @@
   --ease-out: var(--ez-out);
   --ease-in-out: var(--ez-in-out);
   --ease-in: var(--ez-in);
+  /* Transitions default to the 80 ms tier, which the reduced-motion reset collapses. */
+  --default-transition-duration: var(--d-1);
+  --default-transition-timing-function: var(--ez-out);
 }
 
 /* Base styles (design doc §4.6); the page, not body, sets its width. */
