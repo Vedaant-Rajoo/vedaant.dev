@@ -37,6 +37,10 @@ export default defineConfig({
       },
     },
   ],
+  // cloudflared Quick Tunnels give the dev server a new random subdomain of trycloudflare.com on
+  // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
+  // Vite's host check closed to DNS rebinding.
+  server: { allowedHosts: ['.trycloudflare.com'] },
   vite: {
     plugins: [tailwindcss()],
     // The first versions with light-dark(). Below this floor Vite's Lightning CSS minifier
