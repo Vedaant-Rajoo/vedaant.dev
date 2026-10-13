@@ -3,8 +3,8 @@ interface Props {
   tile: string;
   title: string;
   sub: string;
-  start: string;
-  end: string | null;
+  start?: string;
+  end?: string | null;
   href?: string;
   toggle?: boolean;
 }
@@ -17,12 +17,19 @@ const long = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', tim
 const month = (format: Intl.DateTimeFormat, value: string) => format.format(new Date(value));
 ---
 
-{/* One list row (p10): a tile, the title and its sub line, then the paired dates and the default
-    slot, which move under the text when large type leaves the text under 6rem. Spans only, so the
-    row can be a <summary>. A role without an end is current: the live dot, "now", not muted. */}
+{/* One list row (p10): a tile, the title and its sub line with the chips slot, then the paired
+    dates, if any, and the default slot, which move under the text when large type leaves the text
+    under 6rem. Spans only, so the row can be a <summary>. A null end is a current role: the live
+    dot, "now", not muted; an ended role is muted; a row without dates is neither. Every row
+    overhangs the column by 8px (p09), so a link's or a toggle's hover fill clears the text. */}
 <Tag
   href={href}
-  class:list={['flex flex-wrap items-center gap-3 py-2.5', end !== null && 'text-fg-2', toggle && 'cursor-pointer']}
+  class:list={[
+    '-mx-2 flex flex-wrap items-center gap-3 rounded-sm px-2 py-2.5',
+    end && 'text-fg-2',
+    (href || toggle) && 'transition-colors duration-(--d-2) hover:bg-surface',
+    toggle && 'cursor-pointer',
+  ]}
 >
   <span
     aria-hidden="true"
@@ -36,14 +43,18 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
     }
   </span>
   <span class="min-w-0 grow basis-24 leading-(--lh-snug) text-pretty">
-    <span class="font-medium">{title}</span>{href && <span aria-hidden="true"> ↗</span>}{' '}
-    <span class="inline-block text-sm leading-(--lh-snug) text-fg-2">· {sub}</span>
+    <span class="font-medium">{title}</span>{href?.startsWith('https://') && <span aria-hidden="true"> ↗</span>}{' '}
+    <span class="inline-block text-sm leading-(--lh-snug) text-fg-2">· {sub}<slot name="chips" /></span>
   </span>
   <span class="meta ml-auto text-right text-xs text-fg-3">
-    <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class="no-underline whitespace-nowrap">
-      <time datetime={start}>{month(short, start)}</time> –{' '}
-      {end ? <time datetime={end}>{month(short, end)}</time> : 'now'}
-    </abbr>
+    {
+      start && (
+        <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class="no-underline whitespace-nowrap">
+          <time datetime={start}>{month(short, start)}</time> –{' '}
+          {end ? <time datetime={end}>{month(short, end)}</time> : 'now'}
+        </abbr>
+      )
+    }
     <slot />
   </span>
 </Tag>

@@ -1,8 +1,11 @@
 import { defineCollection } from 'astro:content';
-import { file } from 'astro/loaders';
+import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+// https:// only. z.url() alone also accepts javascript: and mailto: URLs, and https:host, which a
+// browser resolves against this site.
+const https = z.url({ protocol: /^https$/ }).startsWith('https://');
 const fromFile = file('src/data/work.json');
 
 const work = defineCollection({
@@ -25,8 +28,7 @@ const work = defineCollection({
       start: month,
       end: month.nullable(),
       summary: z.string().min(1).max(140),
-      // https only: z.url() alone also accepts javascript: and mailto: URLs.
-      url: z.url({ protocol: /^https$/ }).optional(),
+      url: https.optional(),
       collapse: z.boolean().optional(),
     })
     .refine(({ start, end }) => end === null || end >= start, {
@@ -36,4 +38,22 @@ const work = defineCollection({
     }),
 });
 
-export const collections = { work };
+const projects = defineCollection({
+  loader: glob({ pattern: '*.md', base: 'src/content/projects' }),
+  schema: z.strictObject({
+    title: z.string().min(1),
+    summary: z.string().min(1).max(90),
+    year: z.int().min(1000).max(9999),
+    // 24 characters fit the text column at 320px.
+    stack: z.array(z.string().min(1).max(24)).max(4),
+    status: z.enum(['active', 'done', 'archived']),
+    featured: z.boolean(),
+    draft: z.boolean().optional(),
+    repo: https.optional(),
+    // An npm package name, such as @scope/name.
+    package: z.string().min(1).optional(),
+    confidential: z.boolean().optional(),
+  }),
+});
+
+export const collections = { work, projects };

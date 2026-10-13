@@ -2,9 +2,22 @@
 interface Props {
   label: string;
   count: number;
+  href?: string;
 }
 
-const { label, count } = Astro.props;
+const { label, count, href } = Astro.props;
 ---
 
-<h2 class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">{label} {count}</h2>
+<div class="flex items-baseline justify-between gap-3 border-t border-dashed border-line pt-6">
+  <h2 class="meta text-xs text-fg-3">{label} {count}</h2>
+  {
+    href && (
+      <a
+        href={href}
+        class="meta -my-3.5 inline-flex min-h-11 min-w-11 items-center justify-end text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+      >
+        <span>all <span aria-hidden="true">↗</span></span>
+      </a>
+    )
+  }
+</div>
