@@ -3,6 +3,7 @@ import { site } from '../data/site';
 
 // HH:MM in the owner's zone at build time; with JS off a page shows when it was built (FR-SH-2).
 // Exported, so Astro runs it once per build, not per page, and every page shows the same time.
+// theme.ts repeats this format each minute in the browser, from data-zone: change both together.
 export const parts = Object.fromEntries(
   new Intl.DateTimeFormat('en-GB', {
     timeZone: site.timeZone,
@@ -30,7 +31,7 @@ const datetime = `${parts.year}-${parts.month}-${parts.day}T${time}${offset}`;
   type="button"
   class="flex min-h-11 cursor-pointer items-center gap-2 px-1.5 font-mono transition-colors hover:text-fg-2"
 >
-  <time datetime={datetime}>{time}</time>
+  <time datetime={datetime} data-zone={site.timeZone}>{time}</time>
 </button>
 <script src="../scripts/theme.ts"></script>
 

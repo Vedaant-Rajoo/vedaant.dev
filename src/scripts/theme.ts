@@ -30,6 +30,12 @@ function stored(): Theme {
   return 'system';
 }
 
+// The time on screen leads the name (WCAG 2.5.3), then the theme now and next (FR-SH-2).
+function label(theme: Theme) {
+  const text = `${time.textContent}, switch theme: now ${theme}, next ${next(theme)}`;
+  button.setAttribute('aria-label', text);
+}
+
 function show(theme: Theme) {
   if (theme === 'system') {
     delete root.dataset.theme;
@@ -38,9 +44,7 @@ function show(theme: Theme) {
   }
   root.dataset.themePref = theme;
   [light.media, dark.media] = media[theme];
-  // The time on screen leads the name (WCAG 2.5.3), then the theme now and next (FR-SH-2).
-  const label = `${time.textContent}, switch theme: now ${theme}, next ${next(theme)}`;
-  button.setAttribute('aria-label', label);
+  label(theme);
 }
 
 let theme = stored();
@@ -78,3 +82,42 @@ addEventListener('pageshow', (event) => {
     show(theme);
   }
 });
+
+// The clock's own zone, from its data-zone (site.timeZone), never the visitor's. The options and
+// the parts below repeat Clock.astro's build-time format: change both together.
+const clock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: time.dataset.zone,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+  timeZoneName: 'longOffset',
+});
+let timer: ReturnType<typeof setTimeout> | undefined;
+
+// Shows the minute now, then runs again just after the next one starts. Both use one instant, so
+// a minute that turns in between is shown by that next run. The text, datetime and label change
+// only with the minute.
+function tick() {
+  const now = Date.now();
+  const parts = Object.fromEntries(
+    clock.formatToParts(now).map(({ type, value }) => [type, value]),
+  );
+  const text = `${parts.hour}:${parts.minute}`;
+  const offset = parts.timeZoneName.slice(3) || '+00:00';
+  const datetime = `${parts.year}-${parts.month}-${parts.day}T${text}${offset}`;
+  if (time.dateTime !== datetime) {
+    time.textContent = text;
+    time.dateTime = datetime;
+    label(theme);
+  }
+  clearTimeout(timer);
+  timer = setTimeout(tick, 60_000 - (now % 60_000));
+}
+
+tick();
+// A page shown again, also from the back/forward cache, updates at once, not when a timer that
+// the browser slowed or paused fires.
+addEventListener('visibilitychange', tick);
