@@ -62,7 +62,7 @@ only names tokens and components; where it differs, the pages win.
   doc's light `--c-live` and light hex `--c-fg-2` fail.
 - `--c-live` (green) marks only live state. No icon set; use text glyphs.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
-  expands.
+  expands except the `<details>` folding older work roles.
 - Separate with 1px `--c-line` and whitespace, not cards or shadows. Set width
   per page (40rem; 56rem on `/projects` and `/now`), not on `body`.
 - The clock is the theme button: it cycles light → dark → system, never by time

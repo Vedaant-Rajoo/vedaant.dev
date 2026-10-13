@@ -1,0 +1,56 @@
+---
+interface Props {
+  tile: string;
+  title: string;
+  sub: string;
+  start: string;
+  end: string | null;
+  href?: string;
+  toggle?: boolean;
+}
+
+const { tile, title, sub, start, end, href, toggle = false } = Astro.props;
+const Tag = (toggle && 'summary') || (href && 'a') || 'div';
+// YYYY-MM is midnight UTC on the 1st, so format in UTC; 'en', because Node's en-GB writes "Sept".
+const short = new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+const long = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const month = (format: Intl.DateTimeFormat, value: string) => format.format(new Date(value));
+---
+
+{/* One list row (p10): a tile, the title and its sub line, then the paired dates and the default
+    slot, which move under the text when large type leaves the text under 6rem. Spans only, so the
+    row can be a <summary>. A role without an end is current: the live dot, "now", not muted. */}
+<Tag
+  href={href}
+  class:list={['flex flex-wrap items-center gap-3 py-2.5', end !== null && 'text-fg-2', toggle && 'cursor-pointer']}
+>
+  <span
+    aria-hidden="true"
+    class="relative flex size-8 shrink-0 items-center justify-center rounded-sm bg-sunken font-mono text-xs"
+  >
+    {tile}
+    {
+      end === null && (
+        <span class="absolute -top-0.5 -right-0.5 size-1.75 rounded-(--r-pill) bg-live outline-2 outline-bg" />
+      )
+    }
+  </span>
+  <span class="min-w-0 grow basis-24 leading-(--lh-snug) text-pretty">
+    <span class="font-medium">{title}</span>{href && <span aria-hidden="true"> ↗</span>}{' '}
+    <span class="inline-block text-sm leading-(--lh-snug) text-fg-2">· {sub}</span>
+  </span>
+  <span class="meta ml-auto text-right text-xs text-fg-3">
+    <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class="no-underline whitespace-nowrap">
+      <time datetime={start}>{month(short, start)}</time> –{' '}
+      {end ? <time datetime={end}>{month(short, end)}</time> : 'now'}
+    </abbr>
+    <slot />
+  </span>
+</Tag>
+
+<style>
+  /* Safari draws its own disclosure triangle on a <summary>, whatever its display. */
+  summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

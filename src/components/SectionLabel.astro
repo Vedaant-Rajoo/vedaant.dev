@@ -1,0 +1,10 @@
+---
+interface Props {
+  label: string;
+  count: number;
+}
+
+const { label, count } = Astro.props;
+---
+
+<h2 class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">{label} {count}</h2>
