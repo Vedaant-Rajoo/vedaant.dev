@@ -72,7 +72,9 @@ only names tokens and components; where it differs, the pages win.
 - Pages are prerendered and complete with JS off: live widgets show their
   build-time value, never a spinner or error text.
 - The browser fetches only the site's own `/api/*`, from one `<presence-hub>`
-  per page; never a third-party API or WebSocket.
+  per page; never a third-party API or WebSocket. The one exception is Last.fm:
+  the hub reads `user.getRecentTracks` directly, and its API key in
+  `src/data/now-playing.ts` is a public, read-only identifier, not a secret.
 - Read secrets only through `astro:env/server`; `import.meta.env` inlines them
   at build. The build must pass with every API down, from committed snapshots.
 - Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
