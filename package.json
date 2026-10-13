@@ -7,7 +7,7 @@
     "prebuild": "test -f public/resume.pdf || { echo 'public/resume.pdf is missing' >&2; exit 1; }",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "biome check",
+    "check": "biome check && astro check",
     "fix": "biome check --write"
   },
   "dependencies": {
@@ -16,6 +16,9 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15"
+    "@astrojs/check": "^0.9.10",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^24.19.2",
+    "typescript": "^6.0.3"
   }
 }
