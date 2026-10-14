@@ -36,6 +36,25 @@ export default defineConfig({
         ],
       },
     },
+    {
+      // The hero's one serif word (FR-HE-3; licence in src/assets/fonts/OFL-instrument-serif.txt).
+      // optional: used only if it is ready at once and never swapped in, so a late font leaves the
+      // word in the sans and nothing moves. No fallbacks: tokens.css puts the sans after it.
+      provider: fontProviders.local(),
+      name: 'Instrument Serif',
+      cssVariable: '--ff-instrument-serif',
+      display: 'optional',
+      fallbacks: [],
+      options: {
+        variants: [
+          {
+            src: ['./src/assets/fonts/instrument-serif-latin-400-italic.woff2'],
+            weight: '400',
+            style: 'italic',
+          },
+        ],
+      },
+    },
   ],
   // cloudflared Quick Tunnels give the dev server a new random subdomain of trycloudflare.com on
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps

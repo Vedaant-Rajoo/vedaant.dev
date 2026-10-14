@@ -83,7 +83,9 @@ only names tokens and components; where it differs, the pages win.
 - LCP ≤1.2s; CLS 0, live-state changes included. Never animate the LCP element
   (the home name).
 - Load fonts with the Astro Fonts API, not `@fontsource` imports. Preload only
-  Geist sans; at most 2 font requests on first paint and 90 KB total.
+  Geist sans; at most 2 font requests on first paint and 90 KB total, except
+  the hero's one serif word: a third request, `font-display: optional`, which
+  the browser may leave unused for a view and never swaps in.
 - Targets ≥44px, no horizontal scroll at 320px, and the nav wraps instead of
   collapsing into a hamburger.
 - The nav words are `projects · writing · now`, not the spec's four: no word

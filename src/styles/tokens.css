@@ -21,6 +21,9 @@
        The var() fallbacks repeat D24's stacks from astro.config.mjs for a page without <Font />. */
     --ff-sans: var(--ff-geist, system-ui, -apple-system, sans-serif);
     --ff-mono: var(--ff-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    /* The hero's serif word (FR-HE-3): Instrument Serif when it is ready, else the sans. Without its
+       <Font />, the var is invalid and the word inherits the sans. */
+    --ff-serif: var(--ff-instrument-serif), var(--ff-sans);
     --fs-xs: 0.75rem;
     --fs-sm: 0.875rem;
     --fs-base: 1rem;

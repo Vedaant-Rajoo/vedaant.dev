@@ -1,5 +1,5 @@
 ---
-import { site } from '../data/site';
+import { resumeMonth, site } from '../data/site';
 
 // The build date in the owner's zone (D44). Exported, so Astro runs it once per build, as in
 // Clock.astro, and every page of a build shows the same date.
@@ -28,7 +28,7 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
       <span>email <span aria-hidden="true">→</span></span>
     </a>
     <a href="/resume.pdf" class={box}>
-      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{month(site.resume.updated)} {site.resume.updated.slice(2, 4)}</time> <span aria-hidden="true">↗</span></span>
+      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true">↗</span></span>
     </a>
     {
       Object.entries(site.socials).map(([name, href]) => (
