@@ -25,21 +25,21 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
 <footer class="flex flex-col gap-2 border-t border-line pt-6 pb-12">
   <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
     <a href={`mailto:${site.email}`} class={box} data-copy>
-      <span>email <span aria-hidden="true">→</span></span>
+      <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
     </a>
     <a href="/resume.pdf" class={box}>
-      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true">↗</span></span>
+      <span>resume · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
     </a>
     {
       Object.entries(site.socials).map(([name, href]) => (
         <a href={href} rel="me" class={box}>
-          <span>{name} <span aria-hidden="true">↗</span></span>
+          <span>{name} <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
         </a>
       ))
     }
   </p>
   <p class="meta text-xs text-fg-3">
-    built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
+    built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true" class="inline-block font-sans">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
   </p>
   <span id="copy-status" class="sr-only" aria-live="polite"></span>
 </footer>

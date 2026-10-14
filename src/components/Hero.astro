@@ -5,8 +5,10 @@ import { resumeMonth, site } from '../data/site';
 type Props = Record<string, never>;
 
 // The serif word (FR-HE-3): hero.accent where it first appears in hero.role (site.ts checks it does).
-const { role, accent = '' } = site.hero;
-const at = accent ? role.indexOf(accent) : role.length;
+const { role, accent = '', mark } = site.hero;
+const at = accent ? role.indexOf(accent) : -1;
+const markedAt = role.indexOf(mark);
+const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + mark.length, role.length]];
 // The labels are the interface's (D38); the lines are the owner's, in site.json.
 const lines = [
   ['today', site.hero.today],
@@ -20,7 +22,16 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
 <section class="flex flex-col gap-4">
   <h1 class="text-3xl font-semibold">{site.hero.name}</h1>
   <p class="text-lg">
-    {role.slice(0, at)}{accent && <span class="accent">{accent}</span>}{role.slice(at + accent.length)}
+    {
+      parts.map(([start, end], index) => {
+        const Tag = index === 1 ? 'mark' : 'span';
+        return (
+          <Tag>{at >= start && at + accent.length <= end ? (
+            <>{role.slice(start, at)}<span class="accent">{accent}</span>{role.slice(at + accent.length, end)}</>
+          ) : role.slice(start, end)}</Tag>
+        );
+      })
+    }
   </p>
   {/* A line moves under its label when large text leaves it less than 11rem beside it. */}
   <dl class="flex flex-col gap-1.5">
@@ -35,13 +46,13 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
   </dl>
   <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
     <a href="/resume.pdf" class={box}>
-      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true">↗</span></span>
+      <span>resume · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
     </a>
     <a href={`mailto:${site.email}`} class={box} data-copy>
-      <span>email <span aria-hidden="true">→</span></span>
+      <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
     </a>
     <a href={site.socials.github} rel="me" class={box}>
-      <span>github <span aria-hidden="true">↗</span></span>
+      <span>github <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
     </a>
   </p>
 </section>

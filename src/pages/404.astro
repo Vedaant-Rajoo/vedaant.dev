@@ -31,7 +31,7 @@ const [ask, link, fix] = notFound.report;
         rows.map(({ word, href, tile, sub }) => (
           <li>
             <Row tile={tile} title={word} sub={sub} href={href}>
-              <span aria-hidden="true">→</span>
+              <span aria-hidden="true" class="inline-block font-sans">→</span>
             </Row>
           </li>
         ))
@@ -43,7 +43,7 @@ const [ask, link, fix] = notFound.report;
       id="report"
       href={`mailto:${site.email}`}
       class="-my-3.5 inline-flex min-h-11 items-center text-fg underline decoration-line-2 transition-colors hover:decoration-fg"
-      ><span>{link} <span aria-hidden="true">→</span></span></a
+      ><span>{link} <span aria-hidden="true" class="inline-block font-sans">→</span></span></a
     >{fix}<span class="noscript:hidden"> {notFound.note}</span>
   </p>
   <script>
@@ -64,20 +64,5 @@ const [ask, link, fix] = notFound.report;
   section,
   .report {
     margin-block-start: var(--sp-section);
-  }
-  /* The highlight from the owner's 404 board (D106): a band from about halfway up the letters to
-     below the words, one per line. S11 moves this rule to global.css for the hero. */
-  mark {
-    background: linear-gradient(transparent 53%, var(--c-mark) 0);
-    box-decoration-break: clone;
-    color: inherit;
-  }
-  /* Forced colours drop the gradient and replace the colours, which would leave the phrase
-     unmarked (NFR-A7). */
-  @media (forced-colors: active) {
-    mark {
-      background-color: Mark;
-      color: MarkText;
-    }
   }
 </style>

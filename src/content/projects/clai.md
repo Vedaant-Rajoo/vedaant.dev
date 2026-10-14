@@ -1,9 +1,9 @@
 ---
 title: clai
-summary: Local-first CLI that turns natural-language intent into editable shell-command candidates
+summary: Natural Language -> shell commands, as a CLI
 year: 2026
 stack: [Go]
 status: active
-featured: true
+featured: false
 repo: https://github.com/vedaant-rajoo/clai
 ---

@@ -34,12 +34,18 @@ const result = z
         role: sentence,
         // FR-HE-3: at most one word in the serif.
         accent: z.string().regex(/^\S+$/, 'Invalid string: expected one word').optional(),
+        mark: z.string().trim().min(1),
         today: sentence,
         previously: sentence,
       })
       .refine(({ role, accent }) => accent === undefined || role.includes(accent), {
         path: ['accent'],
         message: 'Invalid input: expected a word of hero.role',
+        when: ({ issues }) => issues.length === 0,
+      })
+      .refine(({ role, mark }) => role.includes(mark), {
+        path: ['mark'],
+        message: 'Invalid input: expected a phrase of hero.role',
         when: ({ issues }) => issues.length === 0,
       }),
     timeZone,

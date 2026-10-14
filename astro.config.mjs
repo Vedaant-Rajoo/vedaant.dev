@@ -3,7 +3,9 @@ import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
   // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
-  // per family, so the build needs no network (NFR-L1). The fallbacks are D24's stacks, repeated in
+  // per family, so the build needs no network (NFR-L1). The sans subset also includes ← → ↗ from
+  // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
+  // The fallbacks are D24's stacks, repeated in
   // tokens.css; Astro puts a metric-matched face before them and defaults to font-display: swap.
   fonts: [
     {
