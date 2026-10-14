@@ -7,10 +7,18 @@ interface Props {
   end?: string | null;
   href?: string;
   toggle?: boolean;
+  struck?: boolean;
+  note?: string;
+  links?: { label: string; href: string }[];
 }
 
-const { tile, title, sub, start, end, href, toggle = false } = Astro.props;
-const Tag = (toggle && 'summary') || (href && 'a') || 'div';
+const { tile, title, sub, start, end, href, toggle = false, struck = false, note, links = [] } =
+  Astro.props;
+// Links do not nest: with links of its own in the right cell, a row is not one <a>. Its text is
+// the link instead, and the text's ::after covers the row as its target and its focus ring.
+const split = href !== undefined && links.length > 0;
+const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';
+const Text = split ? 'a' : 'span';
 // YYYY-MM is midnight UTC on the 1st, so format in UTC; 'en', because Node's en-GB writes "Sept".
 const short = new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
 const long = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -18,17 +26,20 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
 ---
 
 {/* One list row (p10): a tile, the title and its sub line with the chips slot, then the paired
-    dates, if any, and the default slot, which move under the text when large type leaves the text
-    under 6rem. Spans only, so the row can be a <summary>. A null end is a current role: the live
-    dot, "now", not muted; an ended role is muted; a row without dates is neither. Every row
-    overhangs the column by 8px (p09), so a link's or a toggle's hover fill clears the text. */}
+    dates, if any, the default slot, the note and the links. These move under the text when the
+    text would get less than 6rem beside them, or 12rem beside a note or links, room for the
+    widest chip. Spans only, so the row can be a <summary>. A null end is a current role: the live
+    dot, "now", not muted; an ended role is muted; a row without dates is neither. A struck row, an
+    archived project (FR-PR-3), is muted and its title struck through. Every row overhangs the
+    column by 8px (p09), so a link's or a toggle's hover fill clears the text. */}
 <Tag
-  href={href}
+  href={split ? undefined : href}
   class:list={[
     '-mx-2 flex flex-wrap items-center gap-3 rounded-sm px-2 py-2.5',
-    end && 'text-fg-2',
+    (end || struck) && 'text-fg-2',
     (href || toggle) && 'transition-colors duration-(--d-2) hover:bg-surface',
     toggle && 'cursor-pointer',
+    split && 'relative',
   ]}
 >
   <span
@@ -42,10 +53,19 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
       )
     }
   </span>
-  <span class="min-w-0 grow basis-24 leading-(--lh-snug) text-pretty">
-    <span class="font-medium">{title}</span>{href?.startsWith('https://') && <span aria-hidden="true"> ↗</span>}{' '}
+  <Text
+    href={split ? href : undefined}
+    class:list={[
+      'min-w-0 grow',
+      note || links.length > 0 ? 'basis-48' : 'basis-24',
+      'leading-(--lh-snug) text-pretty',
+      split &&
+        'after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus',
+    ]}
+  >
+    <span class:list={['font-medium', struck && 'line-through']}>{title}</span>{href?.startsWith('https://') && <span aria-hidden="true"> ↗</span>}{' '}
     <span class="inline-block text-sm leading-(--lh-snug) text-fg-2">· {sub}<slot name="chips" /></span>
-  </span>
+  </Text>
   <span class="meta ml-auto text-right text-xs text-fg-3">
     {
       start && (
@@ -56,6 +76,23 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
       )
     }
     <slot />
+    {note}
+    {
+      links.map((link, i) => (
+        <>
+          {(i > 0 || note) && ' · '}
+          <a
+            href={link.href}
+            class="relative -my-2.5 inline-flex min-h-11 min-w-11 items-center justify-end underline decoration-line-2 transition-colors hover:decoration-fg"
+          >
+            <span>
+              {link.label}
+              {link.href.startsWith('https://') && <span aria-hidden="true"> ↗</span>}
+            </span>
+          </a>
+        </>
+      ))
+    }
   </span>
 </Tag>
 

@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import { newestFirst, rowHref, tile } from '../data/projects';
 import Chip from './Chip.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
@@ -7,27 +8,12 @@ import SectionLabel from './SectionLabel.astro';
 // No props: an attribute passed to Projects fails the type check (the S8b → S8c rule).
 type Props = Record<string, never>;
 
-// A body of at least this many words is a case study (FR-PR-4's 500), and its row links to it.
-const CASE_STUDY_WORDS = 500;
-
 const projects = await getCollection('projects');
-// The featured rows, newest first, then by file name (FR-PR-1); archived projects never show here
-// (p10 §04). A draft case study counts only in `astro dev` (p18), and confidential work never links
-// its repo (FR-PR-6), so a row may link nowhere.
+// The featured rows (FR-PR-1); archived projects never show here (p10 §04).
 const rows = projects
   .filter(({ data }) => data.featured && data.status !== 'archived')
-  .sort((a, b) => b.data.year - a.data.year || a.id.localeCompare(b.id))
-  .map(({ id, body = '', data }) => {
-    const words = body.split(/\s+/).filter(Boolean).length;
-    const caseStudy = (import.meta.env.DEV || !data.draft) && words >= CASE_STUDY_WORDS;
-    // The tile: the initials of the title's first two words, or the first two letters of one word.
-    const [first = data.title, second] = data.title.split(/[\s-]+/).filter(Boolean);
-    return {
-      data,
-      tile: (second ? first[0] + second[0] : first.slice(0, 2)).toLowerCase(),
-      href: (caseStudy && `/projects/${id}`) || (!data.confidential && data.repo) || undefined,
-    };
-  });
+  .sort(newestFirst)
+  .map((project) => ({ data: project.data, href: rowHref(project) }));
 ---
 
 <section class="flex flex-col gap-6">
@@ -35,9 +21,9 @@ const rows = projects
   {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
   <ol role="list" class="divide-y divide-line">
     {
-      rows.map(({ data, tile, href }) => (
+      rows.map(({ data, href }) => (
         <li>
-          <Row tile={tile} title={data.title} sub={data.summary} href={href}>
+          <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={href}>
             <Fragment slot="chips">
               {data.stack.map((name) => (
                 <>

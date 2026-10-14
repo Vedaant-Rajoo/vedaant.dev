@@ -1,0 +1,74 @@
+---
+import { getCollection } from 'astro:content';
+import Chip from '../../components/Chip.astro';
+import Row from '../../components/Row.astro';
+import { newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
+import Base from '../../layouts/Base.astro';
+
+const projects = await getCollection('projects');
+// Every project, drafts and archived ones too, one group per year, newest first (FR-PR-3).
+const years = Map.groupBy(projects.toSorted(newestFirst), ({ data }) => data.year);
+---
+
+<Base title="projects · vedaant.dev" class="max-w-wide">
+  <h1 class="text-2xl font-semibold">
+    projects <span class="meta text-base font-normal text-fg-3">{projects.length}</span>
+  </h1>
+  <div class="flex flex-col gap-6">
+    {
+      [...years].map(([year, group]) => (
+        <div class="flex flex-col gap-6">
+          <p id={`year-${year}`} class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">
+            <time>{year}</time>
+          </p>
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ol role="list" aria-labelledby={`year-${year}`} class="divide-y divide-line">
+            {group.map((project) => {
+              const { data } = project;
+              const href = rowHref(project);
+              const npm = npmUrl(project);
+              const repo = href === data.repo ? undefined : data.repo;
+              // The right cell holds the external links the row itself does not go to (p18);
+              // confidential work shows a note instead (FR-PR-6).
+              const links = data.confidential
+                ? []
+                : [
+                    npm ? { label: 'npm', href: npm } : undefined,
+                    repo ? { label: 'repo', href: repo } : undefined,
+                  ].filter((link) => link !== undefined);
+              return (
+                <li>
+                  <Row
+                    tile={tile(data.title)}
+                    title={data.title}
+                    sub={data.summary}
+                    href={href}
+                    struck={data.status === 'archived'}
+                    note={data.confidential ? 'no repo · confidential' : undefined}
+                    links={links}
+                  >
+                    <Fragment slot="chips">
+                      {data.stack.map((name) => (
+                        <>
+                          {' '}
+                          <Chip label={name} />
+                        </>
+                      ))}
+                    </Fragment>
+                    {data.status === 'archived' && <span class="sr-only">archived</span>}
+                  </Row>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  h1 {
+    margin-block: var(--sp-section);
+  }
+</style>
