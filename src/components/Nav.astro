@@ -1,8 +1,8 @@
 ---
+import { words } from '../data/navigation';
 import { site } from '../data/site';
 import Clock from './Clock.astro';
 
-const words = ['projects', 'writing', 'now'];
 const path = Astro.url.pathname;
 ---
 
@@ -10,8 +10,7 @@ const path = Astro.url.pathname;
   <a href="/" class="flex min-h-11 min-w-11 items-center font-medium">{site.name}</a>
   <nav aria-label="Site" class="flex flex-wrap gap-2 text-sm">
     {
-      words.map((word) => {
-        const href = `/${word}`;
+      words.map(({ word, href }) => {
         // /projects, its built form /projects/ and /projects/<slug> (p13) all mark projects.
         const current = path === href || path.startsWith(`${href}/`);
         return (

@@ -1,8 +1,83 @@
 ---
+import Row from '../components/Row.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { home, words } from '../data/navigation';
+import { notFound } from '../data/not-found';
+import { site } from '../data/site';
 import Base from '../layouts/Base.astro';
+
+const rows = [home, ...words];
+const [before, marked, after] = notFound.lead;
+const [ask, link, fix] = notFound.report;
 ---
 
-{/* Without a top-level 404.html, Pages serves the home page for unknown paths. */}
+{/* Without a top-level 404.html, Pages serves the home page for unknown paths. Pages serves this
+    one file for every unknown path, so the build cannot know which: the script below shows it in
+    the reserved line and puts it in the report link's subject. With JS off, both stay out. */}
 <Base title="not found · vedaant.dev" class="max-w-col">
-  <h1>not found</h1>
+  <h1 class="text-2xl font-semibold">404</h1>
+  <p class="meta mt-3 text-xs">
+    <span id="path" class="block min-h-lh truncate noscript:hidden"></span>
+    <span class="text-fg-3">{notFound.status}</span>
+  </p>
+  <p class="mt-3 text-lg">
+    {before}<mark>{marked}</mark>{after}
+  </p>
+  <section class="flex flex-col gap-6">
+    <SectionLabel label="elsewhere" count={rows.length} />
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line">
+      {
+        rows.map(({ word, href, tile, sub }) => (
+          <li>
+            <Row tile={tile} title={word} sub={sub} href={href}>
+              <span aria-hidden="true">→</span>
+            </Row>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+  <p class="report border-t border-dashed border-line pt-6 text-fg-2">
+    {ask}<a
+      id="report"
+      href={`mailto:${site.email}`}
+      class="-my-3.5 inline-flex min-h-11 items-center text-fg underline decoration-line-2 transition-colors hover:decoration-fg"
+      ><span>{link} <span aria-hidden="true">→</span></span></a
+    >{fix}<span class="noscript:hidden"> {notFound.note}</span>
+  </p>
+  <script>
+    import { subject } from '../data/not-found';
+
+    // The requested path, which only the browser knows: it fills the reserved line and goes into
+    // the report link's subject. pathname leaves out the query and the fragment, and it is
+    // percent-encoded ASCII; textContent inserts it as text.
+    const path = location.pathname;
+    (document.getElementById('path') as HTMLElement).textContent = path;
+    const report = document.getElementById('report') as HTMLAnchorElement;
+    report.href += `?subject=${encodeURIComponent(subject(path))}`;
+  </script>
 </Base>
+
+<style>
+  h1,
+  section,
+  .report {
+    margin-block-start: var(--sp-section);
+  }
+  /* The highlight from the owner's 404 board (D106): a band from about halfway up the letters to
+     below the words, one per line. S11 moves this rule to global.css for the hero. */
+  mark {
+    background: linear-gradient(transparent 53%, var(--c-mark) 0);
+    box-decoration-break: clone;
+    color: inherit;
+  }
+  /* Forced colours drop the gradient and replace the colours, which would leave the phrase
+     unmarked (NFR-A7). */
+  @media (forced-colors: active) {
+    mark {
+      background-color: Mark;
+      color: MarkText;
+    }
+  }
+</style>
