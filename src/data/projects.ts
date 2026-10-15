@@ -2,6 +2,10 @@ import type { CollectionEntry } from 'astro:content';
 
 type Project = CollectionEntry<'projects'>;
 
+// The /projects intro, as the owner's design writes it (p12).
+export const intro =
+  'Things I built, newest first. Rows with a case study open it; the rest go straight to the repo. Work done for an employer is described at the level I am allowed to.';
+
 // A body of at least this many words is a case study (FR-PR-4's 500); a draft's counts only in
 // `astro dev` (p18).
 const CASE_STUDY_WORDS = 500;
@@ -17,8 +21,9 @@ export const rowHref = (project: Project) =>
   undefined;
 
 // The tile: the initials of the title's first two words, or the first two letters of one word.
+// Punctuation is not a word: "search (driceroland)" is "sd".
 export const tile = (title: string) => {
-  const [first = title, second] = title.split(/[\s-]+/).filter(Boolean);
+  const [first = title, second] = title.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   return (second ? first[0] + second[0] : first.slice(0, 2)).toLowerCase();
 };
 

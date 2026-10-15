@@ -15,8 +15,10 @@ interface Props {
 const { tile, title, sub, start, end, href, toggle = false, struck = false, note, links = [] } =
   Astro.props;
 // Links do not nest: with links of its own in the right cell, a row is not one <a>. Its text is
-// the link instead, and the text's ::after covers the row as its target and its focus ring.
-const split = href !== undefined && links.length > 0;
+// the link instead, and the text's ::after covers the row as its target and its focus ring. A link
+// to the row's own href is no second link but its label, in place of the ↗ after the title.
+const split = href !== undefined && links.some((link) => link.href !== href);
+const labelled = links.some((link) => link.href === href);
 const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';
 const Text = split ? 'a' : 'span';
 const hasChips = Astro.slots.has('chips');
@@ -32,7 +34,8 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
     widest chip. Spans only, so the row can be a <summary>. A null end is a current role: the live
     dot, "now", not muted; an ended role is muted; a row without dates is neither. A struck row, an
     archived project (FR-PR-3), is muted and its title struck through. Every row overhangs the
-    column by 8px (p09), so a link's or a toggle's hover fill clears the text. */}
+    column by 8px (p09), so a link's or a toggle's hover fill clears the text. Dates above a note
+    or links take a line of their own. */}
 <Tag
   href={split ? undefined : href}
   class:list={[
@@ -64,14 +67,14 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
         'after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus',
     ]}
   >
-    <span class:list={['font-medium', struck && 'line-through']}>{title}</span>{href?.startsWith('https://') && <> <span aria-hidden="true" class="inline-block font-sans">↗</span></>}{' '}
+    <span class:list={['font-medium', struck && 'line-through']}>{title}</span>{href?.startsWith('https://') && !labelled && <> <span aria-hidden="true" class="inline-block font-sans">↗</span></>}{' '}
     <span class:list={['text-sm leading-(--lh-snug) text-fg-2', hasChips ? 'mt-0.5 block' : 'inline-block']}>{!hasChips && '· '}{sub}</span>
     {hasChips && <span class="mt-1.5 flex flex-wrap gap-1.5"><slot name="chips" /></span>}
   </Text>
   <span class="meta ml-auto text-right text-xs text-fg-3">
     {
       start && (
-        <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class="no-underline whitespace-nowrap">
+        <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class:list={['no-underline whitespace-nowrap', (note || links.length > 0) && 'mb-1 block']}>
           <time datetime={start}>{month(short, start)}</time> –{' '}
           {end ? <time datetime={end}>{month(short, end)}</time> : 'now'}
         </abbr>
@@ -83,15 +86,21 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
       links.map((link, i) => (
         <>
           {(i > 0 || note) && ' · '}
-          <a
-            href={link.href}
-            class="relative -my-2.5 inline-flex min-h-11 min-w-11 items-center justify-end underline decoration-line-2 transition-colors hover:decoration-fg"
-          >
-            <span>
-              {link.label}
-              {link.href.startsWith('https://') && <> <span aria-hidden="true" class="inline-block font-sans">↗</span></>}
-            </span>
-          </a>
+          {
+            link.href === href ? (
+              <span>{link.label} <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+            ) : (
+              <a
+                href={link.href}
+                class="relative -my-2.5 inline-flex min-h-11 min-w-11 items-center justify-end underline decoration-line-2 transition-colors hover:decoration-fg"
+              >
+                <span>
+                  {link.label}
+                  {link.href.startsWith('https://') && <> <span aria-hidden="true" class="inline-block font-sans">↗</span></>}
+                </span>
+              </a>
+            )
+          }
         </>
       ))
     }

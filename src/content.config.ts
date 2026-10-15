@@ -53,6 +53,10 @@ const projects = defineCollection({
     // An npm package name, such as @scope/name.
     package: z.string().min(1).optional(),
     confidential: z.boolean().optional(),
+    // An open-source contribution to someone else's repo: the link to my PRs there, which puts the
+    // project in the open source group, and the month I began.
+    prs: https.optional(),
+    start: month.optional(),
   }),
 });
 
