@@ -81,7 +81,8 @@ only names tokens and components; where it differs, the pages win.
 - Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
   transitions. Try CSS first, then a plain `<script>` or a custom element.
 - LCP ≤1.2s; CLS 0, live-state changes included. Never animate the LCP element
-  (the home name).
+  (measure it: a hero line, not the name) except by a mark's background
+  swipe, which moves no text. Never animate the name.
 - Load fonts with the Astro Fonts API, not `@fontsource` imports. Preload only
   Geist sans; at most 2 font requests on first paint and 90 KB total, except
   the hero's one serif word: a third request, `font-display: optional`, which

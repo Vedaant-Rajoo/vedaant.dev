@@ -88,6 +88,23 @@
       color: MarkText;
     }
   }
+  /* The highlighter swipe (FR-HE-2, D114): every mark's band grows from the left once, as the page
+     loads, on each of its lines at once. Only the background moves. no-repeat stops a part-grown
+     band from tiling. With reduced motion the band is drawn whole. */
+  @media (prefers-reduced-motion: no-preference) {
+    mark {
+      background-repeat: no-repeat;
+      animation: mark-swipe var(--d-sig) var(--ez-in-out);
+    }
+  }
+  @keyframes mark-swipe {
+    from {
+      background-size: 0 100%;
+    }
+    to {
+      background-size: 100% 100%;
+    }
+  }
   :focus-visible {
     outline: 2px solid var(--c-focus);
     outline-offset: 2px;
