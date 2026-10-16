@@ -9,7 +9,7 @@ export const intro =
 // A body of at least this many words is a case study (FR-PR-4's 500); a draft's counts only in
 // `astro dev` (p18).
 const CASE_STUDY_WORDS = 500;
-const hasCaseStudy = ({ body = '', data }: Project) =>
+export const hasCaseStudy = ({ body = '', data }: Project) =>
   (import.meta.env.DEV || !data.draft) &&
   body.split(/\s+/).filter(Boolean).length >= CASE_STUDY_WORDS;
 

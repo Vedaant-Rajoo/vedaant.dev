@@ -40,24 +40,37 @@ const work = defineCollection({
 
 const projects = defineCollection({
   loader: glob({ pattern: '*.md', base: 'src/content/projects' }),
-  schema: z.strictObject({
-    title: z.string().min(1),
-    summary: z.string().min(1).max(90),
-    year: z.int().min(1000).max(9999),
-    // 24 characters fit the text column at 320px.
-    stack: z.array(z.string().min(1).max(24)).max(4),
-    status: z.enum(['active', 'done', 'archived']),
-    featured: z.boolean(),
-    draft: z.boolean().optional(),
-    repo: https.optional(),
-    // An npm package name, such as @scope/name.
-    package: z.string().min(1).optional(),
-    confidential: z.boolean().optional(),
-    // An open-source contribution to someone else's repo: the link to my PRs there, which puts the
-    // project in the open source group, and the month I began.
-    prs: https.optional(),
-    start: month.optional(),
-  }),
+  schema: z
+    .strictObject({
+      title: z.string().min(1),
+      summary: z.string().min(1).max(90),
+      year: z.int().min(1000).max(9999),
+      // 24 characters fit the text column at 320px.
+      stack: z.array(z.string().min(1).max(24)).max(4),
+      status: z.enum(['active', 'done', 'archived']),
+      featured: z.boolean(),
+      draft: z.boolean().optional(),
+      repo: https.optional(),
+      // An npm package name, such as @scope/name.
+      package: z.string().min(1).optional(),
+      confidential: z.boolean().optional(),
+      // An open-source contribution to someone else's repo: the link to my PRs there, which puts the
+      // project in the open source group, and the month I began.
+      prs: https.optional(),
+      start: month.optional(),
+      // A case study's dates (p13). Quote them: YAML reads an unquoted 2026-10-15 as a Date.
+      published: z.iso.date().optional(),
+      updated: z.iso.date().optional(),
+    })
+    .refine(
+      ({ published, updated }) =>
+        updated === undefined || (published !== undefined && updated > published),
+      {
+        path: ['updated'],
+        message: 'must be after published',
+        when: ({ issues }) => issues.length === 0,
+      },
+    ),
 });
 
 const writing = defineCollection({

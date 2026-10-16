@@ -1,0 +1,120 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Chip from '../../components/Chip.astro';
+import { hasCaseStudy, npmUrl } from '../../data/projects';
+import Base from '../../layouts/Base.astro';
+
+// One page per row that links a case study: rowHref reads the same predicate, so a draft gets a
+// page only in `astro dev` (D93 O3). Outside a draft, a case study needs its published date (p13).
+export const getStaticPaths = (async () =>
+  (await getCollection('projects', hasCaseStudy)).map((project) => {
+    if (!project.data.draft && project.data.published === undefined) {
+      throw new Error(`${project.filePath}: a case study needs a published date`);
+    }
+    return { params: { slug: project.id }, props: { project } };
+  })) satisfies GetStaticPaths;
+
+const { project } = Astro.props;
+const { data } = project;
+// The title is the page's one h1 (NFR-A3). The rendered body is checked, so raw HTML counts too,
+// <h1/> included, which browsers open as an h1; an h1 in a code fence (escaped) or in an HTML
+// comment does not.
+if (/<h1[\s/>]/i.test((project.rendered?.html ?? '').replace(/<!--[\s\S]*?-->/g, ''))) {
+  throw new Error(`${project.filePath}: the body has an h1; start its headings at ##`);
+}
+const { Content } = await render(project);
+const npm = npmUrl(project);
+// Confidential work keeps its case study, but its links give way to the note (FR-PR-6, D103 O2).
+const links = data.confidential
+  ? []
+  : [
+      npm ? { label: `npm ${data.package}`, href: npm } : undefined,
+      data.repo ? { label: 'repo', href: data.repo } : undefined,
+      data.prs ? { label: 'my PRs', href: data.prs } : undefined,
+    ].filter((link) => link !== undefined);
+// An ISO date is midnight UTC, so read it in UTC; 'en', because Node's en-GB writes "Sept".
+const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
+const day = (iso: string) => {
+  const date = new Date(iso);
+  return `${date.getUTCDate()} ${month.format(date)} ${date.getUTCFullYear()}`;
+};
+// 44px targets (NFR-R2). In the wrapping meta line the boxes keep their height, so wrapped rows
+// stay 8px apart. A back link, alone on its line, is held to the text's height as SectionLabel's
+// is; its box then reaches 14px past the text, which the gaps around it leave free.
+const link =
+  'inline-flex min-h-11 min-w-11 items-center underline decoration-line-2 transition-colors hover:decoration-fg';
+const back = `-my-3.5 ${link}`;
+---
+
+{/* A case study (p13): the header from frontmatter, the Markdown body with the base styles only
+    (Prose is S15b), then the way back and the dates. */}
+<Base title={`${data.title} · vedaant.dev`} class="max-w-col">
+  <header class="flex flex-col gap-3.5">
+    <p class="meta text-xs text-fg-3">
+      <a href="/projects" class={back}>
+        <span><span aria-hidden="true" class="inline-block font-sans">←</span> projects</span>
+      </a>
+    </p>
+    <h1 class="text-2xl font-semibold">{data.title}</h1>
+    <p class="text-lg">{data.summary}</p>
+    <p class="meta flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-fg-3">
+      <time>{data.year}</time>
+      {data.stack.length > 0 && <span>·</span>}
+      {data.stack.map((name) => <Chip label={name} />)}
+      {
+        links.map(({ label, href }) => (
+          <>
+            <span>·</span>
+            <a href={href} class={link}>
+              {/* A package name has no spaces and may be 214 characters long. */}
+              <span class="wrap-anywhere">
+                {label} <span aria-hidden="true" class="inline-block font-sans">↗</span>
+              </span>
+            </a>
+          </>
+        ))
+      }
+      {
+        data.confidential && (
+          <>
+            <span>·</span>
+            <span>no repo · confidential</span>
+          </>
+        )
+      }
+      <span>·</span>
+      <span>status: {data.status}</span>
+    </p>
+  </header>
+  <Content />
+  <footer class="flex flex-wrap justify-between gap-x-3 gap-y-3.5 border-t border-line pt-6">
+    <p class="meta text-xs text-fg-3">
+      <a href="/projects" class={back}>
+        <span><span aria-hidden="true" class="inline-block font-sans">←</span> all projects</span>
+      </a>
+    </p>
+    {
+      data.published && (
+        <p class="meta text-xs text-fg-3">
+          published <time datetime={data.published} class="whitespace-nowrap">{day(data.published)}</time>
+          {data.updated && (
+            <>
+              {' '}
+              · updated <time datetime={data.updated} class="whitespace-nowrap">{day(data.updated)}</time>
+            </>
+          )}
+        </p>
+      )
+    }
+  </footer>
+</Base>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  footer {
+    margin-block-start: var(--sp-section);
+  }
+</style>
