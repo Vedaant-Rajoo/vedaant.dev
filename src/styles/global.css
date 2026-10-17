@@ -123,6 +123,122 @@
   }
 }
 
+/* Prose (p13, p15): a Markdown body inside Prose.astro. Its elements carry no classes, so these
+   rules select them. A section is a ## heading under the home sections' dashed rule. */
+@layer components {
+  /* A long word, URL or inline code breaks rather than widen the page (NFR-R1). */
+  .prose {
+    max-width: var(--w-measure);
+    overflow-wrap: anywhere;
+  }
+  .prose > * + *,
+  .prose blockquote > * + * {
+    margin-block-start: var(--sp-row);
+  }
+  .prose > :is(h2, h3, h4, h5, h6) {
+    font-weight: var(--fw-medium);
+  }
+  /* Headings stop at text-xl (FR-PR-4, FR-WR-3). */
+  .prose > h2 {
+    margin-block-start: --spacing(12);
+    border-block-start: 1px dashed var(--c-line);
+    padding-block-start: var(--sp-stack);
+    font-size: var(--fs-xl);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > h3 {
+    margin-block-start: var(--sp-stack);
+    font-size: var(--fs-lg);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > :is(h2, h3, h4, h5, h6) + * {
+    margin-block-start: --spacing(4);
+  }
+  .prose :is(ul, ol) {
+    padding-inline-start: --spacing(5);
+  }
+  .prose ul {
+    list-style-type: disc;
+  }
+  .prose ol {
+    list-style-type: decimal;
+  }
+  .prose li + li,
+  .prose li > :is(ul, ol) {
+    margin-block-start: --spacing(2);
+  }
+  /* A decision (p13, D125): chose, over, because, each label in a mono column 88px wide. A dd's
+     basis is the rest of its line, so every pair starts a line, and at least 11rem: when large text
+     leaves less beside the label, the dd moves under it, as in the hero's dl. */
+  .prose dl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: --spacing(1) var(--sp-row);
+  }
+  .prose dt {
+    flex: 0 0 --spacing(22);
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+    font-size: var(--fs-xs);
+    letter-spacing: var(--ls-mono);
+    color: var(--c-fg-3);
+  }
+  .prose dd {
+    flex: 1 1 max(--spacing(44), 100% - --spacing(22) - var(--sp-row));
+    min-width: 0;
+  }
+  /* Links as elsewhere. A link in a line of prose keeps the line's height, not 44px (D124). */
+  .prose a {
+    text-decoration-line: underline;
+    text-decoration-color: var(--c-line-2);
+    transition: text-decoration-color var(--d-1) var(--ez-out);
+  }
+  .prose a:hover {
+    text-decoration-color: var(--c-fg);
+  }
+  /* A quote is set in italic at text-lg and nothing else (p15): sans italic (D13), synthesized, so
+     it requests no font (D33, D124). */
+  .prose blockquote {
+    font-style: italic;
+    font-size: var(--fs-lg);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > hr {
+    margin-block: --spacing(12);
+    border-color: var(--c-line);
+  }
+  /* GFM footnotes: the list under a dashed rule, as a section; its h2 is sr-only. */
+  .prose > .footnotes {
+    margin-block-start: --spacing(12);
+    border-block-start: 1px dashed var(--c-line);
+    padding-block-start: var(--sp-stack);
+  }
+  /* Code blocks (p13, p15; D124): the surface fill, a hairline, --r-2, mono at text-sm. Shiki's
+     css-variables theme colours each token through these variables: keywords and strings in the
+     two code colours, comments in --c-fg-2. Any other is unmapped, so its var() is invalid at
+     computed-value time and it inherits the foreground. A long line scrolls inside the block,
+     which Shiki makes focusable (tabindex="0") for the keyboard. */
+  .prose pre {
+    --astro-code-foreground: var(--c-fg);
+    --astro-code-background: var(--c-surface);
+    --astro-code-token-comment: var(--c-fg-2);
+    --astro-code-token-keyword: var(--c-code-keyword);
+    --astro-code-token-string: var(--c-code-string);
+    --astro-code-token-string-expression: var(--c-code-string);
+    overflow-x: auto;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-2);
+    padding: --spacing(3.5) --spacing(4);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-body);
+    letter-spacing: var(--ls-mono);
+  }
+}
+
 /* The theme reveal (FR-SH-2, design doc §6 part 3). theme.ts sets --vt-x and --vt-y, the clock's
    centre, and --vt-r, a radius that reaches the farthest corner, in percentages of the viewport.
    The new snapshot sits on top and grows as a circle over the old one; neither fades. */

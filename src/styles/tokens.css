@@ -15,6 +15,9 @@
     --c-live: light-dark(oklch(52% 0.14 150), oklch(78% 0.17 150));
     --c-mark: light-dark(oklch(93% 0.15 105 / 0.75), oklch(55% 0.12 105 / 0.35));
     --c-focus: light-dark(oklch(55% 0.18 255), oklch(75% 0.14 255));
+    /* Code blocks (D124, not in the doc): keywords and strings, each ≥8:1 on --c-surface. */
+    --c-code-keyword: light-dark(oklch(41% 0.12 300), oklch(78% 0.09 300));
+    --c-code-string: light-dark(oklch(41% 0.1 45), oklch(78% 0.09 45));
 
     /* Type: ratio 1.2, base 1rem, fluid from xl */
     /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, D24's stack.
@@ -91,6 +94,8 @@
       --c-live: #0a7e3a;
       --c-mark: rgb(236 240 120 / 0.75);
       --c-focus: #2f6fd6;
+      --c-code-keyword: #553781;
+      --c-code-string: #753515;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -105,6 +110,8 @@
         --c-live: #5fd38a;
         --c-mark: rgb(140 140 40 / 0.35);
         --c-focus: #86aef5;
+        --c-code-keyword: #c0abe9;
+        --c-code-string: #e8a587;
       }
     }
     :root[data-theme="dark"] {
@@ -119,6 +126,8 @@
       --c-live: #5fd38a;
       --c-mark: rgb(140 140 40 / 0.35);
       --c-focus: #86aef5;
+      --c-code-keyword: #c0abe9;
+      --c-code-string: #e8a587;
     }
   }
 

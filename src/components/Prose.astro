@@ -1,0 +1,10 @@
+---
+// The body is the slot, and nothing else may be passed (the S8b → S8c rule).
+interface Props {
+  children: unknown;
+}
+---
+
+{/* A Markdown body (p13, p15): global.css styles it under .prose, because the rendered elements
+    carry no classes. */}
+<div class="prose"><slot /></div>

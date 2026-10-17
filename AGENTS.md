@@ -55,12 +55,14 @@ only names tokens and components; where it differs, the pages win.
 - Tailwind is v4 via `@tailwindcss/vite`, never the doc's v3 config. At most 12
   dependencies and 20 components; share a component only on its second use.
 - Style only through the tokens in `src/styles/tokens.css`, named as in the
-  doc's §4.2, with no arbitrary values: literal durations escape the
-  reduced-motion reset. Mockup markup and inline styles show intent, not code.
+  doc's §4.2 (plus the code colours `--c-code-keyword` and `--c-code-string`),
+  with no arbitrary values: literal durations escape the reduced-motion reset.
+  Mockup markup and inline styles show intent, not code.
 - Contrast in both themes, hex fallbacks included, on `--c-bg`: body ≥15:1,
   secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text ≥3:1; on the row
-  hover fill (`--c-surface`) body text may drop to 14:1. Measure after token
-  edits; the doc's light `--c-live` and light hex `--c-fg-2` fail.
+  hover fill (`--c-surface`) body text may drop to 14:1, and code-block text
+  is secondary (≥8:1). Measure after token edits (`bun scripts/contrast.ts`);
+  the doc's light `--c-live` and light hex `--c-fg-2` fail.
 - `--c-live` (green) marks only live state. No icon set; use text glyphs.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.
@@ -87,8 +89,9 @@ only names tokens and components; where it differs, the pages win.
   Geist sans; at most 2 font requests on first paint and 90 KB total, except
   the hero's one serif word: a third request, `font-display: optional`, which
   the browser may leave unused for a view and never swaps in.
-- Targets ≥44px, no horizontal scroll at 320px, and the nav wraps instead of
-  collapsing into a hamburger.
+- Targets ≥44px, except a link inside a line of prose, which keeps the line's
+  height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
+  the nav wraps instead of collapsing into a hamburger.
 - The nav words are `projects · writing · now`, not the spec's four: no word
   may link to a 404 at launch, so `shelf` joins with `/shelf` in 1.1.
 - After UI changes, run `bun run check` and `bun run build`, then view light,

@@ -1,9 +1,17 @@
-// NFR-A4 guard: contrast of the Ledger colour tokens against the background, both themes,
-// for the oklch values and for the hex fallbacks. Run `bun scripts/contrast.ts`; it reads
-// src/styles/tokens.css and exits 1 when a pair is under its target.
+// NFR-A4 guard: contrast of the Ledger colour tokens against the background, and of the text
+// that sits on --c-surface against it, both themes, for the oklch values and for the hex
+// fallbacks. Run `bun scripts/contrast.ts`; it reads src/styles/tokens.css and exits 1 when a
+// pair is under its target.
 import { readFileSync } from 'node:fs';
 
 const TARGETS: Record<string, number> = { fg: 15, 'fg-2': 8, 'fg-3': 4.5, live: 4.6, focus: 3 };
+// On --c-surface: a row title on the hover fill (D93) and the text of a code block (D124).
+const ON_SURFACE: Record<string, number> = {
+  fg: 14,
+  'fg-2': 8,
+  'code-keyword': 8,
+  'code-string': 8,
+};
 const THEMES = ['light', 'dark'] as const;
 type Theme = (typeof THEMES)[number];
 type Swatch = { hex: string; clipped: boolean };
@@ -96,7 +104,9 @@ for (let depth = 0; end < css.length; end += 1) {
     }
   }
 }
-const required = [...Object.keys(TARGETS), 'bg'];
+const required = [
+  ...new Set([...Object.keys(TARGETS), ...Object.keys(ON_SURFACE), 'bg', 'surface']),
+];
 for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) {
   const theme: Theme = /\[data-theme="dark"\]|:not\(\[data-theme="light"\]\)/.test(block[1])
     ? 'dark'
@@ -120,25 +130,30 @@ for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) 
 }
 
 let failed = 0;
-console.log('| theme | pair | source | colour | on bg | ratio | target | result |');
+console.log('| theme | pair | source | colour | on | ratio | target | result |');
 console.log('|---|---|---|---|---|---|---|---|');
 for (const theme of THEMES) {
   for (const [source, swatches] of [
     ['oklch', oklch[theme]],
     ['hex', hex[theme]],
   ] as const) {
-    for (const [name, target] of Object.entries(TARGETS)) {
+    for (const [ground, name, target] of [
+      ...Object.entries(TARGETS).map(([n, t]) => ['bg', n, t] as const),
+      ...Object.entries(ON_SURFACE).map(([n, t]) => ['surface', n, t] as const),
+    ]) {
       const fg = swatches[name];
-      const bg = swatches.bg;
+      const bg = swatches[ground];
       if (!fg || !bg) {
-        throw new Error(`token --c-${name} or --c-bg missing from the ${source} ${theme} set`);
+        throw new Error(
+          `token --c-${name} or --c-${ground} missing from the ${source} ${theme} set`,
+        );
       }
       const r = ratio(fg.hex, bg.hex);
       const pass = r >= target;
       failed += pass ? 0 : 1;
       const clip = fg.clipped || bg.clipped ? ' (clipped)' : '';
       console.log(
-        `| ${theme} | ${name} | ${source} | ${fg.hex}${clip} | ${bg.hex} | ${r.toFixed(2)}:1 | ≥ ${target} | ${pass ? 'pass' : 'FAIL'} |`,
+        `| ${theme} | ${name} | ${source} | ${fg.hex}${clip} | ${ground} ${bg.hex} | ${r.toFixed(2)}:1 | ≥ ${target} | ${pass ? 'pass' : 'FAIL'} |`,
       );
     }
   }

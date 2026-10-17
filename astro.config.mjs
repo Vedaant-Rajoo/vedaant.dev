@@ -58,6 +58,10 @@ export default defineConfig({
       },
     },
   ],
+  // Code fences (D124): Shiki's css-variables theme writes each token's colour as a CSS variable,
+  // and global.css maps those to the tokens, so code follows the theme, hex fallbacks included,
+  // with no colour hard-coded (FR-CM-3). wrap: null adds no inline overflow; global.css sets it.
+  markdown: { shikiConfig: { theme: 'css-variables', wrap: null } },
   // cloudflared Quick Tunnels give the dev server a new random subdomain of trycloudflare.com on
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
   // Vite's host check closed to DNS rebinding.
