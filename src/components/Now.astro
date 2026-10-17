@@ -1,5 +1,5 @@
 ---
-import { getEntry } from 'astro:content';
+import { nowEntry } from '../data/now';
 import NowPlaying from './NowPlaying.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
@@ -7,10 +7,7 @@ import SectionLabel from './SectionLabel.astro';
 // No props: an attribute passed to Now fails the type check (the S8b → S8c rule).
 type Props = Record<string, never>;
 
-const now = await getEntry('now', 'now');
-if (now === undefined) {
-  throw new Error('src/content/now/now.md is missing');
-}
+const now = await nowEntry();
 const { updated, building, watched } = now.data;
 // Half stars, as Letterboxd writes them: 3.5 is ★★★½.
 const stars = (rating: number) => '★'.repeat(Math.floor(rating)) + (rating % 1 ? '½' : '');

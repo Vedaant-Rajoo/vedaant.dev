@@ -53,7 +53,21 @@ const result = z
     email: z.email(),
     socials: z.object({ github: https, linkedin: https }),
     source: https,
+    // /now's "history ↗" (FR-NW-2): now.md's commit log on the repo host.
+    history: https,
   })
+  // GitHub's log of one file is <repo>/commits/<branch>/<path>; href has any ../ resolved.
+  .refine(
+    ({ source, history }) => {
+      const { href } = new URL(history);
+      return href.startsWith(`${source}/commits/`) && href.endsWith('/src/content/now/now.md');
+    },
+    {
+      path: ['history'],
+      message: 'Invalid input: expected the commit log of src/content/now/now.md in source',
+      when: ({ issues }) => issues.length === 0,
+    },
+  )
   .safeParse(data);
 if (!result.success) {
   throw new Error(`src/data/site.json is invalid:\n${z.prettifyError(result.error)}`);
