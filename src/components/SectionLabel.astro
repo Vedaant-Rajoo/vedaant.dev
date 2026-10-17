@@ -3,9 +3,12 @@ interface Props {
   label: string;
   count: number;
   href?: string;
+  // The link's word and arrow: "all ↗", or a section's own, as now's "more →" (p10 §05).
+  word?: string;
+  arrow?: string;
 }
 
-const { label, count, href } = Astro.props;
+const { label, count, href, word = 'all', arrow = '↗' } = Astro.props;
 ---
 
 <div class="flex items-baseline justify-between gap-3 border-t border-dashed border-line pt-6">
@@ -16,7 +19,7 @@ const { label, count, href } = Astro.props;
         href={href}
         class="meta -my-3.5 inline-flex min-h-11 min-w-11 items-center justify-end text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
       >
-        <span>all <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+        <span>{word} <span aria-hidden="true" class="inline-block font-sans">{arrow}</span></span>
       </a>
     )
   }

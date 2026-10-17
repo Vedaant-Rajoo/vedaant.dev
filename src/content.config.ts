@@ -97,4 +97,27 @@ const writing = defineCollection({
     }),
 });
 
-export const collections = { work, projects, writing };
+// A quoted day, as writing's: YAML reads a bare 2025-02-30 as a Date, already moved to 2 March.
+const day = z.iso.date({ error: "Invalid date: expected a real day in quotes, as '2025-03-14'" });
+
+// One file, src/content/now/now.md (FR-NW-1): its body is /now's prose under "## label" headings
+// (S18); its frontmatter also feeds the home rows (p10 §05). Another file in the folder is not read.
+const now = defineCollection({
+  loader: glob({ pattern: 'now.md', base: 'src/content/now' }),
+  schema: z.strictObject({
+    updated: day,
+    // The city, shown on /now as "from <city>" (D4).
+    from: z.string().trim().min(1),
+    // The home row's line.
+    building: z.string().trim().min(1),
+    // The home "last watched" row (D11). The rating is out of 5 in half stars; none if unrated.
+    watched: z.strictObject({
+      title: z.string().trim().min(1),
+      year: z.int().min(1000).max(9999),
+      rating: z.number().min(0.5).max(5).multipleOf(0.5).optional(),
+      date: day,
+    }),
+  }),
+});
+
+export const collections = { work, projects, writing, now };

@@ -1,0 +1,61 @@
+---
+import { getEntry } from 'astro:content';
+import Row from './Row.astro';
+import SectionLabel from './SectionLabel.astro';
+
+// No props: an attribute passed to Now fails the type check (the S8b → S8c rule).
+type Props = Record<string, never>;
+
+const now = await getEntry('now', 'now');
+if (now === undefined) {
+  throw new Error('src/content/now/now.md is missing');
+}
+const { updated, building, watched } = now.data;
+// Half stars, as Letterboxd writes them: 3.5 is ★★★½.
+const stars = (rating: number) => '★'.repeat(Math.floor(rating)) + (rating % 1 ? '½' : '');
+// Rows 2 and 3 of p10 §05, from the file; row 1, now playing, is S21b's. The tiles and the words
+// around the owner's are labels (D38).
+const rows = [
+  { tile: '▍', title: 'building', sub: building, href: '/now', prefix: 'from /now · ', day: updated },
+  {
+    tile: 'wt',
+    title: `${watched.title} (${watched.year})`,
+    sub: watched.rating === undefined ? 'last watched' : `last watched · ${stars(watched.rating)}`,
+    day: watched.date,
+  },
+];
+// The date as "D Mon" (p09) in an <abbr> with the whole day, as Writing writes its dates. A
+// YYYY-MM-DD is midnight UTC, so read it in UTC; 'en' for the month, because Node's en-GB writes
+// "Sept", and en-GB for the whole day.
+const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
+const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+{/* wrap-anywhere breaks a word too long for the row, as in Writing (S12). */}
+<section class="flex flex-col gap-6">
+  <SectionLabel label="now" count={rows.length} href="/now" word="more" arrow="→" />
+  {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+  <ol role="list" class="divide-y divide-line wrap-anywhere">
+    {
+      rows.map(({ tile, title, sub, href, prefix, day }) => {
+        const date = new Date(day);
+        return (
+          <li>
+            <Row tile={tile} title={title} sub={sub} href={href}>
+              {prefix}
+              <abbr title={long.format(date)} class="no-underline whitespace-nowrap">
+                <time datetime={day}>{date.getUTCDate()} {month.format(date)}</time>
+              </abbr>
+            </Row>
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>
+
+<style>
+  section {
+    margin-block-start: var(--sp-section);
+  }
+</style>
