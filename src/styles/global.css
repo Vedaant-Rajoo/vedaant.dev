@@ -259,3 +259,52 @@
     clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
   }
 }
+
+/* The now-playing row (S21b; p10 §05, FR-LV-2, FR-LV-6). NowPlaying.astro sets data-state. Idle and
+   offline show the row's meta time; empty and loading, which has no snapshot and so no value, show
+   none. live sets "now" in --c-live at text-sm medium after a dot, which pulses at the signature
+   tier as a ring that grows and fades, and stays still when reduced motion is asked for. Forced
+   colours would paint the dot in the Canvas colour, so there it takes CanvasText. The row is an <a>
+   in every state, so only one with a URL takes the hover fill. */
+@layer components {
+  @media (hover: hover) {
+    a[data-widget="now-playing"][href]:hover {
+      background-color: var(--c-surface);
+    }
+  }
+  [data-widget="now-playing"][data-state="live"] .meta > * {
+    font-family: var(--ff-sans);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--c-live);
+  }
+  [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    inline-size: --spacing(1.75);
+    block-size: --spacing(1.75);
+    margin-inline-end: --spacing(1.5);
+    border-radius: var(--r-pill);
+    background: currentColor;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+      animation: now-pulse var(--d-sig) var(--ez-out) infinite;
+    }
+  }
+  @media (forced-colors: active) {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+  @keyframes now-pulse {
+    from {
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    to {
+      box-shadow: 0 0 0 var(--sp-unit) transparent;
+    }
+  }
+}

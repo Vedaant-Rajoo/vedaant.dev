@@ -1,0 +1,67 @@
+---
+import { nowPlaying } from '../data/lastfm';
+import type { NowPlaying } from '../data/now-playing';
+
+interface Props {
+  // The home row passes neither: the build-time value, idle even when Last.fm said live, and empty
+  // as "—" (FR-LV-1). A state fixture (S23) passes both.
+  value?: NowPlaying;
+  state?: NowPlaying['state'] | 'offline' | 'loading';
+}
+
+const { value = nowPlaying, state = value.state === 'empty' ? 'empty' : 'idle' } = Astro.props;
+const { track, artist, album, at, url } = value;
+// How long ago `at` was when the page was built, floored to its largest unit, as p10's "2h ago": at
+// most eight characters, which the state cell's width holds. Under a minute, or ahead of the
+// build's clock, it reads "1m ago". The hub (S24) recomputes it.
+function ago(time: string) {
+  const minutes = Math.max(1, Math.floor((Date.now() - Date.parse(time)) / 60_000));
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  return days < 365 ? `${days}d ago` : `${Math.floor(days / 365)}y ago`;
+}
+// Artist and album each between U+2068 and U+2069, so a right-to-left name reorders neither the
+// other nor the separators, and a closing space, so the text reads apart from the time after it.
+const rest = artist && ` · \u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;
+// The state text sits in a <time> when there is a time for its datetime, else in a <span>.
+const When = at ? 'time' : 'span';
+---
+
+{/* Row 1 of p10 §05 in Row's anatomy, one line per cell (FR-NP-2). The hub (S24) moves it between
+    states by setting data-state, href and the text of the track, the rest and the time, so all
+    three are here in every state, and the row is an <a> throughout: without a URL it has no href
+    and is not a link. No box moves when they change (FR-LV-3): the text truncates instead of
+    wrapping, nothing else on its line follows the changing text, and the time fills a fixed cell,
+    which large text moves under the text in every state alike. aria-live="off" keeps the changes
+    silent (doc §7); <bdi> keeps a right-to-left track from reordering the rest. */}
+<a
+  href={url}
+  data-widget="now-playing"
+  data-state={state}
+  aria-live="off"
+  aria-busy={state === 'loading' ? 'true' : undefined}
+  class="-mx-2 flex min-h-13 flex-wrap items-center gap-3 rounded-sm px-2 py-2.5 transition-colors duration-(--d-2)"
+>
+  <span
+    aria-hidden="true"
+    class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-sunken font-mono text-xs"
+  >
+    ♪
+  </span>
+  <span class="min-w-0 grow basis-16 truncate leading-(--lh-snug)"
+    ><bdi class="font-medium">{track ?? '—'}</bdi><span class="text-sm leading-(--lh-snug) text-fg-2"
+      >{rest}</span
+    ></span
+  >
+  <span class="meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3">
+    <When datetime={at} class="grow self-stretch text-right leading-5"
+      >{state === 'live' ? 'now' : at && ago(at)}</When
+    >
+  </span>
+</a>

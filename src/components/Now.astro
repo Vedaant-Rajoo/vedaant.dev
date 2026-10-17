@@ -1,5 +1,6 @@
 ---
 import { getEntry } from 'astro:content';
+import NowPlaying from './NowPlaying.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
 
@@ -33,9 +34,10 @@ const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UT
 
 {/* wrap-anywhere breaks a word too long for the row, as in Writing (S12). */}
 <section class="flex flex-col gap-6">
-  <SectionLabel label="now" count={rows.length} href="/now" word="more" arrow="→" />
+  <SectionLabel label="now" count={rows.length + 1} href="/now" word="more" arrow="→" />
   {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
   <ol role="list" class="divide-y divide-line wrap-anywhere">
+    <li><NowPlaying /></li>
     {
       rows.map(({ tile, title, sub, href, prefix, day }) => {
         const date = new Date(day);
@@ -52,6 +54,13 @@ const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UT
       })
     }
   </ol>
+  {/* Last.fm's credit for row 1 (terms 2.7, S21b O1): words rather than its logo, outside the row link. */}
+  <a
+    href="https://www.last.fm/"
+    class="meta -my-3.5 inline-flex min-h-11 min-w-11 items-center justify-end self-end text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+  >
+    <span>via last.fm <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+  </a>
 </section>
 
 <style>
