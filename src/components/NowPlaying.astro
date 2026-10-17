@@ -1,6 +1,6 @@
 ---
 import { nowPlaying } from '../data/lastfm';
-import type { NowPlaying } from '../data/now-playing';
+import { ago, type NowPlaying } from '../data/now-playing';
 
 interface Props {
   // The home row passes neither: the build-time value, idle even when Last.fm said live, and empty
@@ -11,21 +11,6 @@ interface Props {
 
 const { value = nowPlaying, state = value.state === 'empty' ? 'empty' : 'idle' } = Astro.props;
 const { track, artist, album, at, url } = value;
-// How long ago `at` was when the page was built, floored to its largest unit, as p10's "2h ago": at
-// most eight characters, which the state cell's width holds. Under a minute, or ahead of the
-// build's clock, it reads "1m ago". The hub (S24) recomputes it.
-function ago(time: string) {
-  const minutes = Math.max(1, Math.floor((Date.now() - Date.parse(time)) / 60_000));
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-  const days = Math.floor(hours / 24);
-  return days < 365 ? `${days}d ago` : `${Math.floor(days / 365)}y ago`;
-}
 // Artist and album each between U+2068 and U+2069, so a right-to-left name reorders neither the
 // other nor the separators, and a closing space, so the text reads apart from the time after it.
 const rest = artist && ` · \u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;

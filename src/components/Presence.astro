@@ -1,0 +1,72 @@
+---
+import { nowPlaying } from '../data/lastfm';
+import { nowEntry } from '../data/now';
+import { ago, type NowPlaying } from '../data/now-playing';
+
+interface Props {
+  value?: NowPlaying;
+  state?: NowPlaying['state'] | 'offline' | 'loading';
+}
+
+const { from } = (await nowEntry()).data;
+const { value = nowPlaying } = Astro.props;
+const { track, artist, at } = value;
+let state = Astro.props.state ?? (value.state === 'empty' ? 'empty' : 'idle');
+if (!track?.trim()) {
+  state = state === 'loading' ? 'loading' : 'empty';
+} else if (state === 'loading' || (state === 'live' && !artist?.trim())) {
+  state = 'idle';
+}
+const hasValue = state !== 'empty' && state !== 'loading';
+const idle = hasValue && state !== 'live';
+const idleText = hasValue ? 'not listening — last: ' : '—';
+const stateText = state === 'live' ? 'listening — ' : idleText;
+const seen = at && !Number.isNaN(Date.parse(at)) ? at : undefined;
+const When = seen ? 'time' : 'span';
+---
+
+<p
+  data-widget="presence"
+  data-state={state}
+  aria-live="off"
+  aria-busy={state === 'loading' ? 'true' : 'false'}
+  class="meta min-h-4 min-w-0 truncate text-sm font-medium leading-(--lh-snug) text-fg-3"
+>
+  <bdi data-presence="city">{from}</bdi>{' · '}<span data-presence="state"
+    >{stateText}</span
+  ><bdi data-presence="track">{hasValue ? track : ''}</bdi><span data-presence="artist"
+    >{state === 'live' ? ` · \u2068${artist}\u2069` : ''}</span
+  ><When data-presence="age" datetime={seen}>{idle && seen ? ` · ${ago(seen)}` : ''}</When>
+</p>
+
+<style>
+  [data-state="live"] [data-presence="state"] {
+    color: var(--c-live);
+  }
+  [data-state="live"] [data-presence="state"]::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    inline-size: calc(var(--sp-unit) * 1.75);
+    block-size: calc(var(--sp-unit) * 1.75);
+    margin-inline-end: calc(var(--sp-unit) * 1.5);
+    border-radius: var(--r-pill);
+    background: currentColor;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-state="live"] [data-presence="state"]::before {
+      animation: now-pulse var(--d-sig) var(--ez-out) infinite;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-presence="state"]::before {
+      animation: none;
+    }
+  }
+  @media (forced-colors: active) {
+    [data-state="live"] [data-presence="state"]::before {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+</style>
