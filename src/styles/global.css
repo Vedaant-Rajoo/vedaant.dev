@@ -237,6 +237,65 @@
     line-height: var(--lh-body);
     letter-spacing: var(--ls-mono);
   }
+  /* The copy button (S16): Prose.astro puts it in .code, an empty box just before the block, so
+     it sits in the block's top-right corner (p13) and stays there while the code scrolls. At rest
+     the chip holds a copy glyph; a press replaces it with the word "copied". ::after makes the
+     target 44px (NFR-R2). With scripting on, the block keeps that
+     target's height free above the first line from the first paint: the chip covers no code at any
+     scroll position, and adding it moves nothing. Without JS the block stays as above. */
+  @media (scripting: enabled) {
+    .prose pre {
+      padding-block-start: --spacing(11);
+    }
+  }
+  .prose .code {
+    position: relative;
+  }
+  /* The box takes the block's place in the spacing above, so the block itself adds none. */
+  .prose .code + pre {
+    margin-block-start: 0;
+  }
+  .prose .code > button {
+    position: absolute;
+    inset-block-start: --spacing(2);
+    inset-inline-end: --spacing(2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: --spacing(7);
+    min-block-size: --spacing(7);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-1);
+    background: var(--c-bg);
+    padding-inline: --spacing(2);
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+    font-size: var(--fs-xs);
+    font-style: normal;
+    letter-spacing: var(--ls-mono);
+    color: var(--c-fg-3);
+    text-align: center;
+    cursor: pointer;
+  }
+  /* The resting mark is a text glyph (no icon set). The sans stack draws it, as the clock's
+     sun and moon do, because the Geist subset has no copy symbol. */
+  .prose .code > button span {
+    font-family: var(--ff-sans);
+    font-size: var(--fs-base);
+    line-height: 1;
+  }
+  .prose .code > button:hover {
+    border-color: var(--c-line-2);
+    color: var(--c-fg);
+  }
+  /* The target: 8px past the chip on every side. The insets start at its padding box, inside the
+     1px border. A press replaces the glyph with "copied", which is wider; the chip grows to the
+     left, inside the band, and the code does not move. */
+  .prose .code > button::after {
+    content: "";
+    position: absolute;
+    inset: calc(--spacing(-2) - 1px);
+  }
 }
 
 /* The theme reveal (FR-SH-2, design doc §6 part 3). theme.ts sets --vt-x and --vt-y, the clock's
