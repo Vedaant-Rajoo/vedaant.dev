@@ -1,4 +1,4 @@
-import { defineCollection } from 'astro:content';
+import { defineCollection, reference } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
@@ -89,6 +89,7 @@ const writing = defineCollection({
         .optional(),
       kind: z.enum(['post', 'note']),
       draft: z.boolean().default(false),
+      project: reference('projects').optional(),
     })
     .refine(({ published, updated }) => updated === undefined || updated >= published, {
       path: ['updated'],

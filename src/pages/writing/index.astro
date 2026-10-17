@@ -1,0 +1,64 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import Chip from '../../components/Chip.astro';
+import Row from '../../components/Row.astro';
+import { tile } from '../../data/projects';
+import { intro, pieces } from '../../data/writing';
+import Base from '../../layouts/Base.astro';
+
+// Astro only logs a missing reference. Check drafts too; this is validation, never a display list.
+for (const piece of await getCollection('writing')) {
+  if (piece.data.project && !(await getEntry(piece.data.project))) {
+    throw new Error(
+      `${piece.filePath}: writing "${piece.id}" references missing project "${piece.data.project.id}"`,
+    );
+  }
+}
+const all = await pieces();
+const groups = Map.groupBy(all, ({ data }) => data.published.slice(0, 4));
+const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
+const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+<Base title="writing · vedaant.dev" class="max-w-col">
+  <h1 class="text-2xl font-semibold">
+    writing <span class="meta text-base font-normal text-fg-3">{all.length}</span>
+  </h1>
+  <p class="mt-3 text-fg-2">{intro}</p>
+  <div class="flex flex-col gap-6">
+    {
+      [...groups].map(([year, group]) => (
+        <section class="flex flex-col gap-6">
+          <h2 id={`year-${year}`} class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">
+            <time>{year}</time>
+          </h2>
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ol role="list" aria-labelledby={`year-${year}`} class="divide-y divide-line wrap-anywhere">
+            {group.map(({ id, data }) => {
+              const day = new Date(data.published);
+              return (
+                <li>
+                  <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
+                    <Fragment slot="chips">{data.kind === 'note' && <Chip label="note" />}</Fragment>
+                    <abbr title={long.format(day)} class="no-underline whitespace-nowrap">
+                      <time datetime={data.published}>{day.getUTCDate()} {month.format(day)}</time>
+                    </abbr>
+                  </Row>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  h1 {
+    margin-block-start: var(--sp-section);
+  }
+  h1 + p {
+    margin-block-end: var(--sp-section);
+  }
+</style>

@@ -1,0 +1,109 @@
+---
+import { getEntry, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Chip from '../../components/Chip.astro';
+import Prose from '../../components/Prose.astro';
+import Row from '../../components/Row.astro';
+import { rowHref, tile } from '../../data/projects';
+import { pieces } from '../../data/writing';
+import Base from '../../layouts/Base.astro';
+
+export const getStaticPaths = (async () => {
+  const all = await pieces();
+  return all.map((piece, i) => ({
+    params: { slug: piece.id },
+    props: { piece, previous: all[i + 1], next: all[i - 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+const { piece, previous, next } = Astro.props;
+const { data } = piece;
+// Match the case-study page's one-h1 guard, including raw HTML but excluding comments and code.
+if (/<h1[\s/>]/i.test((piece.rendered?.html ?? '').replace(/<!--[\s\S]*?-->/g, ''))) {
+  throw new Error(`${piece.filePath}: the body has an h1; start its headings at ##`);
+}
+const project = data.project && (await getEntry(data.project));
+if (data.project && !project) {
+  throw new Error(
+    `${piece.filePath}: writing "${piece.id}" references missing project "${data.project.id}"`,
+  );
+}
+const { Content } = await render(piece);
+// ponytail: English Markdown whitespace tokens, including markup/code (D145). If rich content or
+// another writing system needs a visible-text count, count parsed rendered text instead.
+const minutes = Math.max(1, Math.ceil((piece.body ?? '').split(/\s+/).filter(Boolean).length / 200));
+const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
+const day = (iso: string) => {
+  const date = new Date(iso);
+  return `${date.getUTCDate()} ${month.format(date)} ${date.getUTCFullYear()}`;
+};
+const link =
+  'flex min-h-11 min-w-11 flex-1 basis-48 items-center underline decoration-line-2 transition-colors hover:decoration-fg';
+---
+
+<Base title={`${data.title} · vedaant.dev`} class="max-w-col">
+  <article class="writing-post wrap-anywhere">
+    <header class="flex flex-col gap-3">
+      <h1 class="text-2xl font-semibold">{data.title}</h1>
+      <p class="meta text-xs text-fg-3">
+        {data.kind} · <time datetime={data.published} class="whitespace-nowrap">{day(data.published)}</time> · <span class="whitespace-nowrap">{minutes} min read</span>
+        {
+          data.updated && data.updated > data.published && (
+            <> · updated <time datetime={data.updated} class="whitespace-nowrap">{day(data.updated)}</time></>
+          )
+        }
+      </p>
+    </header>
+    <Prose><Content /></Prose>
+    {
+      project && (
+        <section aria-label="Related project" class="related border-t border-line pt-6">
+          <Row
+            tile={tile(project.data.title)}
+            title={project.data.title}
+            sub={project.data.summary}
+            href={rowHref(project)}
+            struck={project.data.status === 'archived'}
+            note={project.data.confidential ? 'no repo · confidential' : undefined}
+          >
+            <Fragment slot="chips">{project.data.stack.map((name) => <Chip label={name} />)}</Fragment>
+            <time>{project.data.year}</time>
+            {project.data.status === 'archived' && <span class="sr-only">archived</span>}
+          </Row>
+        </section>
+      )
+    }
+    {
+      (previous || next) && (
+        <nav aria-label="Other writing" class="piece-links meta flex flex-wrap gap-2 border-t border-line pt-6 text-sm">
+          {previous && (
+            <a href={`/writing/${previous.id}`} class={link}>
+              <span><span aria-hidden="true" class="inline-block font-sans">←</span> {previous.data.title}</span>
+            </a>
+          )}
+          {next && (
+            <a href={`/writing/${next.id}`} class={`${link} justify-end text-right`}>
+              <span>{next.data.title} <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+            </a>
+          )}
+        </nav>
+      )
+    }
+  </article>
+</Base>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  .related,
+  .piece-links {
+    margin-block-start: var(--sp-section);
+  }
+  /* ponytail: internal links are root-relative (D145); absolute web links are outbound. If
+     absolute internal URLs are needed, classify against the configured site origin instead. */
+  .writing-post :global(.prose a:is([href^="https://"], [href^="http://"], [href^="//"]))::after {
+    content: ' ↗' / '';
+    font-family: var(--ff-sans);
+  }
+</style>
