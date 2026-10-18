@@ -1,0 +1,82 @@
+---
+import type { GetStaticPaths } from 'astro';
+import NowPlaying from '../components/NowPlaying.astro';
+import Presence from '../components/Presence.astro';
+import type { NowPlaying as Value } from '../data/now-playing';
+import snapshot from '../data/snapshots/lastfm.json';
+import Base from '../layouts/Base.astro';
+
+// FR-LV-2's /_states, in `astro dev` only. Astro skips a page file whose name starts with "_", so
+// this route gives the path, and a build gets none: dist/ has no file for it, as with D93's drafts.
+// ponytail: a top-level [param] route also catches every other one-segment path in dev (each still
+// 404s, after a router warning), and as a second importer of Presence it reorders the home page's
+// inline CSS. A dev-only injectRoute in astro.config.mjs avoids both, if either starts to matter.
+export const getStaticPaths = (() =>
+  import.meta.env.DEV ? [{ params: { fixture: '_states' } }] : []) satisfies GetStaticPaths;
+
+// The five states of FR-LV-2, simulated. Live, idle and offline show the committed snapshot's real
+// track; empty and loading get a value with nothing in it, so neither shows the build's own.
+const idle: Value = { ...snapshot, state: 'idle' };
+const none: Value = { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
+const states = [
+  { state: 'live', value: { ...idle, state: 'live' } },
+  { state: 'idle', value: idle },
+  { state: 'offline', value: idle },
+  { state: 'empty', value: none },
+  { state: 'loading', value: none },
+] as const;
+const widgets = [
+  { name: 'NowPlaying', Widget: NowPlaying },
+  { name: 'Presence', Widget: Presence },
+];
+---
+
+{/* A dev page, so its labels name the components. One row per state, its two widgets side by side
+    while both fit 12rem, else one under the other; the basis is fixed, so a widget's width never
+    depends on its state. Each label keeps two lines, so filling a height moves nothing. Only
+    utilities other pages already use: Tailwind reads this file too, and a new one would reach
+    every page's CSS. */}
+<Base title="states · vedaant.dev" class="max-w-wide">
+  <div class="flex flex-col gap-6 pt-6 pb-12">
+    <h1 class="text-2xl font-semibold">states</h1>
+    <p class="meta flex flex-col text-xs text-fg-3">
+      <span>dev only · simulated states; live, idle and offline use the committed Last.fm snapshot</span>
+      <span>heights measured in this browser by the page's script, “unmeasured” without it</span>
+    </p>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line wrap-anywhere">
+      {
+        states.map(({ state, value }) => (
+          <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
+            {widgets.map(({ name, Widget }) => (
+              <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+                <p class="meta flex flex-col text-xs text-fg-3">
+                  <span>{state} · {name}</span>
+                  <span data-height class="whitespace-nowrap">unmeasured</span>
+                </p>
+                <Widget value={value} state={state} />
+              </div>
+            ))}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+  {/* Each widget's border-box height as laid out now, and again whenever that box changes size: a
+      resize, a font arriving, larger text, zoom. Rounded to 0.001px, finer than any layout unit,
+      so two heights that differ never print the same. Inline, so it exists only in this page's
+      HTML: Astro would emit a processed <script> into dist/_astro/ although the page has no path. */}
+  <script is:inline>
+    {
+      const observer = new ResizeObserver((entries) => {
+        for (const { target } of entries) {
+          const height = Math.round(target.getBoundingClientRect().height * 1000) / 1000;
+          target.parentElement.querySelector('[data-height]').textContent = `${height}px`;
+        }
+      });
+      for (const widget of document.querySelectorAll('main li [data-widget]')) {
+        observer.observe(widget, { box: 'border-box' });
+      }
+    }
+  </script>
+</Base>
