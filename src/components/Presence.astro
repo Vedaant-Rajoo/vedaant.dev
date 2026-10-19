@@ -47,7 +47,7 @@ const When = seen ? 'time' : 'span';
   [data-state="live"] [data-presence="state"]::before {
     content: "";
     display: inline-block;
-    vertical-align: middle;
+    vertical-align: calc(var(--sp-unit) / 4);
     inline-size: calc(var(--sp-unit) * 1.75);
     block-size: calc(var(--sp-unit) * 1.75);
     margin-inline-end: calc(var(--sp-unit) * 1.5);
