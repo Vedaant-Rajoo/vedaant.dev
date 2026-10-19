@@ -54,5 +54,7 @@ const { title, class: className } = Astro.props;
       <main id="content" tabindex="-1"><slot /></main>
       <Footer />
     </div>
+    <presence-hub hidden=""></presence-hub>
+    <script src="../scripts/presence-hub.ts"></script>
   </body>
 </html>

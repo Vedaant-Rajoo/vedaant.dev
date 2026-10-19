@@ -29,6 +29,7 @@ const When = at ? 'time' : 'span';
   href={url}
   data-widget="now-playing"
   data-state={state}
+  data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
   aria-live="off"
   aria-busy={state === 'loading' ? 'true' : undefined}
   class="-mx-2 flex min-h-13 flex-wrap items-center gap-3 rounded-sm px-2 py-2.5 transition-colors duration-(--d-2)"
@@ -40,12 +41,14 @@ const When = at ? 'time' : 'span';
     ♪
   </span>
   <span class="min-w-0 grow basis-16 truncate leading-(--lh-snug)"
-    ><bdi class="font-medium">{track ?? '—'}</bdi><span class="text-sm leading-(--lh-snug) text-fg-2"
+    ><bdi data-now-playing="track" class="font-medium">{track ?? '—'}</bdi><span
+      data-now-playing="rest"
+      class="text-sm leading-(--lh-snug) text-fg-2"
       >{rest}</span
     ></span
   >
   <span class="meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3">
-    <When datetime={at} class="grow self-stretch text-right leading-5"
+    <When data-now-playing="time" datetime={at} class="grow self-stretch text-right leading-5"
       >{state === 'live' ? 'now' : at && ago(at)}</When
     >
   </span>
