@@ -1,3 +1,4 @@
+import { getArtwork } from './artwork';
 import { type NowPlaying, recentTracks, toNowPlaying } from './now-playing';
 import snapshot from './snapshots/lastfm.json';
 
@@ -13,7 +14,7 @@ async function load(): Promise<NowPlaying> {
     const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5_000) });
     const value = response.ok ? toNowPlaying(await response.json()) : null;
     if (value) {
-      return value;
+      return { ...value, artwork: await getArtwork(value) };
     }
     reason = response.ok ? 'unexpected body' : `HTTP ${response.status}`;
   } catch (error) {

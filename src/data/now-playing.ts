@@ -7,6 +7,7 @@ export interface NowPlaying {
   album: string | null;
   at: string | null;
   url: string | null;
+  artwork?: string | null;
 }
 
 // user.getRecentTracks needs no authentication, and the key ships in the page (AGENTS.md, D92).

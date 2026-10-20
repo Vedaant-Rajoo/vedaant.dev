@@ -1,4 +1,5 @@
 ---
+import { artworkKey } from '../data/artwork';
 import { nowPlaying } from '../data/lastfm';
 import { ago, type NowPlaying } from '../data/now-playing';
 
@@ -17,7 +18,7 @@ const {
   state = value.state === 'empty' ? 'empty' : 'idle',
   variant = 'row',
 } = Astro.props;
-const { track, artist, album, at, url } = value;
+const { track, artist, album, at, url, artwork } = value;
 // Artist and album each between U+2068 and U+2069, so a right-to-left name reorders neither the
 // other nor the separators, and a closing space, so the text reads apart from the time after it.
 // The /now cell starts the artist on a line of its own, so only the row puts a separator first.
@@ -33,6 +34,7 @@ const root = {
   'data-variant': variant === 'cell' ? 'cell' : undefined,
   'data-state': state,
   'data-fixture': Astro.props.value || Astro.props.state ? '' : undefined,
+  'data-artwork-key': artwork ? artworkKey(value) : undefined,
   'aria-live': 'off',
   'aria-busy': state === 'loading' ? 'true' : undefined,
 } as const;
@@ -53,9 +55,20 @@ const root = {
     >
       <span
         aria-hidden="true"
-        class="flex size-8 shrink-0 items-center justify-center rounded-sm bg-sunken font-mono text-xs"
+        class="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs"
       >
         ♪
+        <img
+          data-now-playing="artwork"
+          src={artwork}
+          alt=""
+          width="250"
+          height="250"
+          loading="lazy"
+          decoding="async"
+          hidden={!artwork}
+          class="absolute inset-0 size-full object-cover"
+        />
       </span>
       <span class="min-w-0 grow basis-16 truncate leading-(--lh-snug)"
         ><bdi data-now-playing="track" class="font-medium">{track ?? '—'}</bdi><span
@@ -94,9 +107,20 @@ const root = {
         <span class="flex flex-wrap items-center gap-3">
           <span
             aria-hidden="true"
-            class="flex size-14 shrink-0 items-center justify-center rounded-sm bg-sunken font-mono text-xs"
+            class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs"
           >
             ♪
+            <img
+              data-now-playing="artwork"
+              src={artwork}
+              alt=""
+              width="250"
+              height="250"
+              loading="lazy"
+              decoding="async"
+              hidden={!artwork}
+              class="absolute inset-0 size-full object-cover"
+            />
           </span>
           <span class="flex min-w-0 grow basis-24 flex-col">
             <span class="h-lh truncate leading-(--lh-snug)"

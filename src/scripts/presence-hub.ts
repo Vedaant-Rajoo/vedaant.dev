@@ -1,3 +1,4 @@
+import { artworkKey, getArtwork } from '../data/artwork';
 import { ago, type NowPlaying, recentTracks, toNowPlaying } from '../data/now-playing';
 
 // The one <presence-hub> per page (Base.astro) keeps the music widgets current (FR-LV-4). It reads
@@ -38,8 +39,8 @@ function maxAge(header: string | null) {
 }
 
 // One widget's holders as its component builds them for a state and value: change both together.
-// The hub sets only these texts, data-state, aria-busy, the row's href and a <time>'s datetime; it
-// never adds or removes an element (FR-LV-1, D131 O10).
+// The hub keeps these holders and the artwork image in place. It changes text, state, links,
+// datetime and the image's src/hidden attributes, never adding or removing an element (FR-LV-1).
 function texts(kind: string | undefined, state: string, value: NowPlaying, lead: string) {
   const { track, artist, album, at } = value;
   const live = state === 'live';
@@ -71,12 +72,30 @@ function stateFor(kind: string | undefined, state: string, { track, artist }: No
   return state === 'live' && !artist?.trim() ? 'idle' : state;
 }
 
+async function showArtwork(widget: HTMLElement, value: NowPlaying) {
+  const image = widget.querySelector<HTMLImageElement>('[data-now-playing="artwork"]');
+  const key = artworkKey(value);
+  if (!image || widget.dataset.artworkKey === key) {
+    return;
+  }
+  widget.dataset.artworkKey = key;
+  image.hidden = true;
+  image.removeAttribute('src');
+  const src = await getArtwork(value);
+  // A later track or a disconnected page must never receive this track's artwork.
+  if (src && widget.isConnected && widget.dataset.artworkKey === key) {
+    image.src = src;
+    image.hidden = false;
+  }
+}
+
 function show(widget: HTMLElement, state: string, value: NowPlaying) {
   const kind = widget.dataset.widget;
   const shown = stateFor(kind, state, value);
   widget.dataset.state = shown;
   widget.removeAttribute('aria-busy');
   if (kind === 'now-playing') {
+    void showArtwork(widget, value);
     if (value.url) {
       widget.setAttribute('href', value.url);
     } else {
@@ -146,6 +165,16 @@ customElements.define(
     connectedCallback() {
       widgets = [...document.querySelectorAll<HTMLElement>('[data-widget]:not([data-fixture])')];
       if (widgets.length > 0) {
+        for (const image of this.ownerDocument.querySelectorAll<HTMLImageElement>(
+          '[data-now-playing="artwork"]',
+        )) {
+          image.addEventListener('error', () => {
+            image.hidden = true;
+          });
+          if (image.complete && image.hasAttribute('src') && image.naturalWidth === 0) {
+            image.hidden = true;
+          }
+        }
         addEventListener('visibilitychange', schedule);
         schedule();
       }

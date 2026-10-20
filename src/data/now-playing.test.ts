@@ -91,5 +91,6 @@ test('the committed snapshot is an idle value the mapping would produce', () => 
     date: { uts: String(Date.parse(snapshot.at) / 1000) },
   });
   assert.equal(snapshot.state, 'idle');
-  assert.deepEqual(toNowPlaying(body, now), snapshot);
+  const { artwork: _, ...track } = snapshot;
+  assert.deepEqual(toNowPlaying(body, now), track);
 });
