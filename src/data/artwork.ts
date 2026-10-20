@@ -83,13 +83,8 @@ async function cover(releases: Release[], signal: AbortSignal): Promise<string |
   for (const id of ids) {
     const url = `https://coverartarchive.org/release/${id}/front-250`;
     const image = await fetch(url, { method: 'HEAD', signal });
-    const size = Number(image.headers.get('content-length'));
-    if (
-      image.ok &&
-      image.headers.get('content-type')?.startsWith('image/') &&
-      size > 0 &&
-      size <= 20_480
-    ) {
+    // ponytail: use CAA's 250px thumbnail; add resizing if measured transfer costs warrant it.
+    if (image.ok && image.headers.get('content-type')?.startsWith('image/')) {
       return url;
     }
   }

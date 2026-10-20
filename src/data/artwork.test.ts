@@ -97,20 +97,24 @@ test('artwork validates matches, prefers the album, caches requests and fails cl
     // A valid response containing no usable artwork must still return the glyph fallback.
     globalThis.fetch = async () => Response.json({ releases: {} });
     assert.equal(await getArtwork({ ...value, album: 'Malformed' }), null);
-    let sizeChecked = false;
+    let title = 'Large cover';
+    const headers = new Headers({ 'Content-Type': 'image/jpeg', 'Content-Length': '33522' });
     globalThis.fetch = async (input) => {
       if (String(input).includes('musicbrainz.org')) {
         return Response.json({
-          releases: [{ id: ids[0], title: 'Too large', 'artist-credit': credited }],
+          releases: [{ id: ids[0], title, 'artist-credit': credited }],
         });
       }
-      sizeChecked = true;
-      return new Response(null, {
-        headers: { 'Content-Type': 'image/jpeg', 'Content-Length': '20481' },
-      });
+      return new Response(null, { headers });
     };
-    assert.equal(await getArtwork({ ...value, album: 'Too large' }), null);
-    assert.ok(sizeChecked);
+    const artwork = `https://coverartarchive.org/release/${ids[0]}/front-250`;
+    assert.equal(await getArtwork({ ...value, album: title }), artwork);
+    title = 'Unknown size';
+    headers.delete('Content-Length');
+    assert.equal(await getArtwork({ ...value, album: title }), artwork);
+    title = 'Not an image';
+    headers.set('Content-Type', 'text/html');
+    assert.equal(await getArtwork({ ...value, album: title }), null);
 
     let escapedQuery: string | null = null;
     globalThis.fetch = async (input) => {

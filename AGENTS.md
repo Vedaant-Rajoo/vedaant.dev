@@ -81,6 +81,8 @@ only names tokens and components; where it differs, the pages win.
   Artwork uses MusicBrainz release search and Cover Art Archive thumbnails
   (including their Internet Archive redirects), with no key or server runtime.
   Cache lookups per page and keep MusicBrainz requests at least 1.1 seconds apart.
+  Cover Art Archive's 250px thumbnails are exempt from NFR-P7's 20 KB target;
+  do not reject them for their byte size or a missing Content-Length header.
 - Read secrets only through `astro:env/server`; `import.meta.env` inlines them
   at build. The build must pass with every API down, from committed snapshots.
 - Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
