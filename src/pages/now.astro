@@ -1,5 +1,6 @@
 ---
 import { render } from 'astro:content';
+import NowPlaying from '../components/NowPlaying.astro';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
 import Base from '../layouts/Base.astro';
@@ -73,7 +74,7 @@ const date = new Date(updated);
 const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(date);
 ---
 
-{/* /now (p14), its prose half: the header, then the labelled prose. The live bento is S25's. */}
+{/* /now (p14): the header, the labelled prose, then the live bento. */}
 <Base title="now · vedaant.dev" class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
@@ -91,11 +92,27 @@ const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' })
       ))
     }
   </dl>
+  {/* p14's live section. Its grid holds the one MVP cell; a later cell is its own component and data
+      file, placed beside it. */}
+  <section class="flex flex-col gap-4">
+    <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
+    <div class="bento grid gap-3">
+      <NowPlaying variant="cell" />
+    </div>
+  </section>
 </Base>
 
 <style>
   header {
     margin-block: var(--sp-section);
+  }
+  section {
+    margin-block-start: var(--sp-section);
+  }
+  /* p14's grid: as many 20rem columns as fit, the cells stretched to fill them; one column at 390px
+     and below 20rem, the whole width. */
+  .bento {
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 80), 100%), 1fr));
   }
   /* p14's labels: a mono column 96px wide beside the prose, in 65ch inside a 40rem column. A dd's
      basis is the rest of its line, and at least 11rem, so each pair starts a line, and with large

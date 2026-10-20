@@ -40,12 +40,12 @@ function maxAge(header: string | null) {
 // One widget's holders as its component builds them for a state and value: change both together.
 // The hub sets only these texts, data-state, aria-busy, the row's href and a <time>'s datetime; it
 // never adds or removes an element (FR-LV-1, D131 O10).
-function texts(kind: string | undefined, state: string, value: NowPlaying) {
+function texts(kind: string | undefined, state: string, value: NowPlaying, lead: string) {
   const { track, artist, album, at } = value;
   const live = state === 'live';
   const age = at && !live ? ago(at) : '';
   if (kind === 'now-playing') {
-    const rest = artist && ` · \u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;
+    const rest = artist && `${lead}\u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;
     return { track: track ?? '—', rest: rest ?? '', time: live ? 'now' : age };
   }
   // Presence.astro; its city never changes.
@@ -83,7 +83,9 @@ function show(widget: HTMLElement, state: string, value: NowPlaying) {
       widget.removeAttribute('href');
     }
   }
-  for (const [name, text] of Object.entries(texts(kind, shown, value))) {
+  // The /now cell starts the artist on a line of its own, so only the row puts a separator first.
+  const lead = widget.dataset.variant === 'cell' ? ' ' : ' · ';
+  for (const [name, text] of Object.entries(texts(kind, shown, value, lead))) {
     // Always a new text node, even for the same text: a kept node that moves when the text before
     // it changes counts as a layout shift (S21b's zero-shift contract).
     const holder = widget.querySelector(`[data-${kind}="${name}"]`);

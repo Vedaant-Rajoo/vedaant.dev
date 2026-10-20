@@ -26,14 +26,15 @@ const states = [
   { state: 'loading', value: none },
 ] as const;
 const widgets = [
-  { name: 'NowPlaying', Widget: NowPlaying },
-  { name: 'Presence', Widget: Presence },
-];
+  { name: 'NowPlaying', Widget: NowPlaying, props: {} },
+  { name: 'Presence', Widget: Presence, props: {} },
+  { name: 'NowPlaying cell', Widget: NowPlaying, props: { variant: 'cell' } },
+] as const;
 ---
 
-{/* A dev page, so its labels name the components. One row per state, its two widgets side by side
-    while both fit 12rem, else one under the other; the basis is fixed, so a widget's width never
-    depends on its state. Each label keeps two lines, so filling a height moves nothing. Only
+{/* A dev page, so its labels name the components. One row per state, its three widgets side by
+    side while each fits 12rem, else one under another; the basis is fixed, so a widget's width
+    never depends on its state. Each label keeps two lines, so filling a height moves nothing. Only
     utilities other pages already use: Tailwind reads this file too, and a new one would reach
     every page's CSS. */}
 <Base title="states · vedaant.dev" class="max-w-wide">
@@ -48,13 +49,13 @@ const widgets = [
       {
         states.map(({ state, value }) => (
           <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
-            {widgets.map(({ name, Widget }) => (
+            {widgets.map(({ name, Widget, props }) => (
               <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
                 <p class="meta flex flex-col text-xs text-fg-3">
                   <span>{state} · {name}</span>
                   <span data-height class="whitespace-nowrap">unmeasured</span>
                 </p>
-                <Widget value={value} state={state} />
+                <Widget value={value} state={state} {...props} />
               </div>
             ))}
           </li>
@@ -63,9 +64,11 @@ const widgets = [
     </ol>
   </div>
   {/* Each widget's border-box height as laid out now, and again whenever that box changes size: a
-      resize, a font arriving, larger text, zoom. Rounded to 0.001px, finer than any layout unit,
-      so two heights that differ never print the same. Inline, so it exists only in this page's
-      HTML: Astro would emit a processed <script> into dist/_astro/ although the page has no path. */}
+      resize, a font arriving, larger text, zoom. A widget is its column's last element, so the /now
+      cell is measured whole, its credit included ("the bento cell its full height", FR-LV-3).
+      Rounded to 0.001px, finer than any layout unit, so two heights that differ never print the
+      same. Inline, so it exists only in this page's HTML: Astro would emit a processed <script>
+      into dist/_astro/ although the page has no path. */}
   <script is:inline>
     {
       const observer = new ResizeObserver((entries) => {
@@ -74,7 +77,7 @@ const widgets = [
           target.parentElement.querySelector('[data-height]').textContent = `${height}px`;
         }
       });
-      for (const widget of document.querySelectorAll('main li [data-widget]')) {
+      for (const widget of document.querySelectorAll('main li > div > :last-child')) {
         observer.observe(widget, { box: 'border-box' });
       }
     }
