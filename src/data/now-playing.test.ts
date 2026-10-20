@@ -64,6 +64,24 @@ test('null for a malformed body', () => {
   }
 });
 
+test('track drops a featured-artist credit in brackets', () => {
+  const track = (name: string) => toNowPlaying(recent([{ ...scrobble, name }]), now)?.track;
+  for (const name of [
+    'Song (feat. A)',
+    'Song (Feat. A & B)',
+    'Song [ft. A]',
+    'Song (ft A)',
+    'Song (featuring A)',
+  ]) {
+    assert.equal(track(name), 'Song');
+  }
+  assert.equal(track('Song (feat. A) - Remix'), 'Song - Remix');
+  assert.equal(track('Song (Remix) [feat. A]'), 'Song (Remix)');
+  for (const name of ['Song (feature film)', 'Song (Soft)', 'Song feat. A', 'Left (Ftw)']) {
+    assert.equal(track(name), name);
+  }
+});
+
 test('url is a normalized https link to www.last.fm without credentials', () => {
   const url = (value: string) => toNowPlaying(recent([{ ...scrobble, url: value }]), now)?.url;
   assert.equal(url(' https://www.last.fm/music/Band/_/Song\n'), scrobble.url);

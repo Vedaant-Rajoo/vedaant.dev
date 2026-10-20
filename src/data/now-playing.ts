@@ -33,6 +33,15 @@ interface Track {
 
 const text = (value: unknown) => (typeof value === 'string' && value !== '' ? value : null);
 
+// The song alone: Last.fm keeps a featured artist in the title, "Song (feat. X)" or "Song [ft. X]".
+// ponytail: one bracket level; "(feat. A (B))" leaves a stray ")". Add a rule here per new pattern.
+const song = (value: unknown) =>
+  text(
+    typeof value === 'string'
+      ? value.replace(/\s*[([](?:feat(?:uring)?|ft)\b\.?[^)\]]*[)\]]/gi, '')
+      : value,
+  );
+
 // The track's page on Last.fm, normalized; null unless it is an https URL on www.last.fm without
 // credentials. It ends up in an href.
 const page = (value: unknown) => {
@@ -53,7 +62,7 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
     return { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
   }
   const first = (Array.isArray(tracks) ? tracks[0] : tracks) as Track | null | undefined;
-  const track = text(first?.name);
+  const track = song(first?.name);
   const artist = text(first?.artist?.['#text']);
   if (!first || track === null || artist === null) {
     return null;
