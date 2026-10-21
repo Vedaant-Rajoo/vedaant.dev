@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "biome check && astro check",
+    "gate": "sh scripts/gate.sh",
     "fix": "biome check --write"
   },
   "dependencies": {
