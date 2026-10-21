@@ -28,6 +28,8 @@ const sentence = z
 const result = z
   .object({
     name: z.string().min(1),
+    // D5: the full name, for <title>, JSON-LD and the OG image; name stays the nav wordmark.
+    fullName: z.string().trim().min(1),
     hero: z
       .object({
         name: z.string().min(1),

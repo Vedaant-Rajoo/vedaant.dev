@@ -5,6 +5,7 @@ import Chip from '../../components/Chip.astro';
 import Prose from '../../components/Prose.astro';
 import Row from '../../components/Row.astro';
 import { rowHref, tile } from '../../data/projects';
+import { site } from '../../data/site';
 import { pieces } from '../../data/writing';
 import Base from '../../layouts/Base.astro';
 
@@ -41,7 +42,20 @@ const link =
   'flex min-h-11 min-w-11 flex-1 basis-48 items-center underline decoration-line-2 transition-colors hover:decoration-fg';
 ---
 
-<Base title={`${data.title} · vedaant.dev`} class="max-w-col">
+<Base
+  title={data.title}
+  description={data.summary}
+  class="max-w-col"
+  schema={{
+    '@type': 'Article',
+    headline: data.title,
+    description: data.summary,
+    datePublished: data.published,
+    // As the meta line: only an update after the day it was published.
+    dateModified: data.updated && data.updated > data.published ? data.updated : undefined,
+    author: { '@type': 'Person', name: site.fullName, url: Astro.site?.href },
+  }}
+>
   <article class="writing-post wrap-anywhere">
     <header class="flex flex-col gap-3">
       <h1 class="text-2xl font-semibold">{data.title}</h1>

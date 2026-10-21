@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
+import { words } from '../../data/navigation';
 import { intro, newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
 import Base from '../../layouts/Base.astro';
 
@@ -12,9 +13,11 @@ const groups = Map.groupBy(
   projects.toSorted((a, b) => Number(!a.data.prs) - Number(!b.data.prs) || newestFirst(a, b)),
   ({ data }) => (data.prs ? 'open source' : data.year),
 );
+// The line the 404 page shows for this page (navigation.ts) is its description.
+const [{ sub }] = words.filter(({ href }) => href === '/projects');
 ---
 
-<Base title="projects · vedaant.dev" class="max-w-wide">
+<Base title="projects" description={sub} class="max-w-wide">
   <h1 class="text-2xl font-semibold">
     projects <span class="meta text-base font-normal text-fg-3">{projects.length}</span>
   </h1>

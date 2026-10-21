@@ -50,7 +50,7 @@ const back = `-my-3.5 ${link}`;
 
 {/* A case study (p13): the header from frontmatter, the Markdown body in Prose, then the way back
     and the dates. */}
-<Base title={`${data.title} · vedaant.dev`} class="max-w-col">
+<Base title={data.title} description={data.summary} class="max-w-col">
   <header class="flex flex-col gap-3.5">
     <p class="meta text-xs text-fg-3">
       <a href="/projects" class={back}>

@@ -14,7 +14,7 @@ const [ask, link, fix] = notFound.report;
 {/* Without a top-level 404.html, Pages serves the home page for unknown paths. Pages serves this
     one file for every unknown path, so the build cannot know which: the script below shows it in
     the reserved line and puts it in the report link's subject. With JS off, both stay out. */}
-<Base title="not found · vedaant.dev" class="max-w-col">
+<Base title="not found" description={notFound.lead.join('')} class="max-w-col" noindex>
   <h1 class="text-2xl font-semibold">404</h1>
   <p class="meta mt-3 text-xs">
     <span id="path" class="block min-h-lh truncate noscript:hidden"></span>

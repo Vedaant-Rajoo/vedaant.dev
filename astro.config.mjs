@@ -2,6 +2,13 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
+  // The production origin (D85): canonical and Open Graph URLs name it on every build, previews
+  // included, and S27's sitemap will too.
+  site: 'https://vedaantrajoo.com',
+  // Pages serves each page at its directory URL and answers /projects with a 308 to /projects/. A
+  // build's Astro.url already ends in a slash (build.format 'directory'), and 'ignore' keeps dev
+  // serving the slashless links the nav and rows use, which 'always' answers with a 404.
+  trailingSlash: 'ignore',
   // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
   // per family, so the build needs no network (NFR-L1). The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.

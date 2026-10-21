@@ -2,6 +2,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
+import { words } from '../../data/navigation';
 import { tile } from '../../data/projects';
 import { intro, pieces } from '../../data/writing';
 import Base from '../../layouts/Base.astro';
@@ -18,9 +19,11 @@ const all = await pieces();
 const groups = Map.groupBy(all, ({ data }) => data.published.slice(0, 4));
 const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
 const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
+// The line the 404 page shows for this page (navigation.ts) is its description.
+const [{ sub }] = words.filter(({ href }) => href === '/writing');
 ---
 
-<Base title="writing · vedaant.dev" class="max-w-col">
+<Base title="writing" description={sub} class="max-w-col">
   <h1 class="text-2xl font-semibold">
     writing <span class="meta text-base font-normal text-fg-3">{all.length}</span>
   </h1>

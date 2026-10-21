@@ -2,14 +2,33 @@
 import { Font } from 'astro:assets';
 import Footer from '../components/Footer.astro';
 import Nav from '../components/Nav.astro';
+import { site } from '../data/site';
 import '../styles/global.css';
 
 interface Props {
-  title: string;
+  // The page's part of the title, before the full name (FR-DS-2, D5); the home page has none.
+  title?: string;
+  description: string;
   class: string;
+  // JSON-LD (FR-DS-3): a Person on the home page, an Article on a writing page, nothing elsewhere.
+  schema?: Record<string, unknown>;
+  // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
+  // answers 200, so it asks not to be indexed.
+  noindex?: boolean;
 }
 
-const { title, class: className } = Astro.props;
+const { title, description, class: className, schema, noindex = false } = Astro.props;
+const fullTitle = title === undefined ? site.fullName : `${title} · ${site.fullName}`;
+// site is the production origin (D85), so a preview or dev build names production too. A build's
+// Astro.url ends in a slash, as Pages serves each page at its directory URL.
+const canonical = noindex ? undefined : new URL(Astro.url.pathname, Astro.site).href;
+// A script ends at its first "</script", so the JSON keeps no "<" (JSON reads \u003c as "<").
+const jsonLd =
+  schema &&
+  JSON.stringify({ '@context': 'https://schema.org', ...schema, url: canonical }).replaceAll(
+    '<',
+    '\\u003c',
+  );
 ---
 
 <!doctype html>
@@ -17,7 +36,19 @@ const { title, class: className } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+    {/* Chat apps read Open Graph; X reads og:title, og:description and og:image when its own tags
+        are missing, so its card type is the one twitter: tag. */}
+    <meta property="og:type" content={schema?.['@type'] === 'Article' ? 'article' : 'website'} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={new URL('/og.png', Astro.site).href} />
+    <meta property="og:image:alt" content={`${site.fullName}, ${site.hero.role}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
     <meta name="color-scheme" content="light dark" />
     {/* The browser reads theme-color outside CSS, where no token reaches: these repeat the
         --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}

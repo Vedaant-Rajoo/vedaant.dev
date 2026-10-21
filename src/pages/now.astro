@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import NowPlaying from '../components/NowPlaying.astro';
+import { words as nav } from '../data/navigation';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
 import Base from '../layouts/Base.astro';
@@ -72,10 +73,12 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
 // writes "Sept".
 const date = new Date(updated);
 const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(date);
+// The line the 404 page shows for this page (navigation.ts) is its description.
+const [{ sub }] = nav.filter(({ href }) => href === '/now');
 ---
 
 {/* /now (p14): the header, the labelled prose, then the live bento. */}
-<Base title="now · vedaant.dev" class="max-w-wide">
+<Base title="now" description={sub} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
     <p class="meta text-xs text-fg-3">
