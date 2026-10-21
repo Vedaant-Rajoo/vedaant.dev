@@ -49,6 +49,10 @@ const jsonLd =
     <meta property="og:image:alt" content={`${site.fullName}, ${site.hero.role}`} />
     <meta name="twitter:card" content="summary_large_image" />
     {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
+    {/* The v: mark (the owner's PNG, traced as geometry). The SVG follows the OS scheme; Safari
+        and default fetchers take the unlinked /favicon.ico, which Chrome would otherwise prefer. */}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="color-scheme" content="light dark" />
     {/* The browser reads theme-color outside CSS, where no token reaches: these repeat the
         --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
