@@ -129,6 +129,29 @@ for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) 
   }
 }
 
+// public/favicon.svg repeats the --c-sunken (.t) and --c-fg (.i) hex fallbacks, light in the base
+// rules and dark inside its prefers-color-scheme block (D28). public/ is outside FR-CM-3's grep,
+// so this is what catches the icon drifting from a token edit.
+const svg = readFileSync(new URL('../public/favicon.svg', import.meta.url), 'utf8');
+const dark = svg.indexOf('@media(prefers-color-scheme:dark)');
+for (const [theme, part] of [
+  ['light', svg.slice(0, dark)],
+  ['dark', svg.slice(dark)],
+] as const) {
+  for (const [cls, token] of [
+    ['t', 'sunken'],
+    ['i', 'fg'],
+  ]) {
+    const found = part
+      .match(new RegExp(`\\.${cls}\\{fill:(#[0-9a-f]{6})\\}`, 'i'))?.[1]
+      .toLowerCase();
+    const want = hex[theme][token].hex;
+    if (found !== want) {
+      throw new Error(`favicon.svg ${theme} .${cls} is ${found}, but --c-${token} is ${want}`);
+    }
+  }
+}
+
 let failed = 0;
 console.log('| theme | pair | source | colour | on | ratio | target | result |');
 console.log('|---|---|---|---|---|---|---|---|');
