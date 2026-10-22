@@ -38,7 +38,6 @@ const result = z
         accent: z.string().regex(/^\S+$/, 'Invalid string: expected one word').optional(),
         mark: z.string().trim().min(1),
         today: sentence,
-        previously: sentence,
       })
       .refine(({ role, accent }) => accent === undefined || role.includes(accent), {
         path: ['accent'],

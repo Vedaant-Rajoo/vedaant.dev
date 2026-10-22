@@ -11,10 +11,7 @@ const at = accent ? role.indexOf(accent) : -1;
 const markedAt = role.indexOf(mark);
 const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + mark.length, role.length]];
 // The labels are the interface's (D38); the lines are the owner's, in site.json.
-const lines = [
-  ['today', site.hero.today],
-  ['previously', site.hero.previously],
-];
+const lines = [['today', site.hero.today]];
 const link = 'underline decoration-line-2 transition-colors hover:decoration-fg';
 // The footer's 44px box (D40). The email link keeps the footer's shape, so its script copies here too.
 const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
