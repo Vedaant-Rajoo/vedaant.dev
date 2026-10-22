@@ -1,4 +1,6 @@
 ---
+import { monthYear } from '../data/dates';
+
 interface Props {
   tile: string;
   title: string;
@@ -23,10 +25,9 @@ const labelled = links.some((link) => link.href === href);
 const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';
 const Text = split ? 'a' : 'span';
 const hasChips = Astro.slots.has('chips');
-// YYYY-MM is midnight UTC on the 1st, so format in UTC; 'en', because Node's en-GB writes "Sept".
-const short = new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' });
+// The <abbr>'s long form; YYYY-MM is midnight UTC on the 1st, so format in UTC.
 const long = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-const month = (format: Intl.DateTimeFormat, value: string) => format.format(new Date(value));
+const month = (value: string) => long.format(new Date(value));
 ---
 
 {/* One list row (p10): a tile, the title and its sub line with the chips slot, then the paired
@@ -76,9 +77,9 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
   <span class="meta ml-auto text-right text-xs text-fg-3">
     {
       start && (
-        <abbr title={`${month(long, start)} – ${end ? month(long, end) : 'Present'}`} class:list={['no-underline whitespace-nowrap', (note || links.length > 0) && 'mb-1 block']}>
-          <time datetime={start}>{month(short, start)}</time> –{' '}
-          {end ? <time datetime={end}>{month(short, end)}</time> : 'now'}
+        <abbr title={`${month(start)} – ${end ? month(end) : 'Present'}`} class:list={['no-underline whitespace-nowrap', (note || links.length > 0) && 'mb-1 block']}>
+          <time datetime={start}>{monthYear(start)}</time> –{' '}
+          {end ? <time datetime={end}>{monthYear(end)}</time> : 'now'}
         </abbr>
       )
     }

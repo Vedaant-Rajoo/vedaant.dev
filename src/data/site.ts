@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { monthYear } from './dates';
 import data from './site.json';
 
 // The clock's zone: Intl throws RangeError on a name it does not know.
@@ -75,10 +76,5 @@ if (!result.success) {
 }
 export const site = result.data;
 
-// The résumé links' "Mon YY" (FR-HE-4, D46). An ISO date is midnight UTC, so read it in UTC; 'en',
-// because Node's en-GB writes "Sept".
-export const resumeMonth = new Intl.DateTimeFormat('en', {
-  month: 'short',
-  year: '2-digit',
-  timeZone: 'UTC',
-}).format(new Date(site.resume.updated));
+// The résumé links' "Mon ’YY" (FR-HE-4, D46).
+export const resumeMonth = monthYear(site.resume.updated);
