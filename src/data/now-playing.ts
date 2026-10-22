@@ -86,7 +86,7 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
   };
 }
 
-// Build-time age for both home music widgets. Under a minute, or ahead of the build's clock,
+// Build-time age for the music row and /now cell. Under a minute, or ahead of the build's clock,
 // reads "1m ago"; the hub (S24) recomputes it.
 export function ago(time: string) {
   const minutes = Math.max(1, Math.floor((Date.now() - Date.parse(time)) / 60_000));

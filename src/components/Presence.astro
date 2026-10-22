@@ -1,7 +1,7 @@
 ---
 import { nowPlaying } from '../data/lastfm';
 import { nowEntry } from '../data/now';
-import { ago, type NowPlaying } from '../data/now-playing';
+import type { NowPlaying } from '../data/now-playing';
 
 interface Props {
   value?: NowPlaying;
@@ -10,7 +10,7 @@ interface Props {
 
 const { from } = (await nowEntry()).data;
 const { value = nowPlaying } = Astro.props;
-const { track, artist, at } = value;
+const { track, artist } = value;
 let state = Astro.props.state ?? (value.state === 'empty' ? 'empty' : 'idle');
 if (!track?.trim()) {
   state = state === 'loading' ? 'loading' : 'empty';
@@ -18,11 +18,8 @@ if (!track?.trim()) {
   state = 'idle';
 }
 const hasValue = state !== 'empty' && state !== 'loading';
-const idle = hasValue && state !== 'live';
 const idleText = hasValue ? 'not listening — last: ' : '—';
 const stateText = state === 'live' ? 'listening — ' : idleText;
-const seen = at && !Number.isNaN(Date.parse(at)) ? at : undefined;
-const When = seen ? 'time' : 'span';
 ---
 
 <p
@@ -37,7 +34,7 @@ const When = seen ? 'time' : 'span';
     >{stateText}</span
   ><bdi data-presence="track">{hasValue ? track : ''}</bdi><span data-presence="artist"
     >{state === 'live' ? ` · \u2068${artist}\u2069` : ''}</span
-  ><When data-presence="age" datetime={seen}>{idle && seen ? ` · ${ago(seen)}` : ''}</When>
+  >
 </p>
 
 <style>

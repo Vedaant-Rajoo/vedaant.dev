@@ -44,20 +44,19 @@ function maxAge(header: string | null) {
 function texts(kind: string | undefined, state: string, value: NowPlaying, lead: string) {
   const { track, artist, album, at } = value;
   const live = state === 'live';
-  const age = at && !live ? ago(at) : '';
   if (kind === 'now-playing') {
+    const age = at && !live ? ago(at) : '';
     const rest = artist && `${lead}\u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;
     return { track: track ?? '—', rest: rest ?? '', time: live ? 'now' : age };
   }
   // Presence.astro; its city never changes.
   if (state === 'empty') {
-    return { state: '—', track: '', artist: '', age: '' };
+    return { state: '—', track: '', artist: '' };
   }
   return {
     state: live ? 'listening — ' : 'not listening — last: ',
     track: track ?? '',
     artist: live ? ` · \u2068${artist}\u2069` : '',
-    age: age && ` · ${age}`,
   };
 }
 
