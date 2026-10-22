@@ -20,13 +20,15 @@ export default defineConfig({
   // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
   // per family, so the build needs no network (NFR-L1). The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
-  // The fallbacks are D24's stacks, repeated in
-  // tokens.css; Astro puts a metric-matched face before them and defaults to font-display: swap.
+  // The fallbacks are D24's stacks, repeated in tokens.css; Astro puts a metric-matched face
+  // before them. The sans is optional (F4, S30a.2): used if it is ready within its short block
+  // period and never swapped in later, so it cannot re-wrap text; the mono keeps swap (NFR-P6).
   fonts: [
     {
       provider: fontProviders.local(),
       name: 'Geist',
       cssVariable: '--ff-geist',
+      display: 'optional',
       fallbacks: ['system-ui', '-apple-system', 'sans-serif'],
       options: {
         variants: [

@@ -91,9 +91,10 @@ only names tokens and components; where it differs, the pages win.
   (measure it: a hero line, not the name) except by a mark's background
   swipe, which moves no text. Never animate the name.
 - Load fonts with the Astro Fonts API, not `@fontsource` imports. Preload only
-  Geist sans; at most 2 font requests on first paint and 90 KB total, except
-  the hero's one serif word: a third request, `font-display: optional`, which
-  the browser may leave unused for a view and never swaps in.
+  Geist sans, with `font-display: optional` so a late file never re-wraps text;
+  at most 2 font requests on first paint and 90 KB total, except the hero's one
+  serif word: a third request, `font-display: optional`, which the browser may
+  leave unused for a view and never swaps in.
 - Targets ≥44px, except a link inside a line of prose, which keeps the line's
   height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
   the nav wraps instead of collapsing into a hamburger.
