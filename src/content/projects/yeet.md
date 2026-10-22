@@ -1,6 +1,6 @@
 ---
 title: yeet
-summary: Stages your changes, generates a conventional commit message, commits, and pushes.
+summary: stages your changes, generates a conventional commit message, commits, and pushes
 year: 2026
 stack: [Bash]
 status: done

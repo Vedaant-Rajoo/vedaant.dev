@@ -1,6 +1,6 @@
 ---
 title: search (driceroland)
-summary: 'A small, fast WebKit browser for macOS · in the works: extensions on private tabs'
+summary: 'a small, fast WebKit browser for macOS · in the works: extensions on private tabs'
 year: 2026
 stack: [Swift]
 status: active

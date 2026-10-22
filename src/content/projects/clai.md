@@ -1,12 +1,12 @@
 ---
 title: clai
-summary: Natural Language -> shell commands, as a CLI
+summary: natural language → shell commands, as a CLI
 year: 2026
 stack: [Go]
 status: active
-featured: false
-draft: true
+featured: true
 repo: https://github.com/vedaant-rajoo/clai
+published: "2026-10-22"
 ---
 
 ## The problem

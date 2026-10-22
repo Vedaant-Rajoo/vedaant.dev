@@ -1,6 +1,6 @@
 ---
 title: Zen Browser
-summary: Contributions to a Firefox-based browser · extension and workspace fixes
+summary: contributions to a Firefox-based browser · extension and workspace fixes
 year: 2025
 stack: [JavaScript]
 status: active

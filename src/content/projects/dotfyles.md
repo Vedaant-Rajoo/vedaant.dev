@@ -1,6 +1,6 @@
 ---
 title: dotfyles
-summary: my config for mac and linux systems. Built an agents universe.
+summary: my macOS and Linux config · one bootstrap command, shared agent skills
 year: 2026
 stack: [Fish, Lua]
 status: active

@@ -1,6 +1,6 @@
 ---
-title: fettle 
-summary: a macos DAC sample-rate switcher with context
+title: fettle
+summary: a macOS DAC sample-rate switcher with context
 year: 2026
 stack: [macOS]
 status: active
