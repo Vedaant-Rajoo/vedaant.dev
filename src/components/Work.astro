@@ -26,9 +26,9 @@ const rows = (await getCollection('work'))
     (a, b) =>
       b.start.localeCompare(a.start) || (b.end ?? '9999-12').localeCompare(a.end ?? '9999-12'),
   );
-// The newest three roles show, and so does every role without an end. The ended roles after the
+// The newest two roles show, and so does every role without an end. The ended roles after the
 // last of those fold behind one "earlier" row if there are two or more: one alone saves no space.
-const keep = rows.findLastIndex((row, i) => i < 3 || row.end === null);
+const keep = rows.findLastIndex((row, i) => i < 2 || row.end === null);
 const tail = rows.slice(keep + 1);
 const earlier = tail.length > 1 ? tail : [];
 const shown = rows.slice(0, rows.length - earlier.length);

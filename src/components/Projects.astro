@@ -9,10 +9,12 @@ import SectionLabel from './SectionLabel.astro';
 type Props = Record<string, never>;
 
 const projects = await getCollection('projects');
-// The featured rows (FR-PR-1); archived projects never show here (p10 §04).
+// The two newest featured rows (FR-PR-1); archived projects never show here (p10 §04), and the
+// rest wait on /projects.
 const rows = projects
   .filter(({ data }) => data.featured && data.status !== 'archived')
   .sort(newestFirst)
+  .slice(0, 2)
   .map((project) => ({ data: project.data, href: rowHref(project) }));
 ---
 
