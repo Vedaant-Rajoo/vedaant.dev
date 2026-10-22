@@ -35,7 +35,8 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
     dot, "now", not muted; an ended role is muted; a row without dates is neither. A struck row, an
     archived project (FR-PR-3), is muted and its title struck through. Every row overhangs the
     column by 8px (p09), so a link's or a toggle's hover fill clears the text. Dates above a note
-    or links take a line of their own. */}
+    or links take a line of their own. A word too long for its line breaks rather than widen
+    the page (NFR-R1), as in Now's and Writing's lists. */}
 <Tag
   href={split ? undefined : href}
   class:list={[
@@ -60,7 +61,7 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
   <Text
     href={split ? href : undefined}
     class:list={[
-      'min-w-0 grow',
+      'min-w-0 grow wrap-anywhere',
       note || links.length > 0 ? 'basis-48' : 'basis-24',
       'leading-(--lh-snug) text-pretty',
       split &&
