@@ -1,7 +1,7 @@
 ---
 import { artworkKey } from '../data/artwork';
 import { nowPlaying } from '../data/lastfm';
-import { ago, type NowPlaying } from '../data/now-playing';
+import { ago, type NowPlaying, shownAlbum } from '../data/now-playing';
 
 interface Props {
   // The home row passes neither: the build-time value, idle even when Last.fm said live, and empty
@@ -18,7 +18,8 @@ const {
   state = value.state === 'empty' ? 'empty' : 'idle',
   variant = 'row',
 } = Astro.props;
-const { track, artist, album, at, url, artwork } = value;
+const { track, artist, at, url, artwork } = value;
+const album = shownAlbum(value);
 // Artist and album each between U+2068 and U+2069, so a right-to-left name reorders neither the
 // other nor the separators, and a closing space, so the text reads apart from the time after it.
 // The /now cell starts the artist on a line of its own, so only the row puts a separator first.

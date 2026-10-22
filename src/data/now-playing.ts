@@ -86,6 +86,10 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
   };
 }
 
+// The album the music row and the /now cell show beside the artist: none when it is named as the
+// track, as a single's is, so the name is not read twice.
+export const shownAlbum = ({ track, album }: NowPlaying) => (album === track ? null : album);
+
 // Build-time age for the music row and /now cell. Under a minute, or ahead of the build's clock,
 // reads "1m ago"; the hub (S24) recomputes it.
 export function ago(time: string) {

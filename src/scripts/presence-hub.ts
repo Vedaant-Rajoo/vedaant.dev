@@ -1,5 +1,5 @@
 import { artworkKey, getArtwork } from '../data/artwork';
-import { ago, type NowPlaying, recentTracks, toNowPlaying } from '../data/now-playing';
+import { ago, type NowPlaying, recentTracks, shownAlbum, toNowPlaying } from '../data/now-playing';
 
 // The one <presence-hub> per page (Base.astro) keeps the music widgets current (FR-LV-4). It reads
 // Last.fm from the browser (D92): at once, then a minute after each answer while the page is shown,
@@ -42,7 +42,8 @@ function maxAge(header: string | null) {
 // The hub keeps these holders and the artwork image in place. It changes text, state, links,
 // datetime and the image's src/hidden attributes, never adding or removing an element (FR-LV-1).
 function texts(kind: string | undefined, state: string, value: NowPlaying, lead: string) {
-  const { track, artist, album, at } = value;
+  const { track, artist, at } = value;
+  const album = shownAlbum(value);
   const live = state === 'live';
   if (kind === 'now-playing') {
     const age = at && !live ? ago(at) : '';

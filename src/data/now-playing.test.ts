@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { toNowPlaying } from './now-playing';
+import { shownAlbum, toNowPlaying } from './now-playing';
 import snapshot from './snapshots/lastfm.json';
 
 const now = Date.parse('2026-10-14T09:30:59Z');
@@ -111,4 +111,11 @@ test('the committed snapshot is an idle value the mapping would produce', () => 
   assert.equal(snapshot.state, 'idle');
   const { artwork: _, ...track } = snapshot;
   assert.deepEqual(toNowPlaying(body, now), track);
+});
+
+test('shownAlbum drops an album named as its track', () => {
+  const value = toNowPlaying(recent([scrobble]), now);
+  assert.equal(value && shownAlbum(value), 'Record');
+  const single = toNowPlaying(recent([{ ...scrobble, album: { '#text': 'Song' } }]), now);
+  assert.equal(single && shownAlbum(single), null);
 });
