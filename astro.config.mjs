@@ -10,6 +10,9 @@ export default defineConfig({
   // build's Astro.url already ends in a slash (build.format 'directory'), and 'ignore' keeps dev
   // serving the slashless links the nav and rows use, which 'always' answers with a 404.
   trailingSlash: 'ignore',
+  // F1 (S30a.1): every page carries the stylesheet in its own <style>, so first paint waits
+  // for no second request. It costs about 5 KB of gzip HTML per page and the shared CSS file.
+  build: { inlineStylesheets: 'always' },
   // FR-DS-1: sitemap-index.xml lists every page the build makes, in that slash form. A draft has no
   // page outside astro dev (pieces(), hasCaseStudy), so it cannot appear; the integration leaves out
   // the 404 and endpoints such as /feed.xml. The résumé is a file, not a page, so it is named.
