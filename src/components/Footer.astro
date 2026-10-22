@@ -37,6 +37,7 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
         </a>
       ))
     }
+    <a href="/feed.xml" class={box}><span>rss</span></a>
   </p>
   <p class="meta text-xs text-fg-3">
     built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true" class="inline-block font-sans">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>

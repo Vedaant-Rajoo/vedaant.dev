@@ -27,7 +27,9 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
   <h1 class="text-2xl font-semibold">
     writing <span class="meta text-base font-normal text-fg-3">{all.length}</span>
   </h1>
-  <p class="mt-3 text-fg-2">{intro}</p>
+  <p class="mt-3 text-fg-2">
+    {intro} <a href="/feed.xml" class="underline decoration-line-2 transition-colors hover:decoration-fg">rss</a>
+  </p>
   <div class="flex flex-col gap-6">
     {
       [...groups].map(([year, group]) => (

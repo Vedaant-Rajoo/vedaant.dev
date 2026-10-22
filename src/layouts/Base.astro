@@ -39,6 +39,8 @@ const jsonLd =
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+    {/* The feed (FR-DS-1, NFR-S1), named as production serves it, like the canonical URL. */}
+    <link rel="alternate" type="application/rss+xml" title={`writing · ${site.fullName}`} href={new URL('/feed.xml', Astro.site).href} />
     {/* Chat apps read Open Graph; X reads og:title, og:description and og:image when its own tags
         are missing, so its card type is the one twitter: tag. */}
     <meta property="og:type" content={schema?.['@type'] === 'Article' ? 'article' : 'website'} />

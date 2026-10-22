@@ -1,0 +1,6 @@
+# Every crawler may read every page (FR-DS-1). The sitemap URL is site in astro.config.mjs (D85)
+# plus the index file @astrojs/sitemap writes there; change them together.
+User-agent: *
+Allow: /
+
+Sitemap: https://vedaantrajoo.com/sitemap-index.xml
