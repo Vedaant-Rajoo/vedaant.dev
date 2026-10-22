@@ -16,7 +16,8 @@ const { tile, title, sub, start, end, href, toggle = false, struck = false, note
   Astro.props;
 // Links do not nest: with links of its own in the right cell, a row is not one <a>. Its text is
 // the link instead, and the text's ::after covers the row as its target and its focus ring. A link
-// to the row's own href is no second link but its label, in place of the ↗ after the title.
+// to the row's own href is no second link but its label, "repo ↗" or "case study →", in place of
+// the ↗ after the title.
 const split = href !== undefined && links.some((link) => link.href !== href);
 const labelled = links.some((link) => link.href === href);
 const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';
@@ -89,7 +90,7 @@ const month = (format: Intl.DateTimeFormat, value: string) => format.format(new 
           {(i > 0 || note) && ' · '}
           {
             link.href === href ? (
-              <span>{link.label} <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+              <span>{link.label} <span aria-hidden="true" class="inline-block font-sans">{link.href.startsWith('https://') ? '↗' : '→'}</span></span>
             ) : (
               <a
                 href={link.href}

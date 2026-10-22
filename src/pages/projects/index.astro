@@ -1,9 +1,9 @@
 ---
-import { getCollection } from 'astro:content';
+import { type CollectionEntry, getCollection } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
 import { words } from '../../data/navigation';
-import { intro, newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
+import { hasCaseStudy, intro, newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
 import Base from '../../layouts/Base.astro';
 
 const projects = await getCollection('projects');
@@ -13,6 +13,23 @@ const groups = Map.groupBy(
   projects.toSorted((a, b) => Number(!a.data.prs) - Number(!b.data.prs) || newestFirst(a, b)),
   ({ data }) => (data.prs ? 'open source' : data.year),
 );
+// The right cell's links (p18): "case study →" when the row opens one, so a reader can tell it
+// from a row that leaves for the repo, then the external links, of which the one the row itself
+// goes to is its label. Confidential work shows a note instead of those (FR-PR-6).
+const linksOf = (project: CollectionEntry<'projects'>, href: string | undefined) => {
+  const { data } = project;
+  const npm = npmUrl(project);
+  return [
+    hasCaseStudy(project) && href ? { label: 'case study', href } : undefined,
+    ...(data.confidential
+      ? []
+      : [
+          npm ? { label: 'npm', href: npm } : undefined,
+          data.repo ? { label: 'repo', href: data.repo } : undefined,
+          data.prs ? { label: 'my PRs', href: data.prs } : undefined,
+        ]),
+  ].filter((link) => link !== undefined);
+};
 // The line the 404 page shows for this page (navigation.ts) is its description.
 const [{ sub }] = words.filter(({ href }) => href === '/projects');
 ---
@@ -34,17 +51,9 @@ const [{ sub }] = words.filter(({ href }) => href === '/projects');
             {group.map((project) => {
               const { data } = project;
               const href = rowHref(project);
-              const npm = npmUrl(project);
-              // The right cell holds the external links (p18); the one the row itself goes to is
-              // its label. Confidential work shows a note instead (FR-PR-6). The group gives the
-              // year; a contribution shows "Nov 25 – now" from its start month above its links.
-              const links = data.confidential
-                ? []
-                : [
-                    npm ? { label: 'npm', href: npm } : undefined,
-                    data.repo ? { label: 'repo', href: data.repo } : undefined,
-                    data.prs ? { label: 'my PRs', href: data.prs } : undefined,
-                  ].filter((link) => link !== undefined);
+              // The group gives the year; a contribution shows "Nov ’25 – now" from its start
+              // month above its links.
+              const links = linksOf(project, href);
               return (
                 <li>
                   <Row
