@@ -80,7 +80,7 @@ const link =
             struck={project.data.status === 'archived'}
             note={project.data.confidential ? 'no repo · confidential' : undefined}
           >
-            <Fragment slot="chips">{project.data.stack.map((name) => <Chip label={name} />)}</Fragment>
+            <Fragment slot="chips">{project.data.stack.map((name) => <>{' '}<Chip label={name} /></>)}</Fragment>
             <time>{project.data.year}</time>
             {project.data.status === 'archived' && <span class="sr-only">archived</span>}
           </Row>

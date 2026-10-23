@@ -26,9 +26,11 @@ const rows = (await getCollection('work'))
     (a, b) =>
       b.start.localeCompare(a.start) || (b.end ?? '9999-12').localeCompare(a.end ?? '9999-12'),
   );
-// The newest two roles show, and so does every role without an end. The ended roles after the
-// last of those fold behind one "earlier" row if there are two or more: one alone saves no space.
-const keep = rows.findLastIndex((row, i) => i < 2 || row.end === null);
+// Every role without an end shows, and so do the newest two ended roles (the owner's home target,
+// past D175). The ended roles after the last of those fold behind one "earlier" row if there are
+// two or more: one alone saves no space.
+const open = rows.filter((row) => row.end === null).length;
+const keep = rows.findLastIndex((row, i) => i < 2 + open || row.end === null);
 const tail = rows.slice(keep + 1);
 const earlier = tail.length > 1 ? tail : [];
 const shown = rows.slice(0, rows.length - earlier.length);

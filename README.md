@@ -100,7 +100,7 @@ Optional fields:
 - `draft`, `published`, `updated`: case-study controls described next.
 
 `/projects` lists every project, including draft and archived rows. Home shows
-only the two newest featured, non-archived rows, ordered by year and then file
+only the four newest featured, non-archived rows, ordered by year and then file
 id. `featured: true` does not guarantee a home slot. Archived rows stay on
 `/projects` with their archived treatment.
 
@@ -182,8 +182,8 @@ together.
 - `work.json` is a nonempty object keyed by stable role ids. Each value needs
   `employer`, `role`, quoted `start: "YYYY-MM"`, `end` (a quoted month or `null`
   for an ongoing role) and a 1–140 character `summary`. Optional `url` uses
-  `https://`; an end cannot precede its start. Home keeps the newest two roles
-  and every ongoing role visible, folding a remaining tail of two or more ended
+  `https://`; an end cannot precede its start. Home keeps every ongoing role and
+  the newest two ended roles visible, folding a remaining tail of two or more ended
   roles behind “earlier”. A lone trailing role stays visible. The optional
   `collapse` field is accepted by the schema but does not control that folding.
 - Replace `public/resume.pdf` when work changes, date the PDF, and set

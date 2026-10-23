@@ -49,7 +49,7 @@
     --sp-unit: 0.25rem;
     --sp-row: calc(var(--sp-unit) * 3);
     --sp-stack: calc(var(--sp-unit) * 6);
-    --sp-section: clamp(3rem, 2rem + 4vw, 4.5rem);
+    --sp-section: clamp(2.5rem, 2rem + 1.5vw, 3rem);
     --sp-gutter: clamp(1rem, 0.5rem + 2.5vw, 1.5rem);
 
     /* Widths */

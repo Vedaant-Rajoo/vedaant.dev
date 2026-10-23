@@ -10,8 +10,6 @@ const { role, accent = '', mark } = site.hero;
 const at = accent ? role.indexOf(accent) : -1;
 const markedAt = role.indexOf(mark);
 const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + mark.length, role.length]];
-// The labels are the interface's (D38); the lines are the owner's, in site.json.
-const lines = [['today', site.hero.today]];
 const link = 'underline decoration-line-2 transition-colors hover:decoration-fg';
 // The footer's 44px box (D40). The email link keeps the footer's shape, so its script copies here too.
 const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
@@ -31,28 +29,27 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
       })
     }
   </p>
-  <Presence />
-  {/* A line moves under its label when large text leaves it less than 11rem beside it. */}
-  <dl class="flex flex-col gap-1.5">
-    {
-      lines.map(([label, text]) => (
-        <div class="flex flex-wrap items-baseline gap-x-1">
-          <dt class="meta w-24 shrink-0 text-xs text-fg-3">{label}</dt>
-          <dd class="min-w-0 grow basis-44 leading-(--lh-snug)">{text}</dd>
-        </div>
-      ))
-    }
-  </dl>
-  <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
-    <a href="/resume.pdf" class={box}>
-      <span>resume · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+  {/* The presence text fills the row's fixed share, so a live change never moves the link (CLS 0). */}
+  <div class="flex items-center gap-3">
+    <div class="min-w-0 flex-1"><Presence /></div>
+    <a
+      href="/now"
+      class="meta -my-3.5 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-end text-sm text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+    >
+      <span>now <span aria-hidden="true" class="inline-block font-sans">→</span></span>
     </a>
-    <a href={`mailto:${site.email}`} class={box} data-copy>
-      <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
-    </a>
-    <a href={site.socials.github} rel="me" class={box}>
-      <span>github <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
-    </a>
+  </div>
+  {/* The owner's status line, then its links, which wrap under it in a narrow column. */}
+  <p class="flex flex-wrap items-center gap-x-4">
+    <span>{site.hero.today}</span>
+    <span class="-mx-1.5 flex flex-wrap gap-2">
+      <a href="/resume.pdf" class={box}>
+        <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+      </a>
+      <a href={`mailto:${site.email}`} class={box} data-copy>
+        <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+      </a>
+    </span>
   </p>
 </section>
 

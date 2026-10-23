@@ -29,7 +29,7 @@ const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UT
           return (
             <li>
               <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
-                <Fragment slot="chips">{data.kind === 'note' && <Chip label="note" />}</Fragment>
+                <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
                 <abbr title={long.format(day)} class="no-underline whitespace-nowrap">
                   <time datetime={data.published}>{monthYear(data.published)}</time>
                 </abbr>

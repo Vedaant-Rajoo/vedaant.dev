@@ -28,7 +28,7 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
       <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
     </a>
     <a href="/resume.pdf" class={box}>
-      <span>resume · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
     </a>
     {
       Object.entries(site.socials).map(([name, href]) => (
@@ -39,8 +39,10 @@ const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
     }
     <a href="/feed.xml" class={box}><span>rss</span></a>
   </p>
+  {/* Links in this line keep its height (WCAG 2.5.8's inline exception). The Last.fm credit (terms
+      2.7) covers the hero's presence line. */}
   <p class="meta text-xs text-fg-3">
-    built with Astro · <a href={site.source} class={`inline-flex min-h-11 min-w-11 items-center ${link}`}><span>source <span aria-hidden="true" class="inline-block font-sans">↗</span></span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
+    built with Astro · <a href={site.source} class={link}>source <span aria-hidden="true" class="inline-block font-sans">↗</span></a> · <a href="https://www.last.fm/" class={link}>via last.fm <span aria-hidden="true" class="inline-block font-sans">↗</span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
   </p>
   <span id="copy-status" class="sr-only" aria-live="polite"></span>
 </footer>

@@ -297,10 +297,8 @@ try {
   // A parser's message can quote the page, so only the kind of error is printed.
   problems.push(`dist/${page ?? ''}: the widget check stopped (${error?.name ?? 'error'})`);
 }
-for (const home of ['index.html', 'now/index.html']) {
-  if (!widgets[home]) {
-    problems.push(`dist/${home} has no now-playing widget`);
-  }
+if (!widgets['now/index.html']) {
+  problems.push('dist/now/index.html has no now-playing widget');
 }
 const counts = Object.entries(widgets).filter(([, count]) => count);
 console.log(counts.map(([path, count]) => `${path}: ${count} now-playing widget(s)`).join('; '));

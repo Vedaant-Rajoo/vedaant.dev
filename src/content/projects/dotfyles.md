@@ -1,6 +1,6 @@
 ---
 title: dotfyles
-summary: my macOS and Linux config · one bootstrap command, shared agent skills
+summary: packages, config and agent setup, one bootstrap away
 year: 2026
 stack: [Fish, Lua]
 status: active

@@ -44,7 +44,7 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
               return (
                 <li>
                   <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
-                    <Fragment slot="chips">{data.kind === 'note' && <Chip label="note" />}</Fragment>
+                    <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
                     <abbr title={long.format(day)} class="no-underline whitespace-nowrap">
                       <time datetime={data.published}>{day.getUTCDate()} {month.format(day)}</time>
                     </abbr>

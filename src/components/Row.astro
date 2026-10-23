@@ -30,7 +30,8 @@ const long = new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric', tim
 const month = (value: string) => long.format(new Date(value));
 ---
 
-{/* One list row (p10): a tile, the title and its sub line with the chips slot, then the paired
+{/* One list row (p10): a tile, the title and its sub line, which ends in the chips slot (each chip
+    after a space), then the paired
     dates, if any, the default slot, the note and the links. These move under the text when the
     text would get less than 6rem beside them, or 12rem beside a note or links, room for the
     widest chip. Spans only, so the row can be a <summary>. A null end is a current role: the live
@@ -42,7 +43,7 @@ const month = (value: string) => long.format(new Date(value));
 <Tag
   href={split ? undefined : href}
   class:list={[
-    '-mx-2 flex flex-wrap items-center gap-3 rounded-sm px-2 py-2.5',
+    '-mx-2 flex flex-wrap items-center gap-3 rounded-sm px-2 py-1.5',
     (end || struck) && 'text-fg-2',
     (href || toggle) && 'transition-colors duration-(--d-2) hover:bg-surface',
     toggle && 'cursor-pointer',
@@ -71,8 +72,7 @@ const month = (value: string) => long.format(new Date(value));
     ]}
   >
     <span class:list={['font-medium', struck && 'line-through']}>{title}</span>{href?.startsWith('https://') && !labelled && <> <span aria-hidden="true" class="inline-block font-sans">↗</span></>}{' '}
-    <span class:list={['text-sm leading-(--lh-snug) text-fg-2', hasChips ? 'mt-0.5 block' : 'inline-block']}>{!hasChips && '· '}{sub}</span>
-    {hasChips && <span class="mt-1.5 flex flex-wrap gap-1.5"><slot name="chips" /></span>}
+    <span class:list={['text-sm leading-(--lh-snug) text-fg-2', hasChips ? 'mt-0.5 block' : 'inline-block']}>{!hasChips && '· '}{sub}{hasChips && <slot name="chips" />}</span>
   </Text>
   <span class="meta ml-auto text-right text-xs text-fg-3">
     {
