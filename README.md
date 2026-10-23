@@ -299,7 +299,7 @@ origin. Do not interpret preview SEO results as production validation.
 
 `main` is the Pages project's production branch, but this workflow does not run
 on `main`. Production cutover and its deployment trigger remain separate launch
-work. There is no scheduled rebuild, manual-dispatch trigger or PR gate workflow.
+work. There is no scheduled rebuild or manual-dispatch trigger.
 The site uses no adapter, Worker, Pages Function or application server endpoint.
 
 Only the upload step receives these GitHub Actions secrets:
@@ -363,8 +363,11 @@ The gate rebuilds `dist/`, so use a separate checkout if a preview must stay
 unchanged. Failure names the individual command to rerun; inspect its output
 privately and redact credentials/keyed URLs before sharing it.
 
-The offline gate needs macOS `sandbox-exec`. Ubuntu deployment CI currently runs
-`check` and `build`, not this gate. Lighthouse and axe are on-demand tools, not
+The offline gate needs macOS `sandbox-exec`. Ubuntu deployment CI runs `check`
+and `build`, not this gate. The [PR gate workflow](.github/workflows/gate.yml)
+runs `bun run gate` on a macOS runner for pull requests to `main`, with no
+secrets. It blocks no merge unless branch protection requires it, and pushes to
+`ledger_mvp` do not run it. Lighthouse and axe are on-demand tools, not
 dependencies or part of the gate. The pinned audit commands are in the gate
 script's header; use free local ports and a Chrome-compatible axe driver.
 `astro preview` ignores `_headers`: use Wrangler's local Pages runtime when
