@@ -366,4 +366,17 @@
       box-shadow: 0 0 0 var(--sp-unit) transparent;
     }
   }
+  /* Artwork that fails to load keeps the glyph. The hub hides a failed image, but without JS
+     nothing does, and Chromium draws its broken-image icon over the tile. Chromium and Firefox
+     render an image's ::after only while it is broken, never once it loads, so this one covers
+     the image's box with the tile as NowPlaying.astro draws it: its fill and its ♪. */
+  [data-now-playing="artwork"]::after {
+    content: "♪";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--c-sunken);
+  }
 }
