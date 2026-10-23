@@ -1,0 +1,97 @@
+---
+import { Font } from 'astro:assets';
+import Footer from '../components/Footer.astro';
+import Nav from '../components/Nav.astro';
+import { site } from '../data/site';
+import '../styles/global.css';
+
+interface Props {
+  // The page's part of the title, before the full name (FR-DS-2, D5); the home page has none.
+  title?: string;
+  description: string;
+  class: string;
+  // JSON-LD (FR-DS-3): a Person on the home page, an Article on a writing page, nothing elsewhere.
+  schema?: Record<string, unknown>;
+  // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
+  // answers 200, so it asks not to be indexed.
+  noindex?: boolean;
+}
+
+const { title, description, class: className, schema, noindex = false } = Astro.props;
+const fullTitle = title === undefined ? site.fullName : `${title} · ${site.fullName}`;
+// site is the production origin (D85), so a preview or dev build names production too. A build's
+// Astro.url ends in a slash, as Pages serves each page at its directory URL.
+const canonical = noindex ? undefined : new URL(Astro.url.pathname, Astro.site).href;
+// A script ends at its first "</script", so the JSON keeps no "<" (JSON reads \u003c as "<").
+const jsonLd =
+  schema &&
+  JSON.stringify({ '@context': 'https://schema.org', ...schema, url: canonical }).replaceAll(
+    '<',
+    '\\u003c',
+  );
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+    {/* The feed (FR-DS-1, NFR-S1), named as production serves it, like the canonical URL. */}
+    <link rel="alternate" type="application/rss+xml" title={`writing · ${site.fullName}`} href={new URL('/feed.xml', Astro.site).href} />
+    {/* Chat apps read Open Graph; X reads og:title, og:description and og:image when its own tags
+        are missing, so its card type is the one twitter: tag. */}
+    <meta property="og:type" content={schema?.['@type'] === 'Article' ? 'article' : 'website'} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta property="og:image" content={new URL('/og.png', Astro.site).href} />
+    <meta property="og:image:alt" content={`${site.fullName}, ${site.hero.role}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
+    {/* The v: mark (the owner's PNG, traced as geometry). The SVG follows the OS scheme; Safari
+        and default fetchers take the unlinked /favicon.ico, which Chrome would otherwise prefer. */}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="color-scheme" content="light dark" />
+    {/* The browser reads theme-color outside CSS, where no token reaches: these repeat the
+        --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
+    <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
+    {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
+        first paint (FR-SH-3), and its theme-color meta applies whatever the OS prefers. */}
+    <script is:inline>
+      try {
+        const stored = localStorage.getItem('theme');
+        const theme = stored === 'light' || stored === 'dark' ? stored : 'system';
+        const root = document.documentElement;
+        root.dataset.themePref = theme;
+        if (theme !== 'system') {
+          root.dataset.theme = theme;
+          const [light, dark] = document.querySelectorAll('meta[name="theme-color"]');
+          light.media = theme === 'light' ? 'all' : 'not all';
+          dark.media = theme === 'dark' ? 'all' : 'not all';
+        }
+      } catch {}
+    </script>
+    <noscript><style is:inline>#theme-toggle { display: none; }</style></noscript>
+    <Font cssVariable="--ff-geist" preload />
+    <Font cssVariable="--ff-geist-mono" />
+    <Font cssVariable="--ff-instrument-serif" />
+  </head>
+  <body>
+    <a
+      href="#content"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:bg-bg focus:p-3"
+    >skip to content</a>
+    <div class:list={['mx-auto', className]}>
+      <Nav />
+      <main id="content" tabindex="-1"><slot /></main>
+      <Footer />
+    </div>
+    <presence-hub hidden=""></presence-hub>
+    <script src="../scripts/presence-hub.ts"></script>
+  </body>
+</html>

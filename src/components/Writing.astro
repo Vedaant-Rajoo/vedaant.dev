@@ -1,0 +1,49 @@
+---
+import { monthYear } from '../data/dates';
+import { tile } from '../data/projects';
+import { pieces } from '../data/writing';
+import Chip from './Chip.astro';
+import Row from './Row.astro';
+import SectionLabel from './SectionLabel.astro';
+
+// No props: an attribute passed to Writing fails the type check (the S8b → S8c rule).
+type Props = Record<string, never>;
+
+const all = await pieces();
+// The date as "Mon ’YY" (p09) in an <abbr> with the whole day, as Row writes its months. A
+// YYYY-MM-DD is midnight UTC, so read it in UTC; en-GB for the day first.
+const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+{/* The two newest pieces (FR-WR-1), counted all; with none the section is left out (p10 §06).
+    Every row passes the chips slot, so posts and notes share Row's stacked layout (FR-WR-2); only
+    a note fills it. wrap-anywhere breaks a word too long for the row, such as a long identifier. */}
+{
+  all.length > 0 && (
+    <section class="flex flex-col gap-6">
+      <SectionLabel label="writing" count={all.length} href="/writing" />
+      {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+      <ol role="list" class="divide-y divide-line wrap-anywhere">
+        {all.slice(0, 2).map(({ id, data }) => {
+          const day = new Date(data.published);
+          return (
+            <li>
+              <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
+                <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
+                <abbr title={long.format(day)} class="no-underline whitespace-nowrap">
+                  <time datetime={data.published}>{monthYear(data.published)}</time>
+                </abbr>
+              </Row>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  )
+}
+
+<style>
+  section {
+    margin-block-start: var(--sp-section);
+  }
+</style>

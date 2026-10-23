@@ -1,0 +1,50 @@
+---
+import { site } from '../data/site';
+
+// HH:MM in the owner's zone at build time; with JS off a page shows when it was built (FR-SH-2).
+// Exported, so Astro runs it once per build, not per page, and every page shows the same time.
+// theme.ts repeats this format each minute in the browser, from data-zone: change both together.
+export const parts = Object.fromEntries(
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: site.timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZoneName: 'longOffset',
+  })
+    .formatToParts()
+    .map(({ type, value }) => [type, value]),
+);
+const time = `${parts.hour}:${parts.minute}`;
+// longOffset reads "GMT+05:30"; if an ICU prints a zero offset as bare "GMT", keep "+00:00".
+const offset = parts.timeZoneName.slice(3) || '+00:00';
+const datetime = `${parts.year}-${parts.month}-${parts.day}T${time}${offset}`;
+---
+
+{/* With JS off the noscript time shows, and Base.astro's noscript style hides the button. */}
+<noscript><time datetime={datetime} class="flex min-h-11 items-center px-1.5">{time}</time></noscript>
+<button
+  id="theme-toggle"
+  type="button"
+  class="flex min-h-11 cursor-pointer items-center gap-2 px-1.5 font-mono transition-colors hover:text-fg-2"
+>
+  <time datetime={datetime} data-zone={site.timeZone}>{time}</time>
+</button>
+<script src="../scripts/theme.ts"></script>
+
+<style>
+  /* ◐ system, ☀ light, ☾ dark, from the head script's data-theme-pref; \FE0E asks for the text
+     form of ☀, which some systems draw as an emoji. */
+  button::after {
+    content: "◐";
+  }
+  :global([data-theme-pref="light"]) button::after {
+    content: "☀\FE0E";
+  }
+  :global([data-theme-pref="dark"]) button::after {
+    content: "☾";
+  }
+</style>

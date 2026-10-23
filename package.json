@@ -1,0 +1,26 @@
+{
+  "name": "vedaant.dev",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "prebuild": "test -f public/resume.pdf || { echo 'public/resume.pdf is missing' >&2; exit 1; }",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "biome check && astro check",
+    "gate": "sh scripts/gate.sh",
+    "fix": "biome check --write"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.8",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^24.19.2",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,96 @@
+---
+import { type CollectionEntry, getCollection } from 'astro:content';
+import Chip from '../../components/Chip.astro';
+import Row from '../../components/Row.astro';
+import { words } from '../../data/navigation';
+import { hasCaseStudy, intro, newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
+import Base from '../../layouts/Base.astro';
+
+const projects = await getCollection('projects');
+// Open-source contributions, the projects with my PRs, come first as one group; then every other
+// project, drafts and archived ones too, one group per year, newest first (FR-PR-3).
+const groups = Map.groupBy(
+  projects.toSorted((a, b) => Number(!a.data.prs) - Number(!b.data.prs) || newestFirst(a, b)),
+  ({ data }) => (data.prs ? 'open source' : data.year),
+);
+// The right cell's links (p18): "case study →" when the row opens one, so a reader can tell it
+// from a row that leaves for the repo, then the external links, of which the one the row itself
+// goes to is its label. Confidential work shows a note instead of those (FR-PR-6).
+const linksOf = (project: CollectionEntry<'projects'>, href: string | undefined) => {
+  const { data } = project;
+  const npm = npmUrl(project);
+  return [
+    hasCaseStudy(project) && href ? { label: 'case study', href } : undefined,
+    ...(data.confidential
+      ? []
+      : [
+          npm ? { label: 'npm', href: npm } : undefined,
+          data.repo ? { label: 'repo', href: data.repo } : undefined,
+          data.prs ? { label: 'my PRs', href: data.prs } : undefined,
+        ]),
+  ].filter((link) => link !== undefined);
+};
+// The line the 404 page shows for this page (navigation.ts) is its description.
+const [{ sub }] = words.filter(({ href }) => href === '/projects');
+---
+
+<Base title="projects" description={sub} class="max-w-wide">
+  <h1 class="text-2xl font-semibold">
+    projects <span class="meta text-base font-normal text-fg-3">{projects.length}</span>
+  </h1>
+  <p class="mt-3 max-w-col text-fg-2">{intro}</p>
+  <div class="flex flex-col gap-6">
+    {
+      [...groups].map(([label, group], i) => (
+        <div class="flex flex-col gap-6">
+          <p id={`group-${i}`} class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">
+            {typeof label === 'number' ? <time>{label}</time> : label}
+          </p>
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ol role="list" aria-labelledby={`group-${i}`} class="divide-y divide-line">
+            {group.map((project) => {
+              const { data } = project;
+              const href = rowHref(project);
+              // The group gives the year; a contribution shows "Nov ’25 – now" from its start
+              // month above its links.
+              const links = linksOf(project, href);
+              return (
+                <li>
+                  <Row
+                    tile={tile(data.title)}
+                    title={data.title}
+                    sub={data.summary}
+                    start={data.start}
+                    href={href}
+                    struck={data.status === 'archived'}
+                    note={data.confidential ? 'no repo · confidential' : undefined}
+                    links={links}
+                  >
+                    <Fragment slot="chips">
+                      {data.stack.map((name) => (
+                        <>
+                          {' '}
+                          <Chip label={name} />
+                        </>
+                      ))}
+                    </Fragment>
+                    {data.status === 'archived' && <span class="sr-only">archived</span>}
+                  </Row>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  h1 {
+    margin-block-start: var(--sp-section);
+  }
+  h1 + p {
+    margin-block-end: var(--sp-section);
+  }
+</style>

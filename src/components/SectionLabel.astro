@@ -1,0 +1,26 @@
+---
+interface Props {
+  label: string;
+  count: number;
+  href?: string;
+  // The link's word: "all", or a section's own, as now's "more" (p10 §05). Its arrow is →, a page
+  // of this site; ↗ marks a link that leaves it (Row).
+  word?: string;
+}
+
+const { label, count, href, word = 'all' } = Astro.props;
+---
+
+<div class="flex items-baseline justify-between gap-3 border-t border-dashed border-line pt-6">
+  <h2 class="meta text-xs text-fg-3">{label} {count}</h2>
+  {
+    href && (
+      <a
+        href={href}
+        class="meta -my-3.5 inline-flex min-h-11 min-w-11 items-center justify-end text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+      >
+        <span>{word} <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+      </a>
+    )
+  }
+</div>

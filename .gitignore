@@ -16,6 +16,9 @@ dist/
 .env.*
 !.env.example
 
+# Local workspace for owner and agents (see AGENTS.md)
+.local
+
 # Logs
 *.log
 

@@ -1,0 +1,161 @@
+---
+import { render } from 'astro:content';
+import NowPlaying from '../components/NowPlaying.astro';
+import { words as nav } from '../data/navigation';
+import { nowEntry } from '../data/now';
+import { site } from '../data/site';
+import Base from '../layouts/Base.astro';
+
+const now = await nowEntry();
+const { updated, from } = now.data;
+const fail = (problem: string) => {
+  throw new Error(`${now.filePath}: ${problem}`);
+};
+
+// FR-NW-1: the body is "## label" sections; each label is a <dt> and the paragraphs under it its
+// <dd>. Astro writes a "## label" as <h2 id="…">label</h2> and lists it in its headings, where a
+// raw <h2> is missing. Comments are dropped first. A section with no text is left out.
+const [before, ...parts] = (now.rendered?.html ?? '')
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .split(/<h2 id="[^"]*">([^<]*)<\/h2>/);
+const pairs = Array.from({ length: parts.length / 2 }, (_, i) => {
+  const html = parts[2 * i + 1].trim();
+  // Inline tags stay against the letters around them, so "*fixture*." is one word. A paragraph
+  // end or a line break is a gap.
+  const text = html
+    .replace(/<br\b[^>]*>/g, '\n')
+    .replace(/<\/p>/g, '\n')
+    .replace(/<[^>]*>/g, '')
+    .trim();
+  return { label: parts[2 * i], html, text };
+});
+if (before.trim() !== '') {
+  fail('the body must start with a plain "## label" line');
+}
+for (const { label, html } of pairs) {
+  if (label.trim() === '') {
+    fail('a "##" line has no label');
+  }
+  if (label !== label.toLowerCase()) {
+    fail(`"## ${label}" has a capital letter`);
+  }
+  // ponytail: paragraphs of text with links, emphasis, strikethrough, inline code and line breaks
+  // only, the elements this page and the base layer style. Any other tag fails here, so a heading,
+  // list, quote, code block, image or raw HTML does; admit one with its styles (a local image also
+  // needs render(), as rendered.html holds only its placeholder).
+  if (html.replace(/<\/?(?:p|a|em|strong|del|code|br)\b[^>]*>/g, '').includes('<')) {
+    fail(`"## ${label}" may hold only paragraphs of text`);
+  }
+}
+const { headings } = await render(now);
+if (pairs.length !== headings.filter(({ depth }) => depth === 2).length) {
+  fail('an HTML <h2> is not a label; write "## label"');
+}
+const labels = pairs.map(({ label }) => label);
+const twice = labels.find((label, i) => labels.indexOf(label) !== i);
+if (twice !== undefined) {
+  fail(`"## ${twice}" appears twice`);
+}
+const sections = pairs.filter(({ text }) => text !== '');
+if (sections.length === 0) {
+  fail('no "## label" has text under it');
+}
+// The words of the prose as rendered: labels and comments do not count.
+const words = sections.reduce((sum, { text }) => sum + text.split(/\s+/).length, 0);
+if (words > 400) {
+  fail(`the prose is ${words} words; at most 400 (FR-NW-1)`);
+}
+
+// FR-NW-3: "older than 60 days", in whole days at build. updated is midnight UTC, so the note
+// shows from the 61st day after it, and never for a day in the future.
+const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
+// "10 Oct 2026" (p14), read in UTC as the case study reads its dates; 'en', because Node's en-GB
+// writes "Sept".
+const date = new Date(updated);
+const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(date);
+// The line the 404 page shows for this page (navigation.ts) is its description.
+const [{ sub }] = nav.filter(({ href }) => href === '/now');
+---
+
+{/* /now (p14): the header, the labelled prose, then the live bento. */}
+<Base title="now" description={sub} class="max-w-wide">
+  <header class="flex max-w-col flex-col gap-3">
+    <h1 class="text-2xl font-semibold">now</h1>
+    <p class="meta text-xs text-fg-3">
+      updated <time datetime={updated} class="whitespace-nowrap">{date.getUTCDate()} {month} {date.getUTCFullYear()}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="inline-flex min-h-11 min-w-11 items-center underline decoration-line-2 transition-colors hover:decoration-fg"><span>history <span aria-hidden="true" class="inline-block font-sans">↗</span></span></a>
+    </p>
+  </header>
+  <dl>
+    {
+      sections.map(({ label, html }) => (
+        <>
+          <dt set:html={label} />
+          <dd set:html={html} />
+        </>
+      ))
+    }
+  </dl>
+  {/* p14's live section. Its grid holds the one MVP cell; a later cell is its own component and data
+      file, placed beside it. */}
+  <section class="flex flex-col gap-4">
+    <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
+    <div class="bento grid gap-3">
+      <NowPlaying variant="cell" />
+    </div>
+  </section>
+</Base>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  section {
+    margin-block-start: var(--sp-section);
+  }
+  /* p14's grid: as many 20rem columns as fit, the cells stretched to fill them; one column at 390px
+     and below 20rem, the whole width. */
+  .bento {
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 80), 100%), 1fr));
+  }
+  /* p14's labels: a mono column 96px wide beside the prose, in 65ch inside a 40rem column. A dd's
+     basis is the rest of its line, and at least 11rem, so each pair starts a line, and with large
+     text the dd moves under its label, as in the decisions grid. A long word or URL breaks rather
+     than widen the page. */
+  dl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: calc(var(--sp-unit) * 2.5) calc(var(--sp-unit) * 4);
+    max-width: min(var(--w-col), var(--w-measure));
+    overflow-wrap: anywhere;
+  }
+  dt {
+    flex: 0 0 calc(var(--sp-unit) * 24);
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+    font-size: var(--fs-xs);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-mono);
+    color: var(--c-fg-3);
+  }
+  dd {
+    flex: 1 1 max(calc(var(--sp-unit) * 44), 100% - calc(var(--sp-unit) * 28));
+    min-width: 0;
+  }
+  /* The rendered paragraphs carry no classes and no scope. */
+  dd :global(p + p) {
+    margin-block-start: var(--sp-row);
+  }
+  /* Longhands, because Tailwind scans this file: the shorthand property's name is also a
+     utility's, which would then compile into every page's CSS. */
+  dd :global(a) {
+    text-decoration-line: underline;
+    text-decoration-color: var(--c-line-2);
+    transition-property: text-decoration-color;
+    transition-duration: var(--d-1);
+    transition-timing-function: var(--ez-out);
+  }
+  dd :global(a:hover) {
+    text-decoration-color: var(--c-fg);
+  }
+</style>

@@ -1,0 +1,20 @@
+{
+  "name": "vee",
+  "fullName": "Vedaant Rajoo",
+  "hero": {
+    "name": "Vee",
+    "role": "Backend & systems engineer, between roles and building in the open.",
+    "accent": "systems",
+    "mark": "building in the open",
+    "today": "Looking for a backend or systems role."
+  },
+  "timeZone": "Asia/Kolkata",
+  "resume": { "updated": "2026-09-17" },
+  "email": "vedaant12345@gmail.com",
+  "socials": {
+    "github": "https://github.com/vedaant-rajoo",
+    "linkedin": "https://linkedin.com/in/vedaant-rajoo"
+  },
+  "source": "https://github.com/vedaant-rajoo/vedaant.dev",
+  "history": "https://github.com/vedaant-rajoo/vedaant.dev/commits/ledger_mvp/src/content/now/now.md"
+}

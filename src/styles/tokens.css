@@ -1,0 +1,143 @@
+/* Ledger tokens (design doc §4.2): light-dark() first, hex fallback below. */
+@layer tokens {
+  :root {
+    color-scheme: light dark;
+
+    /* Colour, 11 roles */
+    --c-bg: light-dark(oklch(98.5% 0.004 95), oklch(17% 0.006 260));
+    --c-surface: light-dark(oklch(96.5% 0.005 95), oklch(20.5% 0.007 260));
+    --c-sunken: light-dark(oklch(93.5% 0.006 95), oklch(24% 0.008 260));
+    --c-fg: light-dark(oklch(22% 0.01 260), oklch(93% 0.005 95));
+    --c-fg-2: light-dark(oklch(40% 0.01 260), oklch(75% 0.008 260));
+    --c-fg-3: light-dark(oklch(52% 0.01 260), oklch(62% 0.008 260));
+    --c-line: light-dark(oklch(90% 0.005 95), oklch(27% 0.008 260));
+    --c-line-2: light-dark(oklch(82% 0.006 95), oklch(35% 0.008 260));
+    --c-live: light-dark(oklch(52% 0.14 150), oklch(78% 0.17 150));
+    --c-mark: light-dark(oklch(93% 0.15 105 / 0.75), oklch(55% 0.12 105 / 0.35));
+    --c-focus: light-dark(oklch(55% 0.18 255), oklch(75% 0.14 255));
+    /* Code blocks (D124, not in the doc): keywords and strings, each ≥8:1 on --c-surface. */
+    --c-code-keyword: light-dark(oklch(41% 0.12 300), oklch(78% 0.09 300));
+    --c-code-string: light-dark(oklch(41% 0.1 45), oklch(78% 0.09 45));
+
+    /* Type: ratio 1.2, base 1rem, fluid from xl */
+    /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, D24's stack.
+       The var() fallbacks repeat D24's stacks from astro.config.mjs for a page without <Font />. */
+    --ff-sans: var(--ff-geist, system-ui, -apple-system, sans-serif);
+    --ff-mono: var(--ff-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    /* The hero's serif word (FR-HE-3): Instrument Serif when it is ready, else the sans. Without its
+       <Font />, the var is invalid and the word inherits the sans. */
+    --ff-serif: var(--ff-instrument-serif), var(--ff-sans);
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.875rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.2rem;
+    --fs-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.44rem);
+    --fs-2xl: clamp(1.44rem, 1.2rem + 1.2vw, 2.074rem);
+    --fs-3xl: clamp(1.728rem, 1.3rem + 2vw, 2.488rem);
+    --lh-tight: 1.1;
+    --lh-snug: 1.3;
+    --lh-body: 1.6;
+    --ls-tight: -0.022em;
+    --ls-snug: -0.011em;
+    --ls-mono: 0.02em;
+    --fw-body: 400;
+    --fw-medium: 500;
+    --fw-strong: 600;
+    --mono-features: "zero" 1, "tnum" 1, "liga" 0, "calt" 0;
+
+    /* Space: 4px base */
+    --sp-unit: 0.25rem;
+    --sp-row: calc(var(--sp-unit) * 3);
+    --sp-stack: calc(var(--sp-unit) * 6);
+    --sp-section: clamp(2.5rem, 2rem + 1.5vw, 3rem);
+    --sp-gutter: clamp(1rem, 0.5rem + 2.5vw, 1.5rem);
+
+    /* Widths */
+    --w-col: 40rem;
+    --w-wide: 56rem;
+    --w-measure: 65ch;
+
+    /* Radii */
+    --r-1: 4px;
+    --r-2: 8px;
+    --r-3: 12px;
+    --r-pill: 999px;
+
+    /* Motion: three tiers, exit one tier faster, sig for the signature reveal only */
+    --d-1: 80ms;
+    --d-2: 160ms;
+    --d-3: 240ms;
+    --d-sig: 640ms;
+    --ez-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ez-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ez-in: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+
+  /* Browsers without light-dark(): before Chrome 123, Firefox 120, Safari 17.5 */
+  @supports not (color: light-dark(#000, #fff)) {
+    :root {
+      --c-bg: #fafaf8;
+      --c-surface: #f4f4f1;
+      --c-sunken: #ebebe7;
+      --c-fg: #1d1f23;
+      --c-fg-2: #45484d;
+      --c-fg-3: #66696f;
+      --c-line: #e2e2de;
+      --c-line-2: #c9c9c4;
+      --c-live: #0a7e3a;
+      --c-mark: rgb(236 240 120 / 0.75);
+      --c-focus: #2f6fd6;
+      --c-code-keyword: #553781;
+      --c-code-string: #753515;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --c-bg: #121417;
+        --c-surface: #1a1c20;
+        --c-sunken: #222428;
+        --c-fg: #eaeae7;
+        --c-fg-2: #b0b3b8;
+        --c-fg-3: #8a8d92;
+        --c-line: #2a2d32;
+        --c-line-2: #3b3e44;
+        --c-live: #5fd38a;
+        --c-mark: rgb(140 140 40 / 0.35);
+        --c-focus: #86aef5;
+        --c-code-keyword: #c0abe9;
+        --c-code-string: #e8a587;
+      }
+    }
+    :root[data-theme="dark"] {
+      --c-bg: #121417;
+      --c-surface: #1a1c20;
+      --c-sunken: #222428;
+      --c-fg: #eaeae7;
+      --c-fg-2: #b0b3b8;
+      --c-fg-3: #8a8d92;
+      --c-line: #2a2d32;
+      --c-line-2: #3b3e44;
+      --c-live: #5fd38a;
+      --c-mark: rgb(140 140 40 / 0.35);
+      --c-focus: #86aef5;
+      --c-code-keyword: #c0abe9;
+      --c-code-string: #e8a587;
+    }
+  }
+
+  /* NFR-A5: every duration token collapses under reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --d-1: 0.01ms;
+      --d-2: 0.01ms;
+      --d-3: 0.01ms;
+      --d-sig: 0.01ms;
+    }
+  }
+}

@@ -1,0 +1,11 @@
+---
+interface Props {
+  label: string;
+}
+
+const { label } = Astro.props;
+---
+
+{/* One chip (FR-PR-2, p09): mono xs in a hairline pill. A chip wider than its line wraps inside the
+    pill rather than widen the page (NFR-A7 at 200% text, D105 Q4). */}
+<span class="meta inline-block rounded-(--r-pill) border border-line px-1.75 py-0.5 text-xs leading-(--lh-tight) wrap-anywhere text-fg-2">{label}</span>

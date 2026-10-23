@@ -1,0 +1,44 @@
+{
+  "zen-browser": {
+    "employer": "Zen Browser, search (driceroland)",
+    "role": "open-source contributor",
+    "start": "2025-11",
+    "end": null,
+    "summary": "Contributing to Zen Browser and search (driceroland)."
+  },
+  "veteran-benefits-guide": {
+    "employer": "Veteran Benefits Guide",
+    "role": "Backend Engineer II",
+    "start": "2023-11",
+    "end": "2026-08",
+    "summary": "Led the backend architecture of a disability-claims platform: a secure NestJS API and a zero-downtime Kafka migration to Salesforce."
+  },
+  "rolls-royce": {
+    "employer": "Rolls-Royce",
+    "role": "Software Analyst",
+    "start": "2022-09",
+    "end": "2023-05",
+    "summary": "Extended LLVM passes for Checked C static analysis of aircraft engine control software; built a CLI porting FreeRTOS and zlib to Checked C."
+  },
+  "purdue-university": {
+    "employer": "Purdue University",
+    "role": "Graduate Research Assistant",
+    "start": "2022-01",
+    "end": "2022-09",
+    "summary": "Built a language server for converting legacy C libraries to Checked C, and converted vsftpd, zlib, FreeRTOS and Icecast."
+  },
+  "accenture": {
+    "employer": "Accenture",
+    "role": "Software Associate",
+    "start": "2020-08",
+    "end": "2021-01",
+    "summary": "Revamped the React frontend of a data-visualization platform and maintained a backend-as-a-service integrated with Kibana."
+  },
+  "ucla": {
+    "employer": "UCLA",
+    "role": "Research Intern",
+    "start": "2020-05",
+    "end": "2020-08",
+    "summary": "Implemented DLedger, a distributed ledger for Named Data Networking, primarily in C++."
+  }
+}

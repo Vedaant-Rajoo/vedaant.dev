@@ -1,0 +1,89 @@
+---
+import { getCollection } from 'astro:content';
+import Row from './Row.astro';
+import SectionLabel from './SectionLabel.astro';
+
+// No props: an attribute passed to Work fails the type check (the S8b → S8c rule).
+type Props = Record<string, never>;
+
+// The tile: the initials of the employer's first two words, or the first two letters of one word.
+const monogram = (employer: string) => {
+  const [first = employer, second] = employer.split(/[\s-]+/).filter(Boolean);
+  return (second ? first[0] + second[0] : first.slice(0, 2)).toUpperCase();
+};
+
+// Astro returns entries sorted by id. Newest first: by start, then by end, a role without an end first.
+const rows = (await getCollection('work'))
+  .map(({ data }) => ({
+    tile: monogram(data.employer),
+    title: data.employer,
+    sub: data.role,
+    start: data.start,
+    end: data.end,
+    href: data.url,
+  }))
+  .sort(
+    (a, b) =>
+      b.start.localeCompare(a.start) || (b.end ?? '9999-12').localeCompare(a.end ?? '9999-12'),
+  );
+// Every role without an end shows, and so do the newest two ended roles (the owner's home target,
+// past D175). The ended roles after the last of those fold behind one "earlier" row if there are
+// two or more: one alone saves no space.
+const open = rows.filter((row) => row.end === null).length;
+const keep = rows.findLastIndex((row, i) => i < 2 + open || row.end === null);
+const tail = rows.slice(keep + 1);
+const earlier = tail.length > 1 ? tail : [];
+const shown = rows.slice(0, rows.length - earlier.length);
+---
+
+<section class="flex flex-col gap-6">
+  <SectionLabel label="work" count={rows.length} />
+  {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+  <ol role="list" class="divide-y divide-line">
+    {
+      shown.map((row) => (
+        <li>
+          <Row {...row} />
+        </li>
+      ))
+    }
+    {
+      earlier.length > 0 && (
+        <li>
+          <details class="group">
+            <Row
+              toggle
+              tile={`+${earlier.length}`}
+              title="earlier"
+              sub={[...new Set(earlier.map((row) => row.title))].join(', ')}
+              start={earlier[earlier.length - 1].start}
+              end={earlier.map((row) => row.end).sort().at(-1) ?? null}
+            >
+              {' '}
+              <span class="whitespace-nowrap">
+                · <span class="group-open:hidden">more <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+                <span class="hidden group-open:inline">fewer <span aria-hidden="true" class="inline-block font-sans">←</span></span>
+              </span>
+            </Row>
+            {/* biome-ignore lint/a11y/noRedundantRoles: as above. */}
+            <ol role="list" class="divide-y divide-line border-t border-line">
+              {
+                earlier.map((row) => (
+                  <li>
+                    <Row {...row} />
+                  </li>
+                ))
+              }
+            </ol>
+          </details>
+        </li>
+      )
+    }
+  </ol>
+</section>
+
+<style>
+  section {
+    margin-block-start: var(--sp-section);
+  }
+</style>

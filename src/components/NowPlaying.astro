@@ -1,0 +1,144 @@
+---
+import { artworkKey } from '../data/artwork';
+import { nowPlaying } from '../data/lastfm';
+import { ago, type NowPlaying, shownAlbum } from '../data/now-playing';
+
+interface Props {
+  // The home row passes neither: the build-time value, idle even when Last.fm said live, and empty
+  // as "—" (FR-LV-1). A state fixture (S23) passes both.
+  value?: NowPlaying;
+  state?: NowPlaying['state'] | 'offline' | 'loading';
+  // The /now bento cell (p14) in place of the home row (p10 §05). Both have the same root and the
+  // same three holders, so the hub (S24) drives them alike, and a variant alone is not a fixture.
+  variant?: 'row' | 'cell';
+}
+
+const {
+  value = nowPlaying,
+  state = value.state === 'empty' ? 'empty' : 'idle',
+  variant = 'row',
+} = Astro.props;
+const { track, artist, at, url, artwork } = value;
+const album = shownAlbum(value);
+// Artist and album each between U+2068 and U+2069, so a right-to-left name reorders neither the
+// other nor the separators, and a closing space, so the text reads apart from the time after it.
+// The /now cell starts the artist on a line of its own, so only the row puts a separator first.
+const rest =
+  artist &&
+  `${variant === 'cell' ? ' ' : ' · '}\u2068${artist}\u2069${album ? ` · \u2068${album}\u2069` : ''} `;
+// The state text sits in a <time> when there is a time for its datetime, else in a <span>.
+const When = at ? 'time' : 'span';
+// The root's attributes, the same in both variants: the hub sets data-state, aria-busy and href.
+const root = {
+  href: url,
+  'data-widget': 'now-playing',
+  'data-variant': variant === 'cell' ? 'cell' : undefined,
+  'data-state': state,
+  'data-fixture': Astro.props.value || Astro.props.state ? '' : undefined,
+  'data-artwork-key': artwork ? artworkKey(value) : undefined,
+  'aria-live': 'off',
+  'aria-busy': state === 'loading' ? 'true' : undefined,
+} as const;
+---
+
+{/* Row 1 of p10 §05 in Row's anatomy, one line per cell (FR-NP-2). The hub (S24) moves it between
+    states by setting data-state, href and the text of the track, the rest and the time, so all
+    three are here in every state, and the row is an <a> throughout: without a URL it has no href
+    and is not a link. No box moves when they change (FR-LV-3): the text truncates instead of
+    wrapping, nothing else on its line follows the changing text, and the time fills a fixed cell,
+    which large text moves under the text in every state alike. aria-live="off" keeps the changes
+    silent (doc §7); <bdi> keeps a right-to-left track from reordering the rest. */}
+{
+  variant === 'row' && (
+    <a
+      {...root}
+      class="-mx-2 flex min-h-13 flex-wrap items-center gap-3 rounded-sm px-2 py-2.5 transition-colors duration-(--d-2)"
+    >
+      <span
+        aria-hidden="true"
+        class="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs"
+      >
+        ♪
+        <img
+          data-now-playing="artwork"
+          src={artwork}
+          alt=""
+          width="250"
+          height="250"
+          loading="lazy"
+          decoding="async"
+          hidden={!artwork}
+          class="absolute inset-0 size-full object-cover"
+        />
+      </span>
+      <span class="min-w-0 grow basis-16 truncate leading-(--lh-snug)"
+        ><bdi data-now-playing="track" class="font-medium">{track ?? '—'}</bdi><span
+          data-now-playing="rest"
+          class="text-sm leading-(--lh-snug) text-fg-2"
+          >{rest}</span
+        ></span
+      >
+      <span class="meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3">
+        <When data-now-playing="time" datetime={at} class="grow self-stretch text-right leading-5"
+          >{state === 'live' ? 'now' : at && ago(at)}</When
+        >
+      </span>
+    </a>
+  )
+}
+{/* The /now cell (p14): the label with the state on its right, the 56px tile, the track over
+    artist · album, and Last.fm's credit, a link of its own outside the cell's link. Every line has
+    a fixed height and truncates, the state fills the row's fixed cell, and only the width moves
+    the text under the tile, so no state or text changes the cell's height (FR-LV-3). The label is
+    a .meta of plain text: global.css paints an element inside a .meta live, never its text.
+    ponytail: h-lh needs the lh unit (Chrome 109, Safari 16.4, Firefox 120); before those an empty
+    artist line collapses and the title moves. A rem height per line works there, if they matter. */}
+{
+  variant === 'cell' && (
+    <div class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-1.5">
+      <a {...root} class="-mx-2 flex flex-col gap-2.5 rounded-sm px-2 py-2 transition-colors duration-(--d-2)">
+        <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span class="meta text-xs text-fg-3">now playing</span>
+          <span class="meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3">
+            <When data-now-playing="time" datetime={at} class="grow self-stretch text-right leading-5"
+              >{state === 'live' ? 'now' : at && ago(at)}</When
+            >
+          </span>
+        </span>
+        <span class="flex flex-wrap items-center gap-3">
+          <span
+            aria-hidden="true"
+            class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs"
+          >
+            ♪
+            <img
+              data-now-playing="artwork"
+              src={artwork}
+              alt=""
+              width="250"
+              height="250"
+              loading="lazy"
+              decoding="async"
+              hidden={!artwork}
+              class="absolute inset-0 size-full object-cover"
+            />
+          </span>
+          <span class="flex min-w-0 grow basis-24 flex-col">
+            <span class="h-lh truncate leading-(--lh-snug)"
+              ><bdi data-now-playing="track" class="font-medium">{track ?? '—'}</bdi></span
+            >
+            <span data-now-playing="rest" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
+              >{rest}</span
+            >
+          </span>
+        </span>
+      </a>
+      <a
+        href="https://www.last.fm/"
+        class="meta inline-flex min-h-11 min-w-11 items-center self-start text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+      >
+        <span>via last.fm <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+      </a>
+    </div>
+  )
+}

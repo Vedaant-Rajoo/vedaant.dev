@@ -1,0 +1,382 @@
+/* Tokens first, so they form the lowest layer and any later layer may override one on :root. */
+@import "./tokens.css";
+/* Scan src/ only; words in docs, comments and scripts would otherwise become utilities. */
+@import "tailwindcss" source("../");
+
+/* Utilities read the tokens by reference (design doc §4.5): a token re-declared on a subtree is honoured. */
+@theme inline {
+  /* Tailwind's palette is reset, so only the token colours below compile (D25). */
+  --color-*: initial;
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-sunken: var(--c-sunken);
+  --color-fg: var(--c-fg);
+  --color-fg-2: var(--c-fg-2);
+  --color-fg-3: var(--c-fg-3);
+  --color-line: var(--c-line);
+  --color-line-2: var(--c-line-2);
+  --color-live: var(--c-live);
+  --color-mark: var(--c-mark);
+  --color-focus: var(--c-focus);
+
+  --font-sans: var(--ff-sans);
+  --font-mono: var(--ff-mono);
+  --font-weight-normal: var(--fw-body);
+  --font-weight-medium: var(--fw-medium);
+  --font-weight-semibold: var(--fw-strong);
+
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--lh-snug);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: var(--lh-body);
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--lh-body);
+  --text-lg: var(--fs-lg);
+  --text-lg--line-height: var(--lh-snug);
+  --text-lg--letter-spacing: var(--ls-snug);
+  --text-xl: var(--fs-xl);
+  --text-xl--line-height: var(--lh-snug);
+  --text-xl--letter-spacing: var(--ls-snug);
+  --text-2xl: var(--fs-2xl);
+  --text-2xl--line-height: var(--lh-tight);
+  --text-2xl--letter-spacing: var(--ls-tight);
+  --text-3xl: var(--fs-3xl);
+  --text-3xl--line-height: var(--lh-tight);
+  --text-3xl--letter-spacing: var(--ls-tight);
+
+  --spacing: var(--sp-unit);
+  --container-col: var(--w-col);
+  --container-wide: var(--w-wide);
+  --radius-sm: var(--r-1);
+  --radius: var(--r-2);
+  --radius-lg: var(--r-3);
+  --ease-out: var(--ez-out);
+  --ease-in-out: var(--ez-in-out);
+  --ease-in: var(--ez-in);
+  /* Transitions default to the 80 ms tier, which the reduced-motion reset collapses. */
+  --default-transition-duration: var(--d-1);
+  --default-transition-timing-function: var(--ez-out);
+}
+
+/* Base styles (design doc §4.6); the page, not body, sets its width. */
+@layer base {
+  html {
+    background: var(--c-bg);
+    color: var(--c-fg);
+    font: var(--fw-body) var(--fs-base) / var(--lh-body) var(--ff-sans);
+  }
+  body {
+    padding-inline: var(--sp-gutter);
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  mark {
+    background: linear-gradient(transparent 53%, var(--c-mark) 0);
+    box-decoration-break: clone;
+    color: inherit;
+  }
+  /* Forced colours remove the gradient; keep marked phrases visible (NFR-A7). */
+  @media (forced-colors: active) {
+    mark {
+      background-color: Mark;
+      color: MarkText;
+    }
+  }
+  /* The highlighter swipe (FR-HE-2, D114): every mark's band grows from the left once, as the page
+     loads, on each of its lines at once. Only the background moves. no-repeat stops a part-grown
+     band from tiling. With reduced motion the band is drawn whole. */
+  @media (prefers-reduced-motion: no-preference) {
+    mark {
+      background-repeat: no-repeat;
+      animation: mark-swipe var(--d-sig) var(--ez-in-out);
+    }
+  }
+  @keyframes mark-swipe {
+    from {
+      background-size: 0 100%;
+    }
+    to {
+      background-size: 100% 100%;
+    }
+  }
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+    border-radius: var(--r-1);
+  }
+  ::selection {
+    background: var(--c-mark);
+    color: var(--c-fg);
+  }
+  code,
+  kbd,
+  time,
+  .meta {
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+  }
+}
+
+/* Prose (p13, p15): a Markdown body inside Prose.astro. Its elements carry no classes, so these
+   rules select them. A section is a ## heading under the home sections' dashed rule. */
+@layer components {
+  /* A long word, URL or inline code breaks rather than widen the page (NFR-R1). */
+  .prose {
+    max-width: var(--w-measure);
+    overflow-wrap: anywhere;
+  }
+  .prose > * + *,
+  .prose blockquote > * + * {
+    margin-block-start: var(--sp-row);
+  }
+  .prose > :is(h2, h3, h4, h5, h6) {
+    font-weight: var(--fw-medium);
+  }
+  /* Headings stop at text-xl (FR-PR-4, FR-WR-3). */
+  .prose > h2 {
+    margin-block-start: --spacing(12);
+    border-block-start: 1px dashed var(--c-line);
+    padding-block-start: var(--sp-stack);
+    font-size: var(--fs-xl);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > h3 {
+    margin-block-start: var(--sp-stack);
+    font-size: var(--fs-lg);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > :is(h2, h3, h4, h5, h6) + * {
+    margin-block-start: --spacing(4);
+  }
+  .prose :is(ul, ol) {
+    padding-inline-start: --spacing(5);
+  }
+  .prose ul {
+    list-style-type: disc;
+  }
+  .prose ol {
+    list-style-type: decimal;
+  }
+  .prose li + li,
+  .prose li > :is(ul, ol) {
+    margin-block-start: --spacing(2);
+  }
+  /* A decision (p13, D125): chose, over, because, each label in a mono column 88px wide. A dd's
+     basis is the rest of its line, so every pair starts a line, and at least 11rem: when large text
+     leaves less beside the label, the dd moves under it, as in the hero's dl. */
+  .prose dl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: --spacing(1) var(--sp-row);
+  }
+  .prose dt {
+    flex: 0 0 --spacing(22);
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+    font-size: var(--fs-xs);
+    letter-spacing: var(--ls-mono);
+    color: var(--c-fg-3);
+  }
+  .prose dd {
+    flex: 1 1 max(--spacing(44), 100% - --spacing(22) - var(--sp-row));
+    min-width: 0;
+  }
+  /* Links as elsewhere. A link in a line of prose keeps the line's height, not 44px (D124). */
+  .prose a {
+    text-decoration-line: underline;
+    text-decoration-color: var(--c-line-2);
+    transition: text-decoration-color var(--d-1) var(--ez-out);
+  }
+  .prose a:hover {
+    text-decoration-color: var(--c-fg);
+  }
+  /* A quote is set in italic at text-lg and nothing else (p15): sans italic (D13), synthesized, so
+     it requests no font (D33, D124). */
+  .prose blockquote {
+    font-style: italic;
+    font-size: var(--fs-lg);
+    line-height: var(--lh-snug);
+    letter-spacing: var(--ls-snug);
+  }
+  .prose > hr {
+    margin-block: --spacing(12);
+    border-color: var(--c-line);
+  }
+  /* GFM footnotes: the list under a dashed rule, as a section; its h2 is sr-only. */
+  .prose > .footnotes {
+    margin-block-start: --spacing(12);
+    border-block-start: 1px dashed var(--c-line);
+    padding-block-start: var(--sp-stack);
+  }
+  /* Code blocks (p13, p15; D124): the surface fill, a hairline, --r-2, mono at text-sm. Shiki's
+     css-variables theme colours each token through these variables: keywords and strings in the
+     two code colours, comments in --c-fg-2. Any other is unmapped, so its var() is invalid at
+     computed-value time and it inherits the foreground. A long line scrolls inside the block,
+     which Shiki makes focusable (tabindex="0") for the keyboard. */
+  .prose pre {
+    --astro-code-foreground: var(--c-fg);
+    --astro-code-background: var(--c-surface);
+    --astro-code-token-comment: var(--c-fg-2);
+    --astro-code-token-keyword: var(--c-code-keyword);
+    --astro-code-token-string: var(--c-code-string);
+    --astro-code-token-string-expression: var(--c-code-string);
+    overflow-x: auto;
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-2);
+    padding: --spacing(3.5) --spacing(4);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-body);
+    letter-spacing: var(--ls-mono);
+  }
+  /* The copy button (S16): Prose.astro puts it in .code, an empty box just before the block, so
+     it sits in the block's top-right corner (p13) and stays there while the code scrolls. At rest
+     the chip holds a copy glyph; a press replaces it with the word "copied". ::after makes the
+     target 44px (NFR-R2). With scripting on, the block keeps that
+     target's height free above the first line from the first paint: the chip covers no code at any
+     scroll position, and adding it moves nothing. Without JS the block stays as above. */
+  @media (scripting: enabled) {
+    .prose pre {
+      padding-block-start: --spacing(11);
+    }
+  }
+  .prose .code {
+    position: relative;
+  }
+  /* The box takes the block's place in the spacing above, so the block itself adds none. */
+  .prose .code + pre {
+    margin-block-start: 0;
+  }
+  .prose .code > button {
+    position: absolute;
+    inset-block-start: --spacing(2);
+    inset-inline-end: --spacing(2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: --spacing(7);
+    min-block-size: --spacing(7);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-1);
+    background: var(--c-bg);
+    padding-inline: --spacing(2);
+    font-family: var(--ff-mono);
+    font-feature-settings: var(--mono-features);
+    font-size: var(--fs-xs);
+    font-style: normal;
+    letter-spacing: var(--ls-mono);
+    color: var(--c-fg-3);
+    text-align: center;
+    cursor: pointer;
+  }
+  /* The resting mark is a text glyph (no icon set). The sans stack draws it, as the clock's
+     sun and moon do, because the Geist subset has no copy symbol. */
+  .prose .code > button span {
+    font-family: var(--ff-sans);
+    font-size: var(--fs-base);
+    line-height: 1;
+  }
+  .prose .code > button:hover {
+    border-color: var(--c-line-2);
+    color: var(--c-fg);
+  }
+  /* The target: 8px past the chip on every side. The insets start at its padding box, inside the
+     1px border. A press replaces the glyph with "copied", which is wider; the chip grows to the
+     left, inside the band, and the code does not move. */
+  .prose .code > button::after {
+    content: "";
+    position: absolute;
+    inset: calc(--spacing(-2) - 1px);
+  }
+}
+
+/* The theme reveal (FR-SH-2, design doc §6 part 3). theme.ts sets --vt-x and --vt-y, the clock's
+   centre, and --vt-r, a radius that reaches the farthest corner, in percentages of the viewport.
+   The new snapshot sits on top and grows as a circle over the old one; neither fades. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+  animation: theme-reveal var(--d-sig) var(--ez-in-out);
+}
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0 at var(--vt-x) var(--vt-y));
+  }
+  to {
+    clip-path: circle(var(--vt-r) at var(--vt-x) var(--vt-y));
+  }
+}
+
+/* The now-playing row (S21b; p10 §05, FR-LV-2, FR-LV-6). NowPlaying.astro sets data-state. Idle and
+   offline show the row's meta time; empty and loading, which has no snapshot and so no value, show
+   none. live sets "now" in --c-live at text-sm medium after a dot, which pulses at the signature
+   tier as a ring that grows and fades, and stays still when reduced motion is asked for. Forced
+   colours would paint the dot in the Canvas colour, so there it takes CanvasText. The row is an <a>
+   in every state, so only one with a URL takes the hover fill. */
+@layer components {
+  @media (hover: hover) {
+    a[data-widget="now-playing"][href]:hover {
+      background-color: var(--c-surface);
+    }
+  }
+  [data-widget="now-playing"][data-state="live"] .meta > * {
+    font-family: var(--ff-sans);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--c-live);
+  }
+  [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    inline-size: --spacing(1.75);
+    block-size: --spacing(1.75);
+    margin-inline-end: --spacing(1.5);
+    border-radius: var(--r-pill);
+    background: currentColor;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+      animation: now-pulse var(--d-sig) var(--ez-out) infinite;
+    }
+  }
+  @media (forced-colors: active) {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+  @keyframes now-pulse {
+    from {
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    to {
+      box-shadow: 0 0 0 var(--sp-unit) transparent;
+    }
+  }
+  /* Artwork that fails to load keeps the glyph. The hub hides a failed image, but without JS
+     nothing does, and Chromium draws its broken-image icon over the tile. Chromium and Firefox
+     render an image's ::after only while it is broken, never once it loads, so this one covers
+     the image's box with the tile as NowPlaying.astro draws it: its fill and its ♪. */
+  [data-now-playing="artwork"]::after {
+    content: "♪";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--c-sunken);
+  }
+}
