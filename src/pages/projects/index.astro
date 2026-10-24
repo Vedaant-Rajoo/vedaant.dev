@@ -2,29 +2,28 @@
 import { type CollectionEntry, getCollection } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
+import { initials } from '../../data/format';
 import { words } from '../../data/navigation';
-import { hasCaseStudy, intro, newestFirst, npmUrl, rowHref, tile } from '../../data/projects';
+import { hasCaseStudy, intro, newestFirst, rowHref } from '../../data/projects';
 import Base from '../../layouts/Base.astro';
 
 const projects = await getCollection('projects');
 // Open-source contributions, the projects with my PRs, come first as one group; then every other
-// project, drafts and archived ones too, one group per year, newest first (FR-PR-3).
+// project, drafts and archived ones too, one group per year, newest first.
 const groups = Map.groupBy(
   projects.toSorted((a, b) => Number(!a.data.prs) - Number(!b.data.prs) || newestFirst(a, b)),
   ({ data }) => (data.prs ? 'open source' : data.year),
 );
-// The right cell's links (p18): "case study →" when the row opens one, so a reader can tell it
+// The right cell's links: "case study →" when the row opens one, so a reader can tell it
 // from a row that leaves for the repo, then the external links, of which the one the row itself
-// goes to is its label. Confidential work shows a note instead of those (FR-PR-6).
+// goes to is its label. Confidential work shows a note instead of those.
 const linksOf = (project: CollectionEntry<'projects'>, href: string | undefined) => {
   const { data } = project;
-  const npm = npmUrl(project);
   return [
     hasCaseStudy(project) && href ? { label: 'case study', href } : undefined,
     ...(data.confidential
       ? []
       : [
-          npm ? { label: 'npm', href: npm } : undefined,
           data.repo ? { label: 'repo', href: data.repo } : undefined,
           data.prs ? { label: 'my PRs', href: data.prs } : undefined,
         ]),
@@ -57,7 +56,7 @@ const [{ sub }] = words.filter(({ href }) => href === '/projects');
               return (
                 <li>
                   <Row
-                    tile={tile(data.title)}
+                    tile={initials(data.title)}
                     title={data.title}
                     sub={data.summary}
                     start={data.start}

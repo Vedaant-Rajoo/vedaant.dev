@@ -1,0 +1,7 @@
+# The default rules, plus the public read-only Last.fm key from src/data/now-playing.ts, which the
+# build copies into dist/ without its gitleaks:allow comment.
+[extend]
+useDefault = true
+
+[[allowlists]]
+regexes = ['''^ad7d5f6085314e87eac8b6bc74a08ac2$''']

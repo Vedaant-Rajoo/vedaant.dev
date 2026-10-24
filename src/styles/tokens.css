@@ -1,4 +1,4 @@
-/* Ledger tokens (design doc §4.2): light-dark() first, hex fallback below. */
+/* Ledger tokens: light-dark() first, hex fallback below. */
 @layer tokens {
   :root {
     color-scheme: light dark;
@@ -15,16 +15,16 @@
     --c-live: light-dark(oklch(52% 0.14 150), oklch(78% 0.17 150));
     --c-mark: light-dark(oklch(93% 0.15 105 / 0.75), oklch(55% 0.12 105 / 0.35));
     --c-focus: light-dark(oklch(55% 0.18 255), oklch(75% 0.14 255));
-    /* Code blocks (D124, not in the doc): keywords and strings, each ≥8:1 on --c-surface. */
+    /* Code blocks, not in the doc: keywords and strings, each ≥8:1 on --c-surface. */
     --c-code-keyword: light-dark(oklch(41% 0.12 300), oklch(78% 0.09 300));
     --c-code-string: light-dark(oklch(41% 0.1 45), oklch(78% 0.09 45));
 
     /* Type: ratio 1.2, base 1rem, fluid from xl */
-    /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, D24's stack.
-       The var() fallbacks repeat D24's stacks from astro.config.mjs for a page without <Font />. */
+    /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, the stack.
+       The var() fallbacks repeat the stacks from astro.config.mjs for a page without <Font />. */
     --ff-sans: var(--ff-geist, system-ui, -apple-system, sans-serif);
     --ff-mono: var(--ff-geist-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-    /* The hero's serif word (FR-HE-3): Instrument Serif when it is ready, else the sans. Without its
+    /* The hero's serif word: Instrument Serif when it is ready, else the sans. Without its
        <Font />, the var is invalid and the word inherits the sans. */
     --ff-serif: var(--ff-instrument-serif), var(--ff-sans);
     --fs-xs: 0.75rem;
@@ -131,7 +131,7 @@
     }
   }
 
-  /* NFR-A5: every duration token collapses under reduced motion */
+  /* Every duration token collapses under reduced motion */
   @media (prefers-reduced-motion: reduce) {
     :root {
       --d-1: 0.01ms;

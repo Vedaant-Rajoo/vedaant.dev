@@ -5,8 +5,8 @@ year: 2026
 stack: [Astro, TypeScript, Tailwind CSS]
 status: active
 featured: true
-draft: true
 repo: https://github.com/vedaant-rajoo/vedaant.dev
+published: "2026-10-23"
 ---
 
 ## The problem
@@ -117,13 +117,13 @@ async function load(): Promise<NowPlaying> {
 
 ## Trade-offs
 
-Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. The repository is private while the site is built, so the source links are dead until launch. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
+Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. The repository stayed private while the site was built, so its source links were dead until launch. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
 
 ## Outcome
 
-The repository started on 10 October 2026. Six days and 36 commits later it had the home page, `/projects`, the 404 page, the writing collection with its newest rows on the home page, and this case-study page, and every push deployed a preview at ledger-mvp.vedaantrajoo.com. Each page ships 1,702 bytes of gzipped JavaScript (1,867 on the 404 page) against the 5,120-byte gate, the stylesheet is about 5 KB gzipped, and the three font files total 73,944 bytes of the 90 KB budget, with only the sans and the mono requested on first paint. The build passes with Last.fm unreachable. Eleven of twenty components and seven of twelve dependencies are in use. Lighthouse, axe and the field numbers come at a later step, so there are none to report yet. The site will live at vedaantrajoo.com.
+The repository started on 10 October 2026. Six days and 36 commits later it had the home page, `/projects`, the 404 page, the writing collection with its newest rows on the home page, and this case-study page, and every push deployed a preview at ledger-mvp.vedaantrajoo.com. Each page ships 1,702 bytes of gzipped JavaScript (1,867 on the 404 page) against the 5,120-byte gate, the stylesheet is about 5 KB gzipped, and the three font files total 73,944 bytes of the 90 KB budget, with only the sans and the mono requested on first paint. The build passes with Last.fm unreachable. Eleven of twenty components and seven of twelve dependencies are in use. Lighthouse, axe and the field numbers come at a later step, so there are none to report yet. The site lives at vedaantrajoo.com.
 
 ## Links
 
-- Source: https://github.com/vedaant-rajoo/vedaant.dev (private until launch)
+- Source: https://github.com/vedaant-rajoo/vedaant.dev
 - Last.fm API: https://www.last.fm/api/show/user.getRecentTracks

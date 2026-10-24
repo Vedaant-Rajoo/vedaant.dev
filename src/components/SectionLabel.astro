@@ -1,10 +1,11 @@
 ---
+import Arrow from './Arrow.astro';
+
 interface Props {
   label: string;
   count: number;
   href?: string;
-  // The link's word: "all", or a section's own, as now's "more" (p10 §05). Its arrow is →, a page
-  // of this site; ↗ marks a link that leaves it (Row).
+  // The link's word: "all", or a section's own, as now's "more".
   word?: string;
 }
 
@@ -17,9 +18,9 @@ const { label, count, href, word = 'all' } = Astro.props;
     href && (
       <a
         href={href}
-        class="meta -my-3.5 inline-flex min-h-11 min-w-11 items-center justify-end text-xs text-fg-3 underline decoration-line-2 transition-colors hover:decoration-fg"
+        class="meta target link -my-3.5 justify-end text-xs text-fg-3"
       >
-        <span>{word} <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+        <span>{word} <Arrow>→</Arrow></span>
       </a>
     )
   }

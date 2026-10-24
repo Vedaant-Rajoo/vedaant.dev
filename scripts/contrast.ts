@@ -1,11 +1,11 @@
-// NFR-A4 guard: contrast of the Ledger colour tokens against the background, and of the text
+// Contrast of the Ledger colour tokens against the background, and of the text
 // that sits on --c-surface against it, both themes, for the oklch values and for the hex
 // fallbacks. Run `bun scripts/contrast.ts`; it reads src/styles/tokens.css and exits 1 when a
 // pair is under its target.
 import { readFileSync } from 'node:fs';
 
 const TARGETS: Record<string, number> = { fg: 15, 'fg-2': 8, 'fg-3': 4.5, live: 4.6, focus: 3 };
-// On --c-surface: a row title on the hover fill (D93) and the text of a code block (D124).
+// On --c-surface: a row title on the hover fill and the text of a code block.
 const ON_SURFACE: Record<string, number> = {
   fg: 14,
   'fg-2': 8,
@@ -130,7 +130,7 @@ for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) 
 }
 
 // public/favicon.svg repeats the --c-sunken (.t) and --c-fg (.i) hex fallbacks, light in the base
-// rules and dark inside its prefers-color-scheme block (D28). public/ is outside FR-CM-3's grep,
+// rules and dark inside its prefers-color-scheme block. public/ is outside the gate's colour grep,
 // so this is what catches the icon drifting from a token edit.
 const svg = readFileSync(new URL('../public/favicon.svg', import.meta.url), 'utf8');
 const dark = svg.indexOf('@media(prefers-color-scheme:dark)');

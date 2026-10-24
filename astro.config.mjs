@@ -3,26 +3,26 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, fontProviders } from 'astro/config';
 
 export default defineConfig({
-  // The production origin (D85): canonical and Open Graph URLs name it on every build, previews
-  // included, and S27's sitemap will too.
+  // The production origin: canonical and Open Graph URLs name it on every build, previews
+  // included, and so does the sitemap.
   site: 'https://vedaantrajoo.com',
   // Pages serves each page at its directory URL and answers /projects with a 308 to /projects/. A
   // build's Astro.url already ends in a slash (build.format 'directory'), and 'ignore' keeps dev
   // serving the slashless links the nav and rows use, which 'always' answers with a 404.
   trailingSlash: 'ignore',
-  // F1 (S30a.1): every page carries the stylesheet in its own <style>, so first paint waits
+  // F1: every page carries the stylesheet in its own <style>, so first paint waits
   // for no second request. It costs about 5 KB of gzip HTML per page and the shared CSS file.
   build: { inlineStylesheets: 'always' },
-  // FR-DS-1: sitemap-index.xml lists every page the build makes, in that slash form. A draft has no
+  // sitemap-index.xml lists every page the build makes, in that slash form. A draft has no
   // page outside astro dev (pieces(), hasCaseStudy), so it cannot appear; the integration leaves out
   // the 404 and endpoints such as /feed.xml. The résumé is a file, not a page, so it is named.
   integrations: [sitemap({ customPages: ['https://vedaantrajoo.com/resume.pdf'] })],
   // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
-  // per family, so the build needs no network (NFR-L1). The sans subset also includes ← → ↗ from
+  // per family, so the build needs no network. The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
-  // The fallbacks are D24's stacks, repeated in tokens.css; Astro puts a metric-matched face
-  // before them. The sans is optional (F4, S30a.2): used if it is ready within its short block
-  // period and never swapped in later, so it cannot re-wrap text; the mono keeps swap (NFR-P6).
+  // The fallback stacks are repeated in tokens.css; Astro puts a metric-matched face
+  // before them. The sans is optional: used if it is ready within its short block
+  // period and never swapped in later, so it cannot re-wrap text; the mono keeps swap.
   fonts: [
     {
       provider: fontProviders.local(),
@@ -56,7 +56,7 @@ export default defineConfig({
       },
     },
     {
-      // The hero's one serif word (FR-HE-3; licence in src/assets/fonts/OFL-instrument-serif.txt).
+      // The hero's one serif word (licence in src/assets/fonts/OFL-instrument-serif.txt).
       // optional: used only if it is ready at once and never swapped in, so a late font leaves the
       // word in the sans and nothing moves. No fallbacks: tokens.css puts the sans after it.
       provider: fontProviders.local(),
@@ -75,9 +75,9 @@ export default defineConfig({
       },
     },
   ],
-  // Code fences (D124): Shiki's css-variables theme writes each token's colour as a CSS variable,
+  // Code fences: Shiki's css-variables theme writes each token's colour as a CSS variable,
   // and global.css maps those to the tokens, so code follows the theme, hex fallbacks included,
-  // with no colour hard-coded (FR-CM-3). wrap: null adds no inline overflow; global.css sets it.
+  // with no colour hard-coded. wrap: null adds no inline overflow; global.css sets it.
   markdown: { shikiConfig: { theme: 'css-variables', wrap: null } },
   // cloudflared Quick Tunnels give the dev server a new random subdomain of trycloudflare.com on
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
@@ -87,12 +87,12 @@ export default defineConfig({
     plugins: [tailwindcss()],
     // The first versions with light-dark(). Below this floor Vite's Lightning CSS minifier
     // rewrites it into a custom-property polyfill; the hex block in tokens.css serves older
-    // browsers instead (NFR-B1).
+    // browsers instead.
     build: {
       cssTarget: ['chrome123', 'edge123', 'firefox120', 'safari17.5', 'ios17.5'],
       // Astro inlines a processed <script> under 4 KB into each page. Keep scripts as /_astro/
       // files, so a CSP's script-src 'self' covers them and only the is:inline theme restore in
-      // Base.astro needs a hash (NFR-X3). Other assets keep Vite's 4 KB default.
+      // Base.astro needs a hash. Other assets keep Vite's 4 KB default.
       assetsInlineLimit: (file) => (file.endsWith('.js') ? false : undefined),
     },
   },

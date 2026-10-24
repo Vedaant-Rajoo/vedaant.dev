@@ -1,4 +1,4 @@
-// The 404 page's copy (FR-DS-4), as the owner's design writes it (D99). The middle part of `lead`
+// The 404 page's copy, as the owner's design writes it. The middle part of `lead`
 // is marked; the middle part of `report` is the link text.
 export const notFound = {
   status: 'not found · last seen: never',
@@ -12,6 +12,6 @@ export const notFound = {
   note: 'The email opens with the address already in the subject.',
 } as const;
 
-// The report email's subject, in the owner's words (D102). The page's script imports only this, so
+// The report email's subject, in the owner's words. The page's script imports only this, so
 // the rest of the copy stays out of the page's JavaScript.
 export const subject = (path: string) => `404d on ${path} on your site`;

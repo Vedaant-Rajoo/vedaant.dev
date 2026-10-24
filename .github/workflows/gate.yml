@@ -1,5 +1,5 @@
-# Runs the local quality gate (scripts/gate.sh) on pull requests to main (S30c, D19). macOS,
-# because the gate's offline build uses sandbox-exec; no secrets and a read-only token.
+# Runs the local quality gate (scripts/gate.sh) on pull requests to main. macOS, because the
+# gate's offline build uses sandbox-exec; no secrets and a read-only token.
 name: gate
 
 on:
@@ -24,6 +24,12 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.14.1
-      - run: node --version && bun --version
+      - name: install gitleaks 8.30.1
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/gitleaks.tgz" https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz
+          echo "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5  $RUNNER_TEMP/gitleaks.tgz" | shasum -a 256 -c
+          tar -xzf "$RUNNER_TEMP/gitleaks.tgz" -C "$RUNNER_TEMP" gitleaks
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: node --version && bun --version && gitleaks version
       - run: bun install --frozen-lockfile
       - run: bun run gate

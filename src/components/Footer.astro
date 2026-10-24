@@ -1,54 +1,38 @@
 ---
-import { resumeMonth, site } from '../data/site';
+import { day } from '../data/format';
+import { built, resumeMonth, site } from '../data/site';
+import Arrow from './Arrow.astro';
 
-// The build date in the owner's zone (D44). Exported, so Astro runs it once per build, as in
-// Clock.astro, and every page of a build shows the same date.
-export const built = Object.fromEntries(
-  new Intl.DateTimeFormat('en', {
-    timeZone: site.timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .formatToParts()
-    .map(({ type, value }) => [type, value]),
-);
 const updated = `${built.year}-${built.month}-${built.day}`;
-// An ISO date is midnight UTC, so read its month in UTC; 'en', because Node's en-GB writes "Sept".
-const month = (date: string) =>
-  new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(new Date(date));
-const link = 'underline decoration-line-2 transition-colors hover:decoration-fg';
-// The nav's 44px box (D40). Its inner span keeps the text one run: flex drops spaces between items.
-const box = `flex min-h-11 min-w-11 items-center justify-center px-1.5 ${link}`;
 ---
 
 <footer class="flex flex-col gap-2 border-t border-line pt-6 pb-12">
   <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
-    <a href={`mailto:${site.email}`} class={box} data-copy>
-      <span>email <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+    <a href={`mailto:${site.email}`} class="box" data-copy>
+      <span>email <Arrow>→</Arrow></span>
     </a>
-    <a href="/resume.pdf" class={box}>
-      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+    <a href="/resume.pdf" class="box">
+      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <Arrow>↗</Arrow></span>
     </a>
     {
       Object.entries(site.socials).map(([name, href]) => (
-        <a href={href} rel="me" class={box}>
-          <span>{name} <span aria-hidden="true" class="inline-block font-sans">↗</span></span>
+        <a href={href} rel="me" class="box">
+          <span>{name} <Arrow>↗</Arrow></span>
         </a>
       ))
     }
-    <a href="/feed.xml" class={box}><span>rss</span></a>
+    <a href="/feed.xml" class="box"><span>rss</span></a>
   </p>
-  {/* Links in this line keep its height (WCAG 2.5.8's inline exception). The Last.fm credit (terms
-      2.7) covers the hero's presence line. */}
+  {/* Links in this line keep its height (WCAG 2.5.8's inline exception). The Last.fm credit, which
+      its terms ask for, covers the hero's presence line. */}
   <p class="meta text-xs text-fg-3">
-    built with Astro · <a href={site.source} class={link}>source <span aria-hidden="true" class="inline-block font-sans">↗</span></a> · <a href="https://www.last.fm/" class={link}>via last.fm <span aria-hidden="true" class="inline-block font-sans">↗</span></a> · updated <time datetime={updated} class="whitespace-nowrap">{Number(built.day)} {month(updated)} {built.year}</time>
+    built with Astro · <a href={site.source} class="link">source <Arrow>↗</Arrow></a> · <a href="https://www.last.fm/" class="link">via last.fm <Arrow>↗</Arrow></a> · updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>
   </p>
   <span id="copy-status" class="sr-only" aria-live="polite"></span>
 </footer>
 
 <script>
-  // FR-CT-1: with JS, a click on an email link copies the address instead of opening the mail
+  // With JS, a click on an email link copies the address instead of opening the mail
   // client, and the link reads "copied" for 1.5 s. A click with a modifier key, a browser without
   // the Clipboard API and a failed copy open the mailto: link as before.
   const status = document.getElementById('copy-status') as HTMLElement;

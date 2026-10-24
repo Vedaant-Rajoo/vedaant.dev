@@ -13,7 +13,7 @@ const credited = (release: Release, artist: string) =>
   Array.isArray(release['artist-credit']) &&
   release['artist-credit'].some((credit) => normalize(credit?.name) === artist);
 
-// ponytail: cache successes and misses for this page's lifetime; reload retries failed lookups.
+// shortcut: cache successes and misses for this page's lifetime; reload retries failed lookups.
 const cache = new Map<string, Promise<string | null>>();
 let due = 0;
 let queue = Promise.resolve();
@@ -38,7 +38,7 @@ export function getArtwork(value: NowPlaying): Promise<string | null> {
 async function lookup(value: NowPlaying): Promise<string | null> {
   const signal = AbortSignal.timeout(12_000);
   const artist = normalize(value.artist);
-  // ponytail: strip " - edition"; missing albums try the track's single, then keep the glyph.
+  // shortcut: strip " - edition"; missing albums try the track's single, then keep the glyph.
   for (const title of new Set([value.album?.split(' - ')[0], value.track])) {
     if (!title?.trim()) {
       continue;
@@ -83,7 +83,7 @@ async function cover(releases: Release[], signal: AbortSignal): Promise<string |
   for (const id of ids) {
     const url = `https://coverartarchive.org/release/${id}/front-250`;
     const image = await fetch(url, { method: 'HEAD', signal });
-    // ponytail: use CAA's 250px thumbnail; add resizing if measured transfer costs warrant it.
+    // shortcut: use CAA's 250px thumbnail; add resizing if measured transfer costs warrant it.
     if (image.ok && image.headers.get('content-type')?.startsWith('image/')) {
       return url;
     }

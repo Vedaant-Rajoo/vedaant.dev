@@ -11,7 +11,7 @@ const path = Astro.url.pathname;
   <nav aria-label="Site" class="flex flex-wrap gap-2 text-sm">
     {
       words.map(({ word, href }) => {
-        // /projects, its built form /projects/ and /projects/<slug> (p13) all mark projects.
+        // /projects, its built form /projects/ and /projects/<slug> all mark projects.
         const current = path === href || path.startsWith(`${href}/`);
         return (
           <a
