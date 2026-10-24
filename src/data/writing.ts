@@ -1,6 +1,5 @@
 import { getCollection } from 'astro:content';
 
-// The /writing intro, as the owner's design writes it.
 export const intro =
   'Posts are long and sourced; notes are short and sometimes wrong. Both are dated.';
 

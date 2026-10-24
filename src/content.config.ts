@@ -57,7 +57,6 @@ const projects = defineCollection({
       // project in the open source group, and the month I began.
       prs: https.optional(),
       start: month.optional(),
-      // A case study's dates.
       published: day.optional(),
       updated: day.optional(),
     })
@@ -97,11 +96,8 @@ const now = defineCollection({
   loader: glob({ pattern: 'now.md', base: 'src/content/now' }),
   schema: z.strictObject({
     updated: day,
-    // The city, shown on /now as "from <city>".
     from: z.string().trim().min(1),
-    // The home row's line.
     building: z.string().trim().min(1),
-    // The home "last watched" row. The rating is out of 5 in half stars; none if unrated.
     watched: z.strictObject({
       title: z.string().trim().min(1),
       year: z.int().min(1000).max(9999),

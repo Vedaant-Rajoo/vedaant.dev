@@ -19,7 +19,6 @@ const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"'
 const decode = (s = '') => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => entities[e]);
 const sum = (sizes: number[]) => sizes.reduce((a, b) => a + b, 0);
 
-// Adds a module and every module it imports, as Vite writes them, to `seen`.
 function load(page: string, module: string, seen: Map<string, number>) {
   if (!/^\/_astro\/[\w./-]+\.js$/.test(module) || !existsSync(`dist${module}`)) {
     problems.push(`${page} loads ${module}, which is not a file in dist/_astro/`);

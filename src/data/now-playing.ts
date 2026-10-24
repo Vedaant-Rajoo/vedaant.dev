@@ -1,4 +1,3 @@
-// The owner's latest Last.fm track, as the music widgets show it: read at build and in the browser.
 export interface NowPlaying {
   state: 'live' | 'idle' | 'empty';
   track: string | null;
@@ -67,7 +66,6 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
     return null;
   }
   const live = first['@attr']?.nowplaying === 'true';
-  // Last.fm sends a scrobble's Unix time in seconds, as a string.
   const uts = first.date?.uts;
   const seconds = typeof uts === 'string' || typeof uts === 'number' ? Number(uts) : Number.NaN;
   // Coarsened to the minute, for privacy; an invalid date when the time is unusable.

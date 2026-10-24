@@ -14,13 +14,11 @@ import {
 // would honour one. It drives only widgets built from the build-time value; a state fixture
 // carries data-fixture.
 let widgets: HTMLElement[] = [];
-// Seconds to wait after none, one, two, and three or more failures in a row.
 const waits = [60, 120, 240, 600];
 let failures = 0;
 let due = 0;
 let busy = false;
 let timer: ReturnType<typeof setTimeout> | undefined;
-// Last.fm's latest answer, kept for a live value that a failure turns offline.
 let last: NowPlaying | undefined;
 
 function schedule() {
@@ -95,9 +93,7 @@ async function poll() {
     // One 5 s budget for the request and its body, as at build (lastfm.ts).
     const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5_000) });
     value = response.ok ? toNowPlaying(await response.json()) : null;
-  } catch {
-    // Blocked, offline, timed out or not JSON: a failure like any other, and silent.
-  }
+  } catch {}
   failures = value ? 0 : failures + 1;
   last = value ?? last;
   for (const widget of widgets) {

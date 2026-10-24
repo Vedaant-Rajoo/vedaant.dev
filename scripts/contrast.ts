@@ -5,7 +5,6 @@
 import { readFileSync } from 'node:fs';
 
 const TARGETS: Record<string, number> = { fg: 15, 'fg-2': 8, 'fg-3': 4.5, live: 4.6, focus: 3 };
-// On --c-surface: a row title on the hover fill and the text of a code block.
 const ON_SURFACE: Record<string, number> = {
   fg: 14,
   'fg-2': 8,
@@ -16,7 +15,6 @@ const THEMES = ['light', 'dark'] as const;
 type Theme = (typeof THEMES)[number];
 type Swatch = { hex: string; clipped: boolean };
 
-// oklch -> OKLab -> LMS -> linear sRGB (Ottosson's matrices).
 function oklchToLinear(L: number, C: number, hDeg: number): number[] {
   const h = (hDeg * Math.PI) / 180;
   const a = C * Math.cos(h);
@@ -31,7 +29,6 @@ function oklchToLinear(L: number, C: number, hDeg: number): number[] {
   ];
 }
 
-// Linear sRGB clipped to the cube, then the sRGB transfer, 8-bit hex.
 function oklchToSwatch(L: number, C: number, hDeg: number): Swatch {
   const linear = oklchToLinear(L, C, hDeg);
   const clipped = linear.some((v) => v < 0 || v > 1);
@@ -45,7 +42,6 @@ function oklchToSwatch(L: number, C: number, hDeg: number): Swatch {
   return { hex: `#${bytes.join('')}`, clipped };
 }
 
-// WCAG 2 relative luminance and contrast ratio from 8-bit sRGB hex.
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;

@@ -17,7 +17,6 @@ for (const piece of await getCollection('writing')) {
 }
 const all = await pieces();
 const groups = Map.groupBy(all, ({ data }) => data.published.slice(0, 4));
-// The line the 404 page shows for this page (navigation.ts) is its description.
 const [{ sub }] = words.filter(({ href }) => href === '/writing');
 ---
 

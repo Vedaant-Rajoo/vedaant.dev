@@ -1,5 +1,3 @@
-# Checks and builds the site, then uploads dist/ to Cloudflare Pages (Direct Upload).
-# A push to main, the project's production branch, deploys https://vedaantrajoo.com.
 name: deploy
 
 on:

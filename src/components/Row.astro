@@ -19,8 +19,8 @@ const { tile, title, sub, start, end, href, toggle = false, struck = false, note
   Astro.props;
 // Links do not nest: with links of its own in the right cell, a row is not one <a>. Its text is
 // the link instead, and the text's ::after covers the row as its target and its focus ring. A link
-// to the row's own href is no second link but its label, "repo ↗" or "case study →", in place of
-// the ↗ after the title.
+// to the row's own href appears once, as its label, "repo ↗" or "case study →", in place of the ↗
+// after the title.
 const split = href !== undefined && links.some((link) => link.href !== href);
 const labelled = links.some((link) => link.href === href);
 const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';

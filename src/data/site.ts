@@ -6,7 +6,6 @@ import data from './site.json';
 // resolves against this site.
 export const https = z.url({ protocol: /^https$/ }).startsWith('https://');
 
-// Parsed at build: a bad field fails `astro build` with a message that names site.json.
 const result = z
   .object({
     name: z.string().min(1),
@@ -16,7 +15,6 @@ const result = z
       .object({
         name: z.string().min(1),
         role: z.string().trim().min(1),
-        // At most one word in the serif.
         accent: z.string().regex(/^\S+$/, 'Invalid string: expected one word').optional(),
         mark: z.string().trim().min(1),
         today: z.string().trim().min(1),
@@ -32,7 +30,6 @@ const result = z
     email: z.email(),
     socials: z.object({ github: https, linkedin: https }),
     source: https,
-    // /now's "history ↗": now.md's commit log.
     history: https,
   })
   .safeParse(data);
@@ -41,7 +38,6 @@ if (!result.success) {
 }
 export const site = result.data;
 
-// The résumé links' "Mon ’YY".
 export const resumeMonth = monthYear(site.resume.updated);
 
 // The build's date and time in the owner's zone, read once so every page of a build agrees. An

@@ -1,5 +1,4 @@
 ---
-// The body is the slot, and nothing else may be passed.
 interface Props {
   children: unknown;
 }
@@ -24,7 +23,6 @@ interface Props {
     navigator.clipboard &&
     matchMedia('(scripting: enabled)').matches
   ) {
-    // The page's latest click owns the region; each button shows its own latest result.
     let latest = 0;
     let announcer: HTMLButtonElement | undefined;
     for (const pre of blocks) {

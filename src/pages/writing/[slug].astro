@@ -21,7 +21,6 @@ export const getStaticPaths = (async () => {
 
 const { piece, previous, next } = Astro.props;
 const { data } = piece;
-// Match the case-study page's one-h1 guard, including raw HTML but excluding comments and code.
 if (/<h1[\s/>]/i.test((piece.rendered?.html ?? '').replace(/<!--[\s\S]*?-->/g, ''))) {
   throw new Error(`${piece.filePath}: the body has an h1; start its headings at ##`);
 }
@@ -43,7 +42,6 @@ const link = 'target link flex-1 basis-48';
     headline: data.title,
     description: data.summary,
     datePublished: data.published,
-    // As the meta line: only an update after the day it was published.
     dateModified: data.updated && data.updated > data.published ? data.updated : undefined,
     author: { '@type': 'Person', name: site.fullName, url: Astro.site?.href },
   }}

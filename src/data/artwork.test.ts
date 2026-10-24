@@ -94,7 +94,6 @@ test('artwork validates matches, prefers the album, caches requests and fails cl
     }
     fail = false;
 
-    // A valid response containing no usable artwork must still return the glyph fallback.
     globalThis.fetch = async () => Response.json({ releases: {} });
     assert.equal(await getArtwork({ ...value, album: 'Malformed' }), null);
     let title = 'Large cover';

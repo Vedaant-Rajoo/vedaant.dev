@@ -38,7 +38,6 @@ export function getArtwork(value: NowPlaying): Promise<string | null> {
 async function lookup(value: NowPlaying): Promise<string | null> {
   const signal = AbortSignal.timeout(12_000);
   const artist = normalize(value.artist);
-  // shortcut: strip " - edition"; missing albums try the track's single, then keep the glyph.
   for (const title of new Set([value.album?.split(' - ')[0], value.track])) {
     if (!title?.trim()) {
       continue;

@@ -6,11 +6,9 @@ import { site } from '../data/site';
 import '../styles/global.css';
 
 interface Props {
-  // The page's part of the title, before the full name; the home page has none.
   title?: string;
   description: string;
   class: string;
-  // JSON-LD: a Person on the home page, an Article on a writing page, nothing elsewhere.
   schema?: Record<string, unknown>;
   // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
   // answers 200, so it asks not to be indexed.
@@ -39,7 +37,6 @@ const jsonLd =
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
-    {/* The feed, named as production serves it, like the canonical URL. */}
     <link rel="alternate" type="application/rss+xml" title={`writing · ${site.fullName}`} href={new URL('/feed.xml', Astro.site).href} />
     {/* Chat apps read Open Graph; X reads og:title, og:description and og:image when its own tags
         are missing, so its card type is the one twitter: tag. */}

@@ -12,7 +12,6 @@ fail() {
   printf 'gate: FAIL: %s\n' "$*" >&2
   exit 1
 }
-# Runs a tool quietly and shows its output only when it fails.
 run() { "$@" < /dev/null > "$tmp/log" 2>&1 || { cat "$tmp/log"; fail "$*"; }; }
 hex='#[0-9a-f]{3,8}\b'
 

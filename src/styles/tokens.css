@@ -1,9 +1,7 @@
-/* Ledger tokens: light-dark() first, hex fallback below. */
 @layer tokens {
   :root {
     color-scheme: light dark;
 
-    /* Colour, 11 roles */
     --c-bg: light-dark(oklch(98.5% 0.004 95), oklch(17% 0.006 260));
     --c-surface: light-dark(oklch(96.5% 0.005 95), oklch(20.5% 0.007 260));
     --c-sunken: light-dark(oklch(93.5% 0.006 95), oklch(24% 0.008 260));
@@ -19,7 +17,6 @@
     --c-code-keyword: light-dark(oklch(41% 0.12 300), oklch(78% 0.09 300));
     --c-code-string: light-dark(oklch(41% 0.1 45), oklch(78% 0.09 45));
 
-    /* Type: ratio 1.2, base 1rem, fluid from xl */
     /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, the stack.
        The var() fallbacks repeat the stacks from astro.config.mjs for a page without <Font />. */
     --ff-sans: var(--ff-geist, system-ui, -apple-system, sans-serif);
@@ -45,25 +42,21 @@
     --fw-strong: 600;
     --mono-features: "zero" 1, "tnum" 1, "liga" 0, "calt" 0;
 
-    /* Space: 4px base */
     --sp-unit: 0.25rem;
     --sp-row: calc(var(--sp-unit) * 3);
     --sp-stack: calc(var(--sp-unit) * 6);
     --sp-section: clamp(2.5rem, 2rem + 1.5vw, 3rem);
     --sp-gutter: clamp(1rem, 0.5rem + 2.5vw, 1.5rem);
 
-    /* Widths */
     --w-col: 40rem;
     --w-wide: 56rem;
     --w-measure: 65ch;
 
-    /* Radii */
     --r-1: 4px;
     --r-2: 8px;
     --r-3: 12px;
     --r-pill: 999px;
 
-    /* Motion: three tiers, exit one tier faster, sig for the signature reveal only */
     --d-1: 80ms;
     --d-2: 160ms;
     --d-3: 240ms;
@@ -131,7 +124,6 @@
     }
   }
 
-  /* Every duration token collapses under reduced motion */
   @media (prefers-reduced-motion: reduce) {
     :root {
       --d-1: 0.01ms;

@@ -8,7 +8,6 @@ const root = document.documentElement;
 const button = document.getElementById('theme-toggle') as HTMLButtonElement;
 const time = button.querySelector('time') as HTMLTimeElement;
 const [light, dark] = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
-// The media of the light and the dark theme-color meta per theme; the first that matches wins.
 const media = {
   light: ['all', 'not all'],
   dark: ['not all', 'all'],
@@ -17,7 +16,6 @@ const media = {
 const next = (theme: Theme) => themes[(themes.indexOf(theme) + 1) % themes.length];
 const osDark = matchMedia('(prefers-color-scheme: dark)');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-// Whether a theme paints the page dark; system follows the OS.
 const paintsDark = (theme: Theme) => theme === 'dark' || (theme === 'system' && osDark.matches);
 
 function stored(): Theme {

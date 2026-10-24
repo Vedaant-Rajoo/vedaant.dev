@@ -8,7 +8,6 @@ type Item = { title: string; link: string; published: string; summary: string; h
 // noncharacters; a YAML "\x01" in a title would break the feed for every reader.
 const unwritable = /(?![\t\n\r])[\p{Cc}\p{Cs}\p{Noncharacter_Code_Point}]/u;
 
-// Element text and double-quoted attribute values; "'" is fine as written in both.
 const xml = (value: string) => {
   const [character] = unwritable.exec(value) ?? [];
   if (character !== undefined) {
@@ -42,7 +41,6 @@ export const absolute = (html: string, page: string) =>
     }),
   );
 
-// One <item>. The endpoint makes each inside its own try, so an error names the piece's file.
 export const item = ({ title, link, published, summary, html }: Item) => `<item>
 <title>${xml(title)}</title>
 <link>${xml(link)}</link>

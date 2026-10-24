@@ -3,7 +3,6 @@ import { resumeMonth, site } from '../data/site';
 import Arrow from './Arrow.astro';
 import Presence from './Presence.astro';
 
-// The serif word: hero.accent where it first appears in hero.role.
 const { role, accent = '', mark } = site.hero;
 const at = accent ? role.indexOf(accent) : -1;
 const markedAt = role.indexOf(mark);
@@ -31,8 +30,7 @@ const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + ma
       <span>now <Arrow>→</Arrow></span>
     </a>
   </div>
-  {/* The owner's status line, then its links, which wrap under it in a narrow column. The email
-      link copies, as the footer's does. */}
+  {/* The email link copies, as the footer's does. */}
   <p class="flex flex-wrap items-center gap-x-4">
     <span>{site.hero.today}</span>
     <span class="-mx-1.5 flex flex-wrap gap-2">

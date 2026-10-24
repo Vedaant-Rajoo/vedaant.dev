@@ -29,7 +29,6 @@ const linksOf = (project: CollectionEntry<'projects'>, href: string | undefined)
         ]),
   ].filter((link) => link !== undefined);
 };
-// The line the 404 page shows for this page (navigation.ts) is its description.
 const [{ sub }] = words.filter(({ href }) => href === '/projects');
 ---
 
@@ -50,8 +49,6 @@ const [{ sub }] = words.filter(({ href }) => href === '/projects');
             {group.map((project) => {
               const { data } = project;
               const href = rowHref(project);
-              // The group gives the year; a contribution shows "Nov ’25 – now" from its start
-              // month above its links.
               const links = linksOf(project, href);
               return (
                 <li>

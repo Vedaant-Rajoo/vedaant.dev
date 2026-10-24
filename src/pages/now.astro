@@ -22,11 +22,9 @@ const sections = Array.from({ length: parts.length / 2 }, (_, i) => ({
 // "Older than 60 days", in whole days at build. updated is midnight UTC, so the note
 // shows from the 61st day after it, and never for a day in the future.
 const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
-// The line the 404 page shows for this page (navigation.ts) is its description.
 const [{ sub }] = nav.filter(({ href }) => href === '/now');
 ---
 
-{/* /now: the header, the labelled prose, then the live bento. */}
 <Base title="now" description={sub} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
@@ -44,8 +42,6 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
       ))
     }
   </dl>
-  {/* The live section. Its grid holds the one MVP cell; a later cell is its own component and data
-      file, placed beside it. */}
   <section class="flex flex-col gap-4">
     <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
@@ -61,8 +57,6 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
   section {
     margin-block-start: var(--sp-section);
   }
-  /* The grid: as many 20rem columns as fit, the cells stretched to fill them; one column at 390px
-     and below 20rem, the whole width. */
   .bento {
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 80), 100%), 1fr));
   }
@@ -91,7 +85,6 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
     flex: 1 1 max(calc(var(--sp-unit) * 44), 100% - calc(var(--sp-unit) * 28));
     min-width: 0;
   }
-  /* The rendered paragraphs carry no classes and no scope. */
   dd :global(p + p) {
     margin-block-start: var(--sp-row);
   }

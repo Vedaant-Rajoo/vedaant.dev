@@ -2,7 +2,6 @@ import type { CollectionEntry } from 'astro:content';
 
 type Project = CollectionEntry<'projects'>;
 
-// The /projects intro, as the owner's design writes it.
 export const intro =
   'Things I built, newest first. Rows with a case study open it; the rest go straight to the repo. Work done for an employer is described at the level I am allowed to.';
 
@@ -19,6 +18,5 @@ export const rowHref = (project: Project) =>
   (!project.data.confidential && project.data.repo) ||
   undefined;
 
-// Newest first, then by file name.
 export const newestFirst = (a: Project, b: Project) =>
   b.data.year - a.data.year || a.id.localeCompare(b.id);

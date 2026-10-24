@@ -14,8 +14,6 @@ import Base from '../layouts/Base.astro';
 export const getStaticPaths = (() =>
   import.meta.env.DEV ? [{ params: { fixture: '_states' } }] : []) satisfies GetStaticPaths;
 
-// The five widget states, simulated. Live, idle and offline show the committed snapshot's real
-// track; empty and loading get a value with nothing in it, so neither shows the build's own.
 const idle: Value = { ...snapshot, state: 'idle' };
 const none: Value = { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
 const states = [
