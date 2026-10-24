@@ -1,11 +1,12 @@
 import { defineCollection, reference } from 'astro:content';
 import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { https } from './data/site';
 
 const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
-// https:// only. z.url() alone also accepts javascript: and mailto: URLs, and https:host, which a
-// browser resolves against this site.
-const https = z.url({ protocol: /^https$/ }).startsWith('https://');
+// A quoted day: YAML reads a bare 2025-02-30 as a Date, already moved to 2 March, so only a
+// string can be checked against the calendar.
+const day = z.iso.date({ error: "Invalid date: expected a real day in quotes, as '2025-03-14'" });
 const fromFile = file('src/data/work.json');
 
 const work = defineCollection({
@@ -51,16 +52,13 @@ const projects = defineCollection({
       featured: z.boolean(),
       draft: z.boolean().optional(),
       repo: https.optional(),
-      // An npm package name, such as @scope/name.
-      package: z.string().min(1).optional(),
       confidential: z.boolean().optional(),
       // An open-source contribution to someone else's repo: the link to my PRs there, which puts the
       // project in the open source group, and the month I began.
       prs: https.optional(),
       start: month.optional(),
-      // A case study's dates (p13). Quote them: YAML reads an unquoted 2026-10-15 as a Date.
-      published: z.iso.date().optional(),
-      updated: z.iso.date().optional(),
+      published: day.optional(),
+      updated: day.optional(),
     })
     .refine(
       ({ published, updated }) =>
@@ -79,14 +77,8 @@ const writing = defineCollection({
     .strictObject({
       title: z.string().min(1),
       summary: z.string().min(1),
-      // A quoted day: YAML reads a bare 2025-02-30 as a Date, already moved to 2 March, so only a
-      // string can be checked against the calendar.
-      published: z.iso.date({
-        error: "Invalid date: expected a real day in quotes, as '2025-03-14'",
-      }),
-      updated: z.iso
-        .date({ error: "Invalid date: expected a real day in quotes, as '2025-03-14'" })
-        .optional(),
+      published: day,
+      updated: day.optional(),
       kind: z.enum(['post', 'note']),
       draft: z.boolean().default(false),
       project: reference('projects').optional(),
@@ -98,20 +90,14 @@ const writing = defineCollection({
     }),
 });
 
-// A quoted day, as writing's: YAML reads a bare 2025-02-30 as a Date, already moved to 2 March.
-const day = z.iso.date({ error: "Invalid date: expected a real day in quotes, as '2025-03-14'" });
-
-// One file, src/content/now/now.md (FR-NW-1): its body is /now's prose under "## label" headings
-// (S18); its frontmatter also feeds the home rows (p10 §05). Another file in the folder is not read.
+// One file, src/content/now/now.md: its body is /now's prose under "## label" headings; its
+// frontmatter also feeds the home rows. Another file in the folder is not read.
 const now = defineCollection({
   loader: glob({ pattern: 'now.md', base: 'src/content/now' }),
   schema: z.strictObject({
     updated: day,
-    // The city, shown on /now as "from <city>" (D4).
     from: z.string().trim().min(1),
-    // The home row's line.
     building: z.string().trim().min(1),
-    // The home "last watched" row (D11). The rating is out of 5 in half stars; none if unrated.
     watched: z.strictObject({
       title: z.string().trim().min(1),
       year: z.int().min(1000).max(9999),

@@ -6,11 +6,9 @@ import { site } from '../data/site';
 import '../styles/global.css';
 
 interface Props {
-  // The page's part of the title, before the full name (FR-DS-2, D5); the home page has none.
   title?: string;
   description: string;
   class: string;
-  // JSON-LD (FR-DS-3): a Person on the home page, an Article on a writing page, nothing elsewhere.
   schema?: Record<string, unknown>;
   // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
   // answers 200, so it asks not to be indexed.
@@ -19,7 +17,7 @@ interface Props {
 
 const { title, description, class: className, schema, noindex = false } = Astro.props;
 const fullTitle = title === undefined ? site.fullName : `${title} · ${site.fullName}`;
-// site is the production origin (D85), so a preview or dev build names production too. A build's
+// site is the production origin, so a preview or dev build names production too. A build's
 // Astro.url ends in a slash, as Pages serves each page at its directory URL.
 const canonical = noindex ? undefined : new URL(Astro.url.pathname, Astro.site).href;
 // A script ends at its first "</script", so the JSON keeps no "<" (JSON reads \u003c as "<").
@@ -39,7 +37,6 @@ const jsonLd =
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {canonical ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
-    {/* The feed (FR-DS-1, NFR-S1), named as production serves it, like the canonical URL. */}
     <link rel="alternate" type="application/rss+xml" title={`writing · ${site.fullName}`} href={new URL('/feed.xml', Astro.site).href} />
     {/* Chat apps read Open Graph; X reads og:title, og:description and og:image when its own tags
         are missing, so its card type is the one twitter: tag. */}
@@ -57,11 +54,11 @@ const jsonLd =
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="color-scheme" content="light dark" />
     {/* The browser reads theme-color outside CSS, where no token reaches: these repeat the
-        --c-bg hex fallbacks in tokens.css. FR-CM-3's hex grep skips these two lines. */}
+        --c-bg hex fallbacks in tokens.css. The gate's hex check skips these two lines. */}
     <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
     {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
-        first paint (FR-SH-3), and its theme-color meta applies whatever the OS prefers. */}
+        first paint, and its theme-color meta applies whatever the OS prefers. */}
     <script is:inline>
       try {
         const stored = localStorage.getItem('theme');

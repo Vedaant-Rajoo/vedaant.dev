@@ -6,16 +6,14 @@ import type { NowPlaying as Value } from '../data/now-playing';
 import snapshot from '../data/snapshots/lastfm.json';
 import Base from '../layouts/Base.astro';
 
-// FR-LV-2's /_states, in `astro dev` only. Astro skips a page file whose name starts with "_", so
-// this route gives the path, and a build gets none: dist/ has no file for it, as with D93's drafts.
-// ponytail: a top-level [param] route also catches every other one-segment path in dev (each still
+// The /_states page, in `astro dev` only. Astro skips a page file whose name starts with "_", so
+// this route gives the path, and a build gets none: dist/ has no file for it, as with drafts.
+// shortcut: a top-level [param] route also catches every other one-segment path in dev (each still
 // 404s, after a router warning), and as a second importer of Presence it reorders the home page's
 // inline CSS. A dev-only injectRoute in astro.config.mjs avoids both, if either starts to matter.
 export const getStaticPaths = (() =>
   import.meta.env.DEV ? [{ params: { fixture: '_states' } }] : []) satisfies GetStaticPaths;
 
-// The five states of FR-LV-2, simulated. Live, idle and offline show the committed snapshot's real
-// track; empty and loading get a value with nothing in it, so neither shows the build's own.
 const idle: Value = { ...snapshot, state: 'idle' };
 const none: Value = { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
 const states = [
@@ -69,7 +67,7 @@ const widgets = [
   </div>
   {/* Each widget's border-box height as laid out now, and again whenever that box changes size: a
       resize, a font arriving, larger text, zoom. A widget is its column's last element, so the /now
-      cell is measured whole, its credit included ("the bento cell its full height", FR-LV-3).
+      cell is measured whole, its credit included ("the bento cell its full height").
       Rounded to 0.001px, finer than any layout unit, so two heights that differ never print the
       same. Inline, so it exists only in this page's HTML: Astro would emit a processed <script>
       into dist/_astro/ although the page has no path. */}

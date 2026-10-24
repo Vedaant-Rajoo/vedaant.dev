@@ -1,18 +1,17 @@
 ---
-// The body is the slot, and nothing else may be passed (the S8b → S8c rule).
 interface Props {
   children: unknown;
 }
 ---
 
-{/* A Markdown body (p13, p15): global.css styles it under .prose, because the rendered elements
+{/* A Markdown body: global.css styles it under .prose, because the rendered elements
     carry no classes. The empty polite region after it announces a copy (below); it is in the HTML
     from the start, because a screen reader registers a live region most reliably that way. */}
 <div class="prose"><slot /></div>
 <span class="sr-only" aria-live="polite"></span>
 
 <script>
-  // FR-WR-3: a copy button on each code block, added here, so without JS the block is a plain
+  // A copy button on each code block, added here, so without JS the block is a plain
   // <pre>. It copies the <code>'s text exactly, reads "copied" or "failed" for 1.5 s, and the first
   // Prose's region announces the result. A browser without the Clipboard API, or one that does not
   // keep the button's room free (global.css), gets no button: the code stays selectable.
@@ -24,14 +23,13 @@ interface Props {
     navigator.clipboard &&
     matchMedia('(scripting: enabled)').matches
   ) {
-    // The page's latest click owns the region; each button shows its own latest result.
     let latest = 0;
     let announcer: HTMLButtonElement | undefined;
     for (const pre of blocks) {
       const button = document.createElement('button');
       button.type = 'button';
       // At rest the visible mark is a copy glyph, hidden from the name (as the footer's arrows
-      // are). "copied" and "failed" are the words on screen, and the name holds them (WCAG 2.5.3).
+      // are). "copied" and "failed" are the words on screen, and the name holds them.
       const label = (text: string) => {
         if (text === 'copy') {
           button.replaceChildren();

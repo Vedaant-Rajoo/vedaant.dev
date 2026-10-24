@@ -5,15 +5,15 @@ year: 2026
 stack: [Astro, TypeScript, Tailwind CSS]
 status: active
 featured: true
-draft: true
 repo: https://github.com/vedaant-rajoo/vedaant.dev
+published: "2026-10-23"
 ---
 
 ## The problem
 
 I needed a site that says what I do and where I have worked within ten seconds on a phone, keeps my résumé and email within two clicks of every page, and shows what I am building now without becoming a chore. I also wanted it to show how I like to build: measured, text first, and complete with JavaScript turned off.
 
-The design is called Ledger. Separation comes from 1px lines and whitespace instead of cards or shadows. There is no icon set, only text glyphs, and green marks live state and nothing else. The bars were written down before the first commit. LCP at or under 1.2 s in the lab, zero layout shift including live-state changes, at most 5 KB of gzipped JavaScript per page, two font requests on first paint, and Lighthouse at 95 or more in all four categories. Zero axe violations, contrast measured in both themes, every animation gone under reduced motion, no horizontal scroll at 320 px, and 44 px targets. No secrets in the build output, a CSP without unsafe-inline for scripts, zero cookies, and a new project live as one file in under five minutes.
+The design is called Ledger. Separation comes from 1px lines and whitespace instead of cards or shadows. There is no icon set, only text glyphs, and green marks live state and nothing else. The bars were written down before the first commit. LCP at or under 1.8 s on Lighthouse's mobile test, zero layout shift including live-state changes, at most 5 KB of gzipped JavaScript per page, two font requests on first paint, and Lighthouse at 95 or more in all four categories. Zero axe violations, contrast measured in both themes, every animation gone under reduced motion, no horizontal scroll at 320 px, and 44 px targets. No secrets in the build output, a CSP without unsafe-inline for scripts, zero cookies, and a new project live as one file in under five minutes.
 
 ## My role
 
@@ -117,13 +117,13 @@ async function load(): Promise<NowPlaying> {
 
 ## Trade-offs
 
-Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. The repository is private while the site is built, so the source links are dead until launch. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
+Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. The repository stayed private while the site was built, so its source links were dead until launch. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
 
 ## Outcome
 
-The repository started on 10 October 2026. Six days and 36 commits later it had the home page, `/projects`, the 404 page, the writing collection with its newest rows on the home page, and this case-study page, and every push deployed a preview at ledger-mvp.vedaantrajoo.com. Each page ships 1,702 bytes of gzipped JavaScript (1,867 on the 404 page) against the 5,120-byte gate, the stylesheet is about 5 KB gzipped, and the three font files total 73,944 bytes of the 90 KB budget, with only the sans and the mono requested on first paint. The build passes with Last.fm unreachable. Eleven of twenty components and seven of twelve dependencies are in use. Lighthouse, axe and the field numbers come at a later step, so there are none to report yet. The site will live at vedaantrajoo.com.
+The repository started on 10 October 2026. Two weeks and 80 commits later it had the home page, `/projects` with two case studies, the writing collection with its first post, `/now` and the 404 page, and every push to `main` deploys to vedaantrajoo.com. An ordinary page ships 4,199 bytes of gzipped JavaScript against the 5,120-byte gate, a page of prose 4,715 and the 404 page 4,364. The stylesheet is about 6.6 KB gzipped and inlined into each page. The three font files total 55,148 bytes of the 90 KB budget, after the serif was cut from the full latin set to the five letters of its one word, 3 KB of 22. The build passes with every remote host unreachable. Fourteen of twenty components and eight of twelve dependencies are in use. On Lighthouse's mobile test every page scores 100 in all four categories, with LCP at 1.36 s (1.51 s on the post) and zero layout shift, and axe finds no violations in either theme. Field numbers come once the site has real visitors. The site lives at vedaantrajoo.com.
 
 ## Links
 
-- Source: https://github.com/vedaant-rajoo/vedaant.dev (private until launch)
+- Source: https://github.com/vedaant-rajoo/vedaant.dev
 - Last.fm API: https://www.last.fm/api/show/user.getRecentTracks

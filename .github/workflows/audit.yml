@@ -1,0 +1,29 @@
+# Runs the launch audits (scripts/audit.sh: Lighthouse, LCP, CLS, axe) on pull requests to main.
+# Linux, since the audits need Chrome and a matching chromedriver, which the runner image ships.
+name: audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.14.1
+      - run: google-chrome --version && "$CHROMEWEBDRIVER/chromedriver" --version
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - run: CHROMEDRIVER="$CHROMEWEBDRIVER/chromedriver" sh scripts/audit.sh

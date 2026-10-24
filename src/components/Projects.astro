@@ -1,16 +1,13 @@
 ---
 import { getCollection } from 'astro:content';
-import { newestFirst, rowHref, tile } from '../data/projects';
+import { initials } from '../data/format';
+import { newestFirst, rowHref } from '../data/projects';
 import Chip from './Chip.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
 
-// No props: an attribute passed to Projects fails the type check (the S8b → S8c rule).
-type Props = Record<string, never>;
-
 const projects = await getCollection('projects');
-// The four newest featured rows (the owner's home target, past D175's two); archived projects
-// never show here (p10 §04), and the rest wait on /projects.
+// The four newest featured rows; archived projects never show here, and the rest wait on /projects.
 const rows = projects
   .filter(({ data }) => data.featured && data.status !== 'archived')
   .sort(newestFirst)
@@ -25,7 +22,7 @@ const rows = projects
     {
       rows.map(({ data, href }) => (
         <li>
-          <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={href}>
+          <Row tile={initials(data.title)} title={data.title} sub={data.summary} href={href}>
             <Fragment slot="chips">
               {data.stack.map((name) => (
                 <>

@@ -5,7 +5,7 @@ import { absolute, item, rss } from '../data/feed';
 import { site } from '../data/site';
 import { intro, pieces } from '../data/writing';
 
-// FR-DS-1: every piece pieces() lists, so no draft outside astro dev (FR-WR-4), newest first, each
+// Every piece pieces() lists, so no draft outside astro dev, newest first, each
 // with the whole body its page shows: render() and <Content />, as the page renders it, images
 // included. astro/container renders a component to a string.
 export const GET: APIRoute = async ({ site: origin }) => {

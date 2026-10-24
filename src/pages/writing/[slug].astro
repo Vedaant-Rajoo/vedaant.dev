@@ -1,10 +1,12 @@
 ---
 import { getEntry, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import Arrow from '../../components/Arrow.astro';
 import Chip from '../../components/Chip.astro';
 import Prose from '../../components/Prose.astro';
 import Row from '../../components/Row.astro';
-import { rowHref, tile } from '../../data/projects';
+import { day, initials } from '../../data/format';
+import { rowHref } from '../../data/projects';
 import { site } from '../../data/site';
 import { pieces } from '../../data/writing';
 import Base from '../../layouts/Base.astro';
@@ -19,27 +21,16 @@ export const getStaticPaths = (async () => {
 
 const { piece, previous, next } = Astro.props;
 const { data } = piece;
-// Match the case-study page's one-h1 guard, including raw HTML but excluding comments and code.
 if (/<h1[\s/>]/i.test((piece.rendered?.html ?? '').replace(/<!--[\s\S]*?-->/g, ''))) {
   throw new Error(`${piece.filePath}: the body has an h1; start its headings at ##`);
 }
+// writing/index.astro fails the build on a missing project.
 const project = data.project && (await getEntry(data.project));
-if (data.project && !project) {
-  throw new Error(
-    `${piece.filePath}: writing "${piece.id}" references missing project "${data.project.id}"`,
-  );
-}
 const { Content } = await render(piece);
-// ponytail: English Markdown whitespace tokens, including markup/code (D145). If rich content or
+// shortcut: English Markdown whitespace tokens, including markup/code. If rich content or
 // another writing system needs a visible-text count, count parsed rendered text instead.
 const minutes = Math.max(1, Math.ceil((piece.body ?? '').split(/\s+/).filter(Boolean).length / 200));
-const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
-const day = (iso: string) => {
-  const date = new Date(iso);
-  return `${date.getUTCDate()} ${month.format(date)} ${date.getUTCFullYear()}`;
-};
-const link =
-  'flex min-h-11 min-w-11 flex-1 basis-48 items-center underline decoration-line-2 transition-colors hover:decoration-fg';
+const link = 'target link flex-1 basis-48';
 ---
 
 <Base
@@ -51,7 +42,6 @@ const link =
     headline: data.title,
     description: data.summary,
     datePublished: data.published,
-    // As the meta line: only an update after the day it was published.
     dateModified: data.updated && data.updated > data.published ? data.updated : undefined,
     author: { '@type': 'Person', name: site.fullName, url: Astro.site?.href },
   }}
@@ -73,7 +63,7 @@ const link =
       project && (
         <section aria-label="Related project" class="related border-t border-line pt-6">
           <Row
-            tile={tile(project.data.title)}
+            tile={initials(project.data.title)}
             title={project.data.title}
             sub={project.data.summary}
             href={rowHref(project)}
@@ -92,12 +82,12 @@ const link =
         <nav aria-label="Other writing" class="piece-links meta flex flex-wrap gap-2 border-t border-line pt-6 text-sm">
           {previous && (
             <a href={`/writing/${previous.id}`} class={link}>
-              <span><span aria-hidden="true" class="inline-block font-sans">←</span> {previous.data.title}</span>
+              <span><Arrow>←</Arrow> {previous.data.title}</span>
             </a>
           )}
           {next && (
             <a href={`/writing/${next.id}`} class={`${link} justify-end text-right`}>
-              <span>{next.data.title} <span aria-hidden="true" class="inline-block font-sans">→</span></span>
+              <span>{next.data.title} <Arrow>→</Arrow></span>
             </a>
           )}
         </nav>
@@ -114,7 +104,7 @@ const link =
   .piece-links {
     margin-block-start: var(--sp-section);
   }
-  /* ponytail: internal links are root-relative (D145); absolute web links are outbound. If
+  /* shortcut: internal links are root-relative; absolute web links are outbound. If
      absolute internal URLs are needed, classify against the configured site origin instead. */
   .writing-post :global(.prose a:is([href^="https://"], [href^="http://"], [href^="//"]))::after {
     content: ' ↗' / '';

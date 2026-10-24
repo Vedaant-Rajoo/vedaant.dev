@@ -2,8 +2,8 @@
 import { getCollection, getEntry } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
+import { dayMonth, fullDay, initials } from '../../data/format';
 import { words } from '../../data/navigation';
-import { tile } from '../../data/projects';
 import { intro, pieces } from '../../data/writing';
 import Base from '../../layouts/Base.astro';
 
@@ -17,9 +17,6 @@ for (const piece of await getCollection('writing')) {
 }
 const all = await pieces();
 const groups = Map.groupBy(all, ({ data }) => data.published.slice(0, 4));
-const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' });
-const long = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
-// The line the 404 page shows for this page (navigation.ts) is its description.
 const [{ sub }] = words.filter(({ href }) => href === '/writing');
 ---
 
@@ -28,7 +25,7 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
     writing <span class="meta text-base font-normal text-fg-3">{all.length}</span>
   </h1>
   <p class="mt-3 text-fg-2">
-    {intro} <a href="/feed.xml" class="underline decoration-line-2 transition-colors hover:decoration-fg">rss</a>
+    {intro} <a href="/feed.xml" class="link">rss</a>
   </p>
   <div class="flex flex-col gap-6">
     {
@@ -40,13 +37,12 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
           {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
           <ol role="list" aria-labelledby={`year-${year}`} class="divide-y divide-line wrap-anywhere">
             {group.map(({ id, data }) => {
-              const day = new Date(data.published);
               return (
                 <li>
-                  <Row tile={tile(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
+                  <Row tile={initials(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
                     <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
-                    <abbr title={long.format(day)} class="no-underline whitespace-nowrap">
-                      <time datetime={data.published}>{day.getUTCDate()} {month.format(day)}</time>
+                    <abbr title={fullDay(data.published)} class="no-underline whitespace-nowrap">
+                      <time datetime={data.published}>{dayMonth(data.published)}</time>
                     </abbr>
                   </Row>
                 </li>

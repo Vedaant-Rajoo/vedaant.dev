@@ -1,5 +1,3 @@
-// The owner's latest Last.fm track, as the now-playing row shows it: read at build (S21a) and in
-// the browser (S24).
 export interface NowPlaying {
   state: 'live' | 'idle' | 'empty';
   track: string | null;
@@ -10,9 +8,9 @@ export interface NowPlaying {
   artwork?: string | null;
 }
 
-// user.getRecentTracks needs no authentication, and the key ships in the page (AGENTS.md, D92).
+// user.getRecentTracks needs no authentication, and the key ships in the page.
 const user = 'newedia';
-const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only (D92)
+const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
 
 export const recentTracks = `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
   method: 'user.getrecenttracks',
@@ -34,7 +32,7 @@ interface Track {
 const text = (value: unknown) => (typeof value === 'string' && value !== '' ? value : null);
 
 // The song alone: Last.fm keeps a featured artist in the title, "Song (feat. X)" or "Song [ft. X]".
-// ponytail: one bracket level; "(feat. A (B))" leaves a stray ")". Add a rule here per new pattern.
+// shortcut: one bracket level; "(feat. A (B))" leaves a stray ")". Add a rule here per new pattern.
 const song = (value: unknown) =>
   text(
     typeof value === 'string'
@@ -68,10 +66,9 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
     return null;
   }
   const live = first['@attr']?.nowplaying === 'true';
-  // Last.fm sends a scrobble's Unix time in seconds, as a string.
   const uts = first.date?.uts;
   const seconds = typeof uts === 'string' || typeof uts === 'number' ? Number(uts) : Number.NaN;
-  // Coarsened to the minute (FR-LV-5, NFR-X5); an invalid date when the time is unusable.
+  // Coarsened to the minute, for privacy; an invalid date when the time is unusable.
   const at = new Date(Math.floor((live ? now : seconds * 1000) / 60_000) * 60_000);
   if (!(live || seconds > 0) || Number.isNaN(at.getTime())) {
     return null;
@@ -90,8 +87,7 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
 // track, as a single's is, so the name is not read twice.
 export const shownAlbum = ({ track, album }: NowPlaying) => (album === track ? null : album);
 
-// Build-time age for the music row and /now cell. Under a minute, or ahead of the build's clock,
-// reads "1m ago"; the hub (S24) recomputes it.
+// The age the music widgets show. Under a minute, or ahead of the clock, reads "1m ago".
 export function ago(time: string) {
   const minutes = Math.max(1, Math.floor((Date.now() - Date.parse(time)) / 60_000));
   if (minutes < 60) {
@@ -103,4 +99,36 @@ export function ago(time: string) {
   }
   const days = Math.floor(hours / 24);
   return days < 365 ? `${days}d ago` : `${Math.floor(days / 365)}y ago`;
+}
+
+// The text of the music row and the /now cell, at build and in the hub. Artist and album each sit
+// between U+2068 and U+2069, so a right-to-left name reorders neither the other nor the separators,
+// and a closing space sets the text apart from the time. The /now cell starts the artist on a line
+// of its own, so only the row passes a separator as the lead.
+export function nowPlayingText(state: string, value: NowPlaying, lead: string) {
+  const { track, artist, at } = value;
+  const album = shownAlbum(value);
+  const after = album ? ` · \u2068${album}\u2069` : '';
+  const rest = artist ? `${lead}\u2068${artist}\u2069${after} ` : '';
+  const time = state === 'live' ? 'now' : (at && ago(at)) || '';
+  return { track: track ?? '—', rest, time };
+}
+
+// The hero's presence line: no track reads empty, and live without an artist reads idle.
+export function presenceState(state: string, { track, artist }: NowPlaying) {
+  if (!track?.trim()) {
+    return 'empty';
+  }
+  return state === 'live' && !artist?.trim() ? 'idle' : state;
+}
+
+export function presenceText(state: string, { track, artist }: NowPlaying) {
+  const shown = state !== 'empty' && state !== 'loading';
+  const live = state === 'live';
+  const idle = shown ? 'not listening — last: ' : '—';
+  return {
+    state: live ? 'listening — ' : idle,
+    track: shown ? (track ?? '') : '',
+    artist: live ? ` · \u2068${artist}\u2069` : '',
+  };
 }

@@ -99,7 +99,7 @@ test('url is a normalized https link to www.last.fm without credentials', () => 
   }
 });
 
-// The snapshot is S21a's fallback: rebuilt as a Last.fm body, it must map back to itself.
+// The snapshot is the build's fallback: rebuilt as a Last.fm body, it must map back to itself.
 test('the committed snapshot is an idle value the mapping would produce', () => {
   const body = recent({
     name: snapshot.track,

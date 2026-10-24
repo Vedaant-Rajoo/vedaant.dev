@@ -1,10 +1,9 @@
 import { getCollection } from 'astro:content';
 
-// The /writing intro, as p15 writes it (D38).
 export const intro =
   'Posts are long and sourced; notes are short and sometimes wrong. Both are dated.';
 
-// Every piece, newest first, then by file name; a draft only in `astro dev` (FR-WR-4). Every list
+// Every piece, newest first, then by file name; a draft only in `astro dev`. Every list
 // of writing (home, /writing, the post pages, the feed, the sitemap) comes from here, so a draft
 // cannot leak through one of them and not the others.
 export const pieces = async () =>

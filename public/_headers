@@ -1,4 +1,4 @@
-# Response headers for everything Pages serves (NFR-X3). The script-src hash is the theme
+# Response headers for everything Pages serves. The script-src hash is the theme
 # restore's in Base.astro as built; scripts/csp-hash.ts fails when the two differ. Beyond 'self',
 # the hub reads Last.fm, and the artwork lookup MusicBrainz and Cover Art Archive, whose images
 # redirect through archive.org to its mirrors.
@@ -8,10 +8,6 @@
   X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=31536000
 
-# Vite and the Fonts API name these files after their content (NFR-P8, D109).
+# Vite and the Fonts API name these files after their content.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
-
-# The ledger_mvp preview's custom domain (D86, D89). Pages marks only *.pages.dev previews.
-https://ledger-mvp.vedaantrajoo.com/*
-  X-Robots-Tag: noindex

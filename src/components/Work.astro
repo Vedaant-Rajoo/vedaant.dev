@@ -1,21 +1,15 @@
 ---
 import { getCollection } from 'astro:content';
+import { initials } from '../data/format';
+import Arrow from './Arrow.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
 
-// No props: an attribute passed to Work fails the type check (the S8b → S8c rule).
-type Props = Record<string, never>;
-
-// The tile: the initials of the employer's first two words, or the first two letters of one word.
-const monogram = (employer: string) => {
-  const [first = employer, second] = employer.split(/[\s-]+/).filter(Boolean);
-  return (second ? first[0] + second[0] : first.slice(0, 2)).toUpperCase();
-};
 
 // Astro returns entries sorted by id. Newest first: by start, then by end, a role without an end first.
 const rows = (await getCollection('work'))
   .map(({ data }) => ({
-    tile: monogram(data.employer),
+    tile: initials(data.employer).toUpperCase(),
     title: data.employer,
     sub: data.role,
     start: data.start,
@@ -26,8 +20,8 @@ const rows = (await getCollection('work'))
     (a, b) =>
       b.start.localeCompare(a.start) || (b.end ?? '9999-12').localeCompare(a.end ?? '9999-12'),
   );
-// Every role without an end shows, and so do the newest two ended roles (the owner's home target,
-// past D175). The ended roles after the last of those fold behind one "earlier" row if there are
+// Every role without an end shows, and so do the newest two ended roles (the owner's home target).
+// The ended roles after the last of those fold behind one "earlier" row if there are
 // two or more: one alone saves no space.
 const open = rows.filter((row) => row.end === null).length;
 const keep = rows.findLastIndex((row, i) => i < 2 + open || row.end === null);
@@ -61,8 +55,8 @@ const shown = rows.slice(0, rows.length - earlier.length);
             >
               {' '}
               <span class="whitespace-nowrap">
-                · <span class="group-open:hidden">more <span aria-hidden="true" class="inline-block font-sans">→</span></span>
-                <span class="hidden group-open:inline">fewer <span aria-hidden="true" class="inline-block font-sans">←</span></span>
+                · <span class="group-open:hidden">more <Arrow>→</Arrow></span>
+                <span class="hidden group-open:inline">fewer <Arrow>←</Arrow></span>
               </span>
             </Row>
             {/* biome-ignore lint/a11y/noRedundantRoles: as above. */}

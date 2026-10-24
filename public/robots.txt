@@ -1,4 +1,4 @@
-# Every crawler may read every page (FR-DS-1). The sitemap URL is site in astro.config.mjs (D85)
+# Every crawler may read every page. The sitemap URL is site in astro.config.mjs
 # plus the index file @astrojs/sitemap writes there; change them together.
 User-agent: *
 Allow: /
