@@ -6,8 +6,8 @@ site lives at https://vedaantrajoo.com; `vedaant.dev` is only the project's name
 
 ## Run locally
 
-Use Bun 1.4.2 and Node 24.14.1, the versions [deployment CI](.github/workflows/deploy.yml)
-pins. Nothing in the repository selects them for you.
+Use Bun 1.4.2 and Node 24.14.1, the versions [the gate](.github/workflows/gate.yml)
+and the Cloudflare build pin. Nothing in the repository selects them for you.
 
 ```sh
 bun --version
@@ -241,26 +241,38 @@ refreshes the snapshot on a schedule.
 
 ## Deployment and secrets
 
-[.github/workflows/deploy.yml](.github/workflows/deploy.yml) runs on every push
-to `main`. On Ubuntu it does a frozen install, `check` and `build`, then uses
-Wrangler 4.150.0 to upload `dist/` to the `vedaant-dev` Cloudflare Pages Direct
-Upload project. `main` is that project's production branch, so each push
-deploys https://vedaantrajoo.com. Deploys queue rather than overlap. A failed
-check or build blocks the upload, and a failed upload leaves the previous
-deployment live. Branch previews are off for now, and there is no scheduled or
-manual deploy.
+The `vedaant-dev` Cloudflare Pages project is connected to this repository and
+builds every push itself, with no GitHub Actions deploy. Its build settings,
+kept in the Cloudflare dashboard, are:
+
+- Build command: `bun install --frozen-lockfile && bun run build`
+- Build output directory: `dist`
+- Environment variables: `BUN_VERSION=1.4.2`, `NODE_VERSION=24.14.1` and
+  `SKIP_DEPENDENCY_INSTALL=1`
+
+`main` is the production branch, so each push to it deploys
+https://vedaantrajoo.com. A failed build leaves the previous deployment live.
+Cloudflare does not wait for the gate or audit checks, so `main` should change
+only through pull requests that require them.
+
+Every other branch gets a preview at `<branch>.vedaant-dev.pages.dev`. A
+Cloudflare Access policy limits previews to the owner, and Cloudflare marks them
+`noindex`. Cloudflare keeps a branch's previews after the branch is deleted, so
+[.github/workflows/previews.yml](.github/workflows/previews.yml) deletes them
+when a branch is deleted. GitHub runs it from `main`'s copy of the file, so it
+cleans up only branches deleted after it lands there.
 
 The site has no adapter, Worker, Pages Function or server endpoint. Only the
-upload step gets these Actions secrets:
+preview cleanup gets these Actions secrets:
 
-- `CLOUDFLARE_API_TOKEN`: permits the Pages upload.
+- `CLOUDFLARE_API_TOKEN`: permits deleting Pages deployments.
 - `CLOUDFLARE_ACCOUNT_ID`: the account the token belongs to; not a credential.
 
 Never put either in source or build environment variables. The site has no
 application secrets. A future server secret must go through `astro:env/server`,
 because `import.meta.env` inlines values into the build.
 
-### Rotate the deployment token
+### Rotate the cleanup token
 
 Keep the token at least scope, expiring within a year, with a reminder before
 it does.
@@ -271,11 +283,10 @@ it does.
 2. Set its expiry to a year or less, record it privately and set a reminder.
 3. Paste it straight into GitHub's Settings > Secrets and variables > Actions >
    `CLOUDFLARE_API_TOKEN`. Cloudflare shows it only once.
-4. Once the next deploy succeeds, revoke the old token. If it fails, check the
-   account, permission and expiry.
+4. Once the next preview cleanup succeeds, revoke the old token. If it fails,
+   check the account, permission and expiry.
 
-See Cloudflare's guides to [token creation and TTL](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/)
-and [Pages uploads from CI](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+See Cloudflare's guide to [token creation and TTL](https://developers.cloudflare.com/fundamentals/api/get-started/create-token/).
 
 ## Quality checks and maintenance
 

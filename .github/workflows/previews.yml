@@ -1,0 +1,42 @@
+# Cloudflare keeps a branch's preview deployments, and its <branch>.vedaant-dev.pages.dev alias,
+# after the branch is deleted. This deletes them when the branch goes. GitHub runs it from main's
+# copy of this file.
+name: previews
+
+on:
+  delete:
+
+permissions: {}
+
+jobs:
+  cleanup:
+    if: github.event.ref_type == 'branch' && github.event.ref != 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          # The branch name is user input: read it from the environment, never inline it.
+          BRANCH: ${{ github.event.ref }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/vedaant-dev/deployments"
+          auth="Authorization: Bearer $CLOUDFLARE_API_TOKEN"
+          ids="$RUNNER_TEMP/ids"
+          : > "$ids"
+          # Collect every page first: deleting while paging would shift later pages.
+          page=1
+          while :; do
+            body=$(curl -sS --fail-with-body -H "$auth" "$api?env=preview&page=$page") || { echo "$body"; exit 1; }
+            jq -r --arg branch "$BRANCH" \
+              '.result[] | select(.deployment_trigger.metadata.branch == $branch) | .id' <<< "$body" >> "$ids"
+            [ "$page" -lt "$(jq '.result_info.total_pages // 1' <<< "$body")" ] || break
+            page=$((page + 1))
+          done
+          echo "Deleting $(wc -l < "$ids") preview deployments of $BRANCH"
+          # force: the branch's latest deployment holds its alias and is refused without it.
+          while read -r id; do
+            curl -sS --fail-with-body -X DELETE -H "$auth" "$api/$id?force=true"
+            echo
+          done < "$ids"
