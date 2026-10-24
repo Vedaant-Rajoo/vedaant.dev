@@ -15,7 +15,12 @@ const result = z
       .object({
         name: z.string().min(1),
         role: z.string().trim().min(1),
-        accent: z.string().regex(/^\S+$/, 'Invalid string: expected one word').optional(),
+        // At most one word in the serif, drawn from the only glyphs its subset file holds
+        // (astro.config.mjs): a new word needs a new subset.
+        accent: z
+          .string()
+          .regex(/^[emsty]+$/, 'Invalid string: expected one word of e, m, s, t and y')
+          .optional(),
         mark: z.string().trim().min(1),
         today: z.string().trim().min(1),
       })

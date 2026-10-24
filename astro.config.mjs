@@ -59,6 +59,10 @@ export default defineConfig({
       // The hero's one serif word (licence in src/assets/fonts/OFL-instrument-serif.txt).
       // optional: used only if it is ready at once and never swapped in, so a late font leaves the
       // word in the sans and nothing moves. No fallbacks: tokens.css puts the sans after it.
+      // The file holds only the glyphs of hero.accent, "systems" (3 KB, not the latin file's
+      // 22 KB, so less of the first view's bandwidth); site.ts rejects an accent it cannot draw.
+      // Made from fontsource 5.3.0's latin 400 italic with fonttools:
+      // pyftsubset <latin file> --text=systems --flavor=woff2 --name-IDs='*'
       provider: fontProviders.local(),
       name: 'Instrument Serif',
       cssVariable: '--ff-instrument-serif',
@@ -67,7 +71,7 @@ export default defineConfig({
       options: {
         variants: [
           {
-            src: ['./src/assets/fonts/instrument-serif-latin-400-italic.woff2'],
+            src: ['./src/assets/fonts/instrument-serif-systems-400-italic.woff2'],
             weight: '400',
             style: 'italic',
           },
