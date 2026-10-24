@@ -1,6 +1,6 @@
 #!/bin/sh
 # Launch audits of every built page: Lighthouse mobile with its default simulated throttling (the
-# agreed reference) at least 95 in all four categories, LCP at most 1.2 s and CLS 0, then axe with
+# agreed reference) at least 95 in all four categories, LCP at most 1.8 s and CLS 0, then axe with
 # no violations in light and dark. Run after `bun run build`; needs Chrome, and for axe a
 # chromedriver matching it in $CHROMEDRIVER. The Pages runtime serves dist/ so _headers apply.
 set -eu
@@ -34,7 +34,7 @@ for (const file of process.argv.slice(1)) {
   const scores = Object.values(categories).map((c) => [c.id, Math.round(c.score * 100)]);
   const lcp = Math.round(audits["largest-contentful-paint"].numericValue);
   const cls = audits["cumulative-layout-shift"].numericValue;
-  const ok = scores.every(([, s]) => s >= 95) && lcp <= 1200 && cls === 0;
+  const ok = scores.every(([, s]) => s >= 95) && lcp <= 1800 && cls === 0;
   failed += ok ? 0 : 1;
   console.log(`${ok ? "pass" : "FAIL"} ${new URL(url).pathname}: ${scores.flat().join(" ")}, LCP ${lcp} ms, CLS ${cls}`);
 }

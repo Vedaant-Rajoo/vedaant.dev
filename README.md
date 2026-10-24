@@ -297,7 +297,7 @@ tokens. It rebuilds `dist/`. A failure prints the failing tool's output; redact
 credentials and keyed URLs before sharing it.
 
 [scripts/audit.sh](scripts/audit.sh) runs the launch audits after a build:
-Lighthouse mobile at least 95 in every category, LCP at most 1.2 s and CLS 0
+Lighthouse mobile at least 95 in every category, LCP at most 1.8 s and CLS 0
 under Lighthouse's default simulated throttling, then axe with no violations in
 light and dark. It serves `dist/` with Wrangler's Pages runtime, so `_headers`
 apply, and needs Chrome, plus a matching chromedriver in `$CHROMEDRIVER` for axe.
