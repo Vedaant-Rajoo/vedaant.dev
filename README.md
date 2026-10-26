@@ -48,8 +48,9 @@ Other scripts in [package.json](package.json):
 ## Edit content
 
 Content lives in these files, never in components.
-[src/content.config.ts](src/content.config.ts) validates collection fields and
-[src/data/site.ts](src/data/site.ts) validates site settings.
+[src/content.config.ts](src/content.config.ts) validates collection fields,
+[src/data/site.ts](src/data/site.ts) validates site settings and
+[src/data/uses.ts](src/data/uses.ts) validates the uses rows.
 
 | Content | File |
 | --- | --- |
@@ -57,6 +58,8 @@ Content lives in these files, never in components.
 | Posts and notes | `src/content/writing/*.md` |
 | Now page, city, building and watched rows | [src/content/now/now.md](src/content/now/now.md) |
 | Work history | [src/data/work.json](src/data/work.json) |
+| Uses rows | [src/data/uses.json](src/data/uses.json) |
+| Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
 | Name, hero, time zone, email, links and résumé date | [src/data/site.json](src/data/site.json) |
 | Résumé PDF | [public/resume.pdf](public/resume.pdf) |
 | Offline music value | [src/data/snapshots/lastfm.json](src/data/snapshots/lastfm.json) |
@@ -144,7 +147,7 @@ the 404 or dev-only `/_states`. Every page head and the footer link the feed.
 If the origin ever changes, update `site`, the sitemap's `customPages` and
 [public/robots.txt](public/robots.txt) together.
 
-### Now, work and résumé
+### Now, work, uses and résumé
 
 - `now.md` is the only file read from its directory. Its frontmatter requires a
   quoted `updated`, `from` (the city), `building`, and `watched` with `title`, an
@@ -163,6 +166,19 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
 - When work changes, replace `public/resume.pdf` and set `resume.updated` in
   `site.json` to the PDF's date. `/resume` redirects to `/resume.pdf`. The build
   checks that the file exists, not that it is current.
+- `uses.json` is a nonempty array of `/uses` rows. Each needs `group`
+  (`hardware`, `editor and shell` or `desktop`, shown in that order), `name`
+  and `note`; `url` (an `https://` link on the name) and `retired` (a year,
+  which strikes the row through) are optional. Rows keep their file order.
+  Retire a row instead of deleting it. A new group needs a line in
+  [src/data/uses.ts](src/data/uses.ts). Keep hex colour codes out of this file:
+  the gate allows them only under `src/content/`.
+- `uses.md` is the only file read from its directory. Its frontmatter requires
+  a quoted `updated` day and `summary`, the intro under the heading and the
+  page's description. Its body is the colophon and must not be empty. Bump
+  `updated` when you edit either file. Tailwind scans both files, so after an
+  edit compare each page's `<style>` with the previous build, as for the music
+  snapshot.
 
 ## Music
 

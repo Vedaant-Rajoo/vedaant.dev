@@ -1,0 +1,82 @@
+---
+import { getEntry, render } from 'astro:content';
+import Arrow from '../components/Arrow.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { day } from '../data/format';
+import { groups } from '../data/uses';
+import Base from '../layouts/Base.astro';
+
+// glob() only warns when the file is gone, and an empty body would leave the colophon blank, so
+// both fail the build instead, naming the file. Comments are dropped first, as on /now.
+const uses = await getEntry('uses', 'uses');
+if (uses === undefined) {
+  throw new Error('src/content/uses/uses.md is missing');
+}
+if (!uses.body?.replace(/<!--[\s\S]*?-->/g, '').trim()) {
+  throw new Error('src/content/uses/uses.md has no colophon: its body is empty');
+}
+const { updated, summary } = uses.data;
+const { Content } = await render(uses);
+---
+
+<Base title="uses" description={summary} class="max-w-col">
+  <header class="flex flex-col gap-3">
+    <h1 class="text-2xl font-semibold">uses</h1>
+    <p class="meta text-xs text-fg-3">
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time> · retired things stay, struck through
+    </p>
+    <p class="text-fg-2">{summary}</p>
+  </header>
+  {
+    groups.map(({ group, rows }) => (
+      <section class="flex flex-col gap-6">
+        <SectionLabel label={group} />
+        {/* A pair is one line: the name in a 220px column and the note beside it, or under it when
+            that leaves the note less than 192px. A long word breaks rather than widen the page. A
+            linked name keeps its whole 44px target in the flow, so a wrapped one pushes its note
+            down instead of covering it. */}
+        <dl class="flex flex-col gap-3">
+          {rows.map(({ name, note, url, retired }) => {
+            const label = retired ? <s>{name}</s> : name;
+            return (
+              <div class="flex flex-wrap items-baseline gap-x-4">
+                <dt class:list={['min-w-0 shrink-0 basis-55 font-medium wrap-anywhere', retired && 'text-fg-2']}>
+                  {url ? (
+                    <a href={url} class="target link">
+                      <span>{label} <Arrow>↗</Arrow></span>
+                    </a>
+                  ) : (
+                    label
+                  )}
+                </dt>
+                <dd class="min-w-0 flex-1 basis-48 text-fg-2 wrap-anywhere">
+                  {note}
+                  {retired && ` · retired ${retired}`}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </section>
+    ))
+  }
+  <section class="flex flex-col gap-6">
+    <SectionLabel label="this site · colophon" />
+    <div class="prose"><Content /></div>
+  </section>
+</Base>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  section {
+    margin-block-start: var(--sp-section);
+  }
+  /* As on a post. shortcut: internal links are root-relative; absolute web links are outbound. If
+     absolute internal URLs are needed, classify against the configured site origin instead. */
+  .prose :global(a:is([href^="https://"], [href^="http://"], [href^="//"]))::after {
+    content: ' ↗' / '';
+    font-family: var(--ff-sans);
+  }
+</style>

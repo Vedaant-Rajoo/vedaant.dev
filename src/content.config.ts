@@ -107,4 +107,14 @@ const now = defineCollection({
   }),
 });
 
-export const collections = { work, projects, writing, now };
+// One file, src/content/uses/uses.md: its frontmatter dates /uses and holds its intro, and its body
+// is the colophon. Another file in the folder is not read.
+const uses = defineCollection({
+  loader: glob({ pattern: 'uses.md', base: 'src/content/uses' }),
+  schema: z.strictObject({
+    updated: day,
+    summary: z.string().trim().min(1),
+  }),
+});
+
+export const collections = { work, projects, writing, now, uses };
