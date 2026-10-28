@@ -61,7 +61,7 @@ Content lives in these files, never in components.
 | Work history | [src/data/work.json](src/data/work.json) |
 | Uses rows | [src/data/uses.json](src/data/uses.json) |
 | Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
-| Shelf lists, reading and last-watched rows, date and intro | [src/data/shelf.json](src/data/shelf.json) |
+| Shelf lists, reading, last-watched and on-repeat rows, date and intro | [src/data/shelf.json](src/data/shelf.json) |
 | Name, hero, time zone, email, links and résumé date | [src/data/site.json](src/data/site.json) |
 | Résumé PDF | [public/resume.pdf](public/resume.pdf) |
 | Offline music value | [src/data/snapshots/lastfm.json](src/data/snapshots/lastfm.json) |
@@ -187,9 +187,11 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   `sentence`; `link` (an `https://` link on the row) is optional, and a film may
   have a `rating`, 0.5–5 in half steps. Rows keep their file order, and an empty
   array leaves its list out. `reading` (`title`, `creator`, and optionally
-  `started`, a quoted `"YYYY-MM"`, and `page`) and `lastWatched` (`title`, an
-  integer `year`, a quoted `date` and an optional `rating`) are the two rows at
-  the top; leave either out to hide it. An unknown field fails the build, and
+  `started`, a quoted `"YYYY-MM"`, and `page`), `lastWatched` (`title`, an
+  integer `year`, a quoted `date` and an optional `rating`) and `listening`
+  (`title`, `creator` and a positive integer `plays`) are the optional rows at
+  the top; leave one out to hide it. The on-repeat row shows the most played
+  album over the last 7 days from Last.fm. An unknown field fails the build, and
   `bun run check` names the file when the JSON itself is broken. Bump `updated`
   when you edit. Keep hex colour codes out of this file, and compare each page's
   `<style>` with the previous build after an edit, since Tailwind scans it.

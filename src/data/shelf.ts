@@ -2,8 +2,8 @@ import { z } from 'astro/zod';
 import data from './shelf.json';
 import { https } from './site';
 
-// /shelf: three curated lists, each row with its one sentence, and the reading and last-watched
-// rows above them. Rows keep their file order; an empty list is left out.
+// /shelf: three curated lists and optional reading, last-watched and on-repeat rows above them.
+// Rows keep their file order; an empty list is left out.
 const text = z.string().trim().min(1);
 const year = z.int().min(1000).max(9999);
 const day = z.iso.date();
@@ -35,6 +35,8 @@ const result = z
         date: day,
       })
       .optional(),
+    // Most played album over the last week, from Last.fm.
+    listening: z.strictObject({ title: text, creator: text, plays: z.int().min(1) }).optional(),
     albums: z.array(z.strictObject(item)),
     films: z.array(z.strictObject({ ...item, rating: rating.optional() })),
     books: z.array(z.strictObject(item)),

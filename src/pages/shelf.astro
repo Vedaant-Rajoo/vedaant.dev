@@ -5,7 +5,7 @@ import { day, initials, monthYear } from '../data/format';
 import { shelf } from '../data/shelf';
 import Base from '../layouts/Base.astro';
 
-const { updated, summary, reading, lastWatched } = shelf;
+const { updated, summary, reading, lastWatched, listening } = shelf;
 const lists = [
   { label: 'albums', items: shelf.albums },
   { label: 'films', items: shelf.films },
@@ -30,7 +30,7 @@ const withYear = (title: string, year: number) => `\u2068${title}\u2069 (${year}
       holds last watched's stars. Stars are in the sans at the sub line's size, as on board 15,
       and hidden from screen readers, which hear the rating instead. */}
   {
-    (reading || lastWatched) && (
+    (reading || lastWatched || listening) && (
       <section>
         {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
         <ul role="list" class="divide-y divide-line">
@@ -62,6 +62,18 @@ const withYear = (title: string, year: number) => `\u2068${title}\u2069 (${year}
                   )}
                 </Fragment>
                 <time datetime={lastWatched.date}>{day(lastWatched.date)}</time>
+              </Row>
+            </li>
+          )}
+          {listening && (
+            <li>
+              <Row
+                tile="♪"
+                title={`on repeat · ${listening.title}`}
+                sub={`${listening.creator} · last 7 days`}
+              >
+                <Fragment slot="chips" />
+                {`${listening.plays} ${listening.plays === 1 ? 'play' : 'plays'}`}
               </Row>
             </li>
           )}
