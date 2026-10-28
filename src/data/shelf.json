@@ -1,6 +1,12 @@
 {
   "updated": "2026-10-28",
   "summary": "Albums, films and books I'd hand you, with a sentence on why I like each one.",
+  "reading": {
+    "title": "A Game of Thrones",
+    "creator": "George R. R. Martin",
+    "started": "2026-10",
+    "page": 120
+  },
   "lastWatched": {
     "title": "Clueless",
     "year": 1995,
