@@ -2,10 +2,15 @@
   "updated": "2026-10-28",
   "summary": "Albums, films and books I'd hand you, with a sentence on why I like each one.",
   "lastWatched": {
-    "title": "I Saw the Devil",
-    "year": 2010,
-    "rating": 4,
-    "date": "2026-10-07"
+    "title": "Clueless",
+    "year": 1995,
+    "rating": 3.5,
+    "date": "2026-10-28"
+  },
+  "listening": {
+    "title": "UNFORGIVEN",
+    "creator": "LE SSERAFIM",
+    "plays": 9
   },
   "albums": [
     {
