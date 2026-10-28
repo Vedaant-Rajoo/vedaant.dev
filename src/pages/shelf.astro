@@ -1,0 +1,127 @@
+---
+import Row from '../components/Row.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { day, initials, monthYear } from '../data/format';
+import { shelf } from '../data/shelf';
+import Base from '../layouts/Base.astro';
+
+const { updated, summary, reading, lastWatched } = shelf;
+const lists = [
+  { label: 'albums', items: shelf.albums },
+  { label: 'films', items: shelf.films },
+  { label: 'books', items: shelf.books },
+].filter(({ items }) => items.length > 0);
+// "★★★★½"; repeat() drops the half.
+const stars = (rating: number) => '★'.repeat(rating) + (rating % 1 ? '½' : '');
+// "Title (2010)". The title sits between U+2068 and U+2069, as artists do in now-playing.ts, so a
+// right-to-left title does not pull the year to its left.
+const withYear = (title: string, year: number) => `\u2068${title}\u2069 (${year})`;
+---
+
+<Base title="shelf" description={summary} class="max-w-wide">
+  <header class="flex max-w-col flex-col gap-3">
+    <h1 class="text-2xl font-semibold">shelf</h1>
+    <p class="meta text-xs text-fg-3">
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time> · favourites are curated by hand
+    </p>
+    <p class="text-fg-2">{summary}</p>
+  </header>
+  {/* Rows put the sub line under the title, as writing's do, through the chips slot, which also
+      holds last watched's stars. Stars are in the sans at the sub line's size, as on board 15,
+      and hidden from screen readers, which hear the rating instead. */}
+  {
+    (reading || lastWatched) && (
+      <section>
+        {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+        <ul role="list" class="divide-y divide-line">
+          {reading && (
+            <li>
+              <Row
+                tile={initials(reading.title)}
+                title={`reading · ${reading.title}`}
+                sub={reading.creator + (reading.started ? ` · started ${monthYear(reading.started)}` : '')}
+              >
+                <Fragment slot="chips" />
+                {reading.page && `p. ${reading.page}`}
+              </Row>
+            </li>
+          )}
+          {lastWatched && (
+            <li>
+              <Row
+                tile={initials(lastWatched.title)}
+                title={`last watched · ${withYear(lastWatched.title, lastWatched.year)}`}
+                sub=""
+              >
+                <Fragment slot="chips">
+                  {lastWatched.rating && (
+                    <>
+                      <span aria-hidden="true">{stars(lastWatched.rating)}</span>
+                      <span class="sr-only">rated {lastWatched.rating} of 5</span>
+                    </>
+                  )}
+                </Fragment>
+                <time datetime={lastWatched.date}>{day(lastWatched.date)}</time>
+              </Row>
+            </li>
+          )}
+        </ul>
+      </section>
+    )
+  }
+  <div class="lists">
+    {
+      lists.map(({ label, items }) => (
+        <section class:list={['flex flex-col gap-6', label === 'books' && 'books']}>
+          <SectionLabel label={label} count={items.length} />
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ol role="list" class="divide-y divide-line">
+            {items.map((item) => (
+              <li>
+                <Row
+                  tile={label === 'albums' ? '♪' : initials(item.title)}
+                  title={label === 'films' ? withYear(item.title, item.year) : item.title}
+                  sub={`${item.creator} · ${item.sentence}`}
+                  href={item.link}
+                >
+                  <Fragment slot="chips" />
+                  {label !== 'films' && <time>{item.year}</time>}
+                  {'rating' in item && typeof item.rating === 'number' && (
+                    <>
+                      <span aria-hidden="true" class="font-sans text-sm">
+                        {stars(item.rating)}
+                      </span>
+                      <span class="sr-only">rated {item.rating} of 5</span>
+                    </>
+                  )}
+                </Row>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  section {
+    margin-block-start: var(--sp-section);
+  }
+  /* Albums beside films when two 18rem columns fit, as on board 15; books take the whole width. */
+  .lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 72), 100%), 1fr));
+    gap: calc(var(--sp-unit) * 10) calc(var(--sp-unit) * 12);
+    margin-block-start: var(--sp-section);
+  }
+  .lists > section {
+    margin-block-start: 0;
+  }
+  .books {
+    grid-column: 1 / -1;
+  }
+</style>

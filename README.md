@@ -49,17 +49,19 @@ Other scripts in [package.json](package.json):
 
 Content lives in these files, never in components.
 [src/content.config.ts](src/content.config.ts) validates collection fields,
-[src/data/site.ts](src/data/site.ts) validates site settings and
-[src/data/uses.ts](src/data/uses.ts) validates the uses rows.
+[src/data/site.ts](src/data/site.ts) validates site settings,
+[src/data/uses.ts](src/data/uses.ts) validates the uses rows and
+[src/data/shelf.ts](src/data/shelf.ts) validates the shelf.
 
 | Content | File |
 | --- | --- |
 | Project rows and case studies | `src/content/projects/*.md` |
 | Posts and notes | `src/content/writing/*.md` |
-| Now page, city, building and watched rows | [src/content/now/now.md](src/content/now/now.md) |
+| Now page, city and building row | [src/content/now/now.md](src/content/now/now.md) |
 | Work history | [src/data/work.json](src/data/work.json) |
 | Uses rows | [src/data/uses.json](src/data/uses.json) |
 | Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
+| Shelf lists, reading and last-watched rows, date and intro | [src/data/shelf.json](src/data/shelf.json) |
 | Name, hero, time zone, email, links and résumé date | [src/data/site.json](src/data/site.json) |
 | Résumé PDF | [public/resume.pdf](public/resume.pdf) |
 | Offline music value | [src/data/snapshots/lastfm.json](src/data/snapshots/lastfm.json) |
@@ -147,16 +149,15 @@ the 404 or dev-only `/_states`. Every page head and the footer link the feed.
 If the origin ever changes, update `site`, the sitemap's `customPages` and
 [public/robots.txt](public/robots.txt) together.
 
-### Now, work, uses and résumé
+### Now, work, uses, shelf and résumé
 
 - `now.md` is the only file read from its directory. Its frontmatter requires a
-  quoted `updated`, `from` (the city), `building`, and `watched` with `title`, an
-  integer `year` and a quoted `date`; `rating` is optional, 0.5–5 in half steps.
-  The body is unique, lowercase `## label` sections of paragraphs, at most 400
-  words in all. Links, emphasis, strikethrough, code spans and line breaks work;
-  lists, images and code blocks do not, and `bun test` checks that shape. Bump
-  `updated` when you edit. Launch needs a date within the last 14 days, and the
-  page shows stale after 60 days.
+  quoted `updated`, `from` (the city) and `building`. The body is unique,
+  lowercase `## label` sections of paragraphs, at most 400 words in all. Links,
+  emphasis, strikethrough, code spans and line breaks work; lists, images and
+  code blocks do not, and `bun test` checks that shape. Bump `updated` when you
+  edit. Launch needs a date within the last 14 days, and the page shows stale
+  after 60 days.
 - `work.json` is a nonempty object keyed by stable role ids. Each role needs
   `employer`, `role`, a quoted `start: "YYYY-MM"`, `end` (a quoted month, or
   `null` while ongoing) and a `summary` of 1–140 characters. `url` is optional
@@ -179,6 +180,19 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   `updated` when you edit either file. Tailwind scans both files, so after an
   edit compare each page's `<style>` with the previous build, as for the music
   snapshot.
+- `shelf.json` is `/shelf`. It requires a quoted `updated` day, a `summary` (the
+  intro under the heading and the page's description) and three arrays,
+  `albums`, `films` and `books`, shown in that order. Each row needs `title`,
+  `creator` (the artist, director or author), an integer `year` and its one
+  `sentence`; `link` (an `https://` link on the row) is optional, and a film may
+  have a `rating`, 0.5–5 in half steps. Rows keep their file order, and an empty
+  array leaves its list out. `reading` (`title`, `creator`, and optionally
+  `started`, a quoted `"YYYY-MM"`, and `page`) and `lastWatched` (`title`, an
+  integer `year`, a quoted `date` and an optional `rating`) are the two rows at
+  the top; leave either out to hide it. An unknown field fails the build, and
+  `bun run check` names the file when the JSON itself is broken. Bump `updated`
+  when you edit. Keep hex colour codes out of this file, and compare each page's
+  `<style>` with the previous build after an edit, since Tailwind scans it.
 
 ## Music
 

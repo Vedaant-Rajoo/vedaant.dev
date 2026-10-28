@@ -67,7 +67,7 @@ only names tokens and components; where it differs, the pages win.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.
 - Separate with 1px `--c-line` and whitespace, not cards or shadows. Set width
-  per page (40rem; 56rem on `/projects` and `/now`), not on `body`.
+  per page (40rem; 56rem on `/projects`, `/now` and `/shelf`), not on `body`.
 - The clock is the theme button: it cycles light → dark → system, never by time
   of day. A `<script is:inline>` in `<head>` restores `data-theme` from
   localStorage before paint; system means no attribute.
@@ -98,7 +98,8 @@ only names tokens and components; where it differs, the pages win.
 - Targets ≥44px, except a link inside a line of prose, which keeps the line's
   height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
   the nav wraps instead of collapsing into a hamburger.
-- The nav words are `projects · writing · now`, not the spec's four: no word
-  may link to a 404 at launch, so `shelf` joins with `/shelf` in 1.1.
+- The nav words are the spec's four, `projects · writing · now · shelf`, and
+  a word never links to a 404. Below 640px the words' boxes have no gap, so
+  the fourth word does not grow the header.
 - After UI changes, run `bun run check` and `bun run build`, then view light,
   dark and system themes, reduced motion and JS off.

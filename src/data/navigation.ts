@@ -1,5 +1,5 @@
-// The nav words at launch (`shelf` joins in 1.1, when /shelf exists), and home. Nav.astro links
-// the words; the 404 page lists home and the words as rows, each with its tile and line.
+// The nav words, and home. Nav.astro links the words; the 404 page lists home and the words as
+// rows, each with its tile and line.
 export const home = {
   word: 'home',
   href: '/',
@@ -16,4 +16,10 @@ export const words = [
   },
   { word: 'writing', href: '/writing', tile: 'wr', sub: 'posts and notes, dated' },
   { word: 'now', href: '/now', tile: 'nw', sub: 'what I am focused on at the moment' },
+  {
+    word: 'shelf',
+    href: '/shelf',
+    tile: 'sh',
+    sub: 'albums, films and books, with a sentence each',
+  },
 ];

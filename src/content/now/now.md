@@ -2,11 +2,6 @@
 updated: "2026-10-22"
 from: "Bhilai"
 building: "this site and fettle, a macOS DAC sample-rate switcher"
-watched:
-  title: "I Saw the Devil"
-  year: 2010
-  rating: 4.5
-  date: "2026-10-11"
 ---
 
 ## building

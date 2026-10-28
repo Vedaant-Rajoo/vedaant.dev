@@ -98,12 +98,6 @@ const now = defineCollection({
     updated: day,
     from: z.string().trim().min(1),
     building: z.string().trim().min(1),
-    watched: z.strictObject({
-      title: z.string().trim().min(1),
-      year: z.int().min(1000).max(9999),
-      rating: z.number().min(0.5).max(5).multipleOf(0.5).optional(),
-      date: day,
-    }),
   }),
 });
 
