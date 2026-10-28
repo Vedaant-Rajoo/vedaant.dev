@@ -1,17 +1,11 @@
 {
   "updated": "2026-10-28",
   "summary": "Albums, films and books I would push across the table at you, each with the one sentence I would say while doing it.",
-  "reading": {
-    "title": "Infinite Jest",
-    "creator": "David Foster Wallace",
-    "started": "2026-09",
-    "page": 981
-  },
   "lastWatched": {
     "title": "I Saw the Devil",
     "year": 2010,
-    "rating": 4.5,
-    "date": "2026-10-11"
+    "rating": 4,
+    "date": "2026-10-07"
   },
   "albums": [
     {
@@ -58,6 +52,13 @@
       "creator": "Miles Davis",
       "year": 1959,
       "sentence": "Calmer than anything else I own, and the only word I have for it is Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch: too long to say, worth every letter."
+    },
+    {
+      "title": "UNFORGIVEN",
+      "creator": "LE SSERAFIM",
+      "year": 2023,
+      "sentence": "TODO: the one sentence you would say while handing this over.",
+      "link": "https://www.last.fm/music/LE+SSERAFIM/UNFORGIVEN"
     }
   ],
   "films": [
@@ -66,24 +67,24 @@
       "creator": "Hayao Miyazaki",
       "year": 2001,
       "sentence": "The film I rewatch when I need to remember that hard work and kindness can be the same thing.",
-      "rating": 5,
-      "link": "https://en.wikipedia.org/wiki/Spirited_Away"
+      "link": "https://en.wikipedia.org/wiki/Spirited_Away",
+      "rating": 5
     },
     {
       "title": "جدایی نادر از سیمین",
       "creator": "Asghar Farhadi",
       "year": 2011,
       "sentence": "A divorce hearing that turns into a thriller about truth, where every character is right and nobody is innocent.",
-      "rating": 4.5,
-      "link": "https://fa.wikipedia.org/wiki/جدایی_نادر_از_سیمین"
+      "link": "https://fa.wikipedia.org/wiki/جدایی_نادر_از_سیمین",
+      "rating": 4.5
     },
     {
       "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
       "creator": "Stanley Kubrick",
       "year": 1964,
       "sentence": "Proof that the funniest film ever made can also be the most frightening one.",
-      "rating": 5,
-      "link": "https://en.wikipedia.org/wiki/Dr._Strangelove"
+      "link": "https://en.wikipedia.org/wiki/Dr._Strangelove",
+      "rating": 5
     },
     {
       "title": "Shoah",
@@ -103,8 +104,8 @@
       "creator": "Tommy Wiseau",
       "year": 2003,
       "sentence": "Half a star, fairly earned: I saw it in a cinema where the audience threw spoons at the screen, and it was the best night out of that year.",
-      "rating": 0.5,
-      "link": "https://en.wikipedia.org/wiki/The_Room"
+      "link": "https://en.wikipedia.org/wiki/The_Room",
+      "rating": 0.5
     },
     {
       "title": "8½",
