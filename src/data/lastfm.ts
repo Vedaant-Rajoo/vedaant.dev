@@ -1,5 +1,5 @@
 import { getArtwork } from './artwork';
-import { type NowPlaying, recentTracks, toNowPlaying } from './now-playing';
+import { apiKey, type NowPlaying, recentTracks, toNowPlaying } from './now-playing';
 import snapshot from './snapshots/lastfm.json';
 
 // The committed value, used when Last.fm fails or sends a body the mapping rejects, so the
@@ -11,7 +11,7 @@ async function load(): Promise<NowPlaying> {
   let reason: string;
   try {
     // One 5 s budget for the whole request, its body included.
-    const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5_000) });
+    const response = await fetch(recentTracks(apiKey), { signal: AbortSignal.timeout(5_000) });
     const value = response.ok ? toNowPlaying(await response.json()) : null;
     if (value) {
       return { ...value, artwork: await getArtwork(value) };

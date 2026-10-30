@@ -10,15 +10,17 @@ export interface NowPlaying {
 
 // user.getRecentTracks needs no authentication, and the key ships in the page.
 const user = 'newedia';
-const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
+export const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
 
-export const recentTracks = `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
-  method: 'user.getrecenttracks',
-  user,
-  limit: '1',
-  format: 'json',
-  api_key: apiKey,
-})}`;
+// The request for one key: the build and the hub pass apiKey, the Function its LASTFM_API_KEY.
+export const recentTracks = (key: string) =>
+  `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
+    method: 'user.getrecenttracks',
+    user,
+    limit: '1',
+    format: 'json',
+    api_key: key,
+  })}`;
 
 interface Track {
   name?: unknown;

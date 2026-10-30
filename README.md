@@ -244,10 +244,10 @@ response, and leaves the file alone on an invalid, live or empty answer.
 ```sh
 bun --eval '
 import { writeFile } from "node:fs/promises";
-import { recentTracks, toNowPlaying } from "./src/data/now-playing.ts";
+import { apiKey, recentTracks, toNowPlaying } from "./src/data/now-playing.ts";
 let value;
 try {
-  const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5000) });
+  const response = await fetch(recentTracks(apiKey), { signal: AbortSignal.timeout(5000) });
   value = response.ok ? toNowPlaying(await response.json()) : null;
 } catch {
   value = null;

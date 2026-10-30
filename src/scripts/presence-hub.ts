@@ -1,5 +1,6 @@
 import { artworkKey, getArtwork } from '../data/artwork';
 import {
+  apiKey,
   type NowPlaying,
   nowPlayingText,
   presenceState,
@@ -91,7 +92,7 @@ async function poll() {
   let value: NowPlaying | null = null;
   try {
     // One 5 s budget for the request and its body, as at build (lastfm.ts).
-    const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5_000) });
+    const response = await fetch(recentTracks(apiKey), { signal: AbortSignal.timeout(5_000) });
     value = response.ok ? toNowPlaying(await response.json()) : null;
   } catch {}
   failures = value ? 0 : failures + 1;
