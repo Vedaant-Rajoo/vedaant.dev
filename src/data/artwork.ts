@@ -13,7 +13,8 @@ const credited = (release: Release, artist: string) =>
   Array.isArray(release['artist-credit']) &&
   release['artist-credit'].some((credit) => normalize(credit?.name) === artist);
 
-// shortcut: cache successes and misses for this page's lifetime; reload retries failed lookups.
+// shortcut: cache successes and misses for the module's lifetime, one build or one Worker instance
+// of the Function; a new one retries failed lookups.
 const cache = new Map<string, Promise<string | null>>();
 let due = 0;
 let queue = Promise.resolve();
@@ -42,7 +43,7 @@ async function lookup(value: NowPlaying): Promise<string | null> {
     if (!title?.trim()) {
       continue;
     }
-    // MusicBrainz allows one request per second per IP. Serialize this page's searches.
+    // MusicBrainz allows one request per second per IP. Serialize this module's searches.
     await new Promise((resolve) => setTimeout(resolve, Math.max(0, due - Date.now())));
     due = Date.now() + 1100;
     const query = `release:${quote(title)} AND artist:${quote(value.artist ?? '')}`;

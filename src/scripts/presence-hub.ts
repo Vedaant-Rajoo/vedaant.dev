@@ -1,19 +1,16 @@
-import { artworkKey, getArtwork } from '../data/artwork';
 import {
-  apiKey,
+  fromLive,
   type NowPlaying,
   nowPlayingText,
   presenceState,
   presenceText,
-  recentTracks,
-  toNowPlaying,
 } from '../data/now-playing';
 
-// The one <presence-hub> per page (Base.astro) keeps the music widgets current. It reads Last.fm
-// from the browser: at once, then a minute after each answer while the page is shown, one request
-// at a time, and later after failures. Last.fm sends no Cache-Control; the browser's HTTP cache
-// would honour one. It drives only widgets built from the build-time value; a state fixture
-// carries data-fixture.
+// The one <presence-hub> per page (Base.astro) keeps the music widgets current. It reads the site's
+// own /api/now-playing: at once, then a minute after each answer while the page is shown, one
+// request at a time, and later after failures. The answer carries max-age=0, so every poll reaches
+// the edge, which keeps it for 30 s. It drives only widgets built from the build-time value; a
+// state fixture carries data-fixture.
 let widgets: HTMLElement[] = [];
 const waits = [60, 120, 240, 600];
 let failures = 0;
@@ -31,21 +28,15 @@ function schedule() {
   }
 }
 
-async function showArtwork(widget: HTMLElement, value: NowPlaying) {
+// The answer names its artwork: a new URL replaces the image, none hides it, and the same URL
+// leaves it as it is, hidden too if it failed to load.
+function showArtwork(widget: HTMLElement, { artwork = null }: NowPlaying) {
   const image = widget.querySelector<HTMLImageElement>('[data-now-playing="artwork"]');
-  const key = artworkKey(value);
-  if (!image || widget.dataset.artworkKey === key) {
+  if (!image || image.getAttribute('src') === artwork) {
     return;
   }
-  widget.dataset.artworkKey = key;
-  image.hidden = true;
-  image.removeAttribute('src');
-  const src = await getArtwork(value);
-  // A later track or a disconnected page must never receive this track's artwork.
-  if (src && widget.isConnected && widget.dataset.artworkKey === key) {
-    image.src = src;
-    image.hidden = false;
-  }
+  attribute(image, 'src', artwork);
+  image.hidden = !artwork;
 }
 
 const attribute = (element: Element, name: string, value: string | null) =>
@@ -57,7 +48,7 @@ function show(widget: HTMLElement, state: string, value: NowPlaying) {
   widget.dataset.state = shown;
   widget.removeAttribute('aria-busy');
   if (kind === 'now-playing') {
-    void showArtwork(widget, value);
+    showArtwork(widget, value);
     attribute(widget, 'href', value.url);
   }
   const texts =
@@ -93,9 +84,9 @@ async function poll() {
   busy = true;
   let value: NowPlaying | null = null;
   try {
-    // One 5 s budget for the request and its body, as at build (lastfm.ts).
-    const response = await fetch(recentTracks(apiKey), { signal: AbortSignal.timeout(5_000) });
-    value = response.ok ? toNowPlaying(await response.json()) : null;
+    // One 5 s budget for the request and its body; the Function answers within about 4 s.
+    const response = await fetch('/api/now-playing', { signal: AbortSignal.timeout(5_000) });
+    value = response.ok ? fromLive(await response.json()) : null;
   } catch {}
   failures = value ? 0 : failures + 1;
   last = value ?? last;

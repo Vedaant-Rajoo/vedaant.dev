@@ -8,11 +8,12 @@ export interface NowPlaying {
   artwork?: string | null;
 }
 
-// user.getRecentTracks needs no authentication, and the key ships in the page.
+// user.getRecentTracks needs no authentication. The build reads Last.fm with this key, public in
+// the history and in earlier pages; the hub reads /api/now-playing and has no key.
 const user = 'newedia';
 export const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
 
-// The request for one key: the build and the hub pass apiKey, the Function its LASTFM_API_KEY.
+// The request for one key: the build passes apiKey, the Function its LASTFM_API_KEY.
 export const recentTracks = (key: string) =>
   `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
     method: 'user.getrecenttracks',
@@ -83,6 +84,32 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
     at: at.toISOString(),
     url: page(first.url),
   };
+}
+
+const states = new Set<unknown>(['live', 'idle', 'empty']);
+const cover =
+  /^https:\/\/coverartarchive\.org\/release\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/front-250$/i;
+const optional = (value: unknown) => value === null || typeof value === 'string';
+// A whole minute, written as toNowPlaying writes it.
+const minute = (value: unknown) => {
+  const time = typeof value === 'string' ? Date.parse(value) : Number.NaN;
+  return time % 60_000 === 0 && new Date(time).toISOString() === value;
+};
+
+// Checks a parsed /api/now-playing body: the committed snapshot's seven fields and nothing else,
+// each in the form the Function writes; null for anything else, so the hub treats it as a failure.
+// The link must pass page() unchanged and the artwork must be a Cover Art Archive thumbnail, because
+// they end up in an href and an <img src>.
+export function fromLive(body: unknown): NowPlaying | null {
+  const { state, track, artist, album, at, url, artwork } = (body ?? {}) as Record<string, unknown>;
+  const valid =
+    typeof body === 'object' &&
+    states.has(state) &&
+    [track, artist, album].every(optional) &&
+    (at === null || minute(at)) &&
+    (url === null || (typeof url === 'string' && page(url) === url)) &&
+    (artwork === null || (typeof artwork === 'string' && cover.test(artwork)));
+  return valid ? ({ state, track, artist, album, at, url, artwork } as NowPlaying) : null;
 }
 
 // The album the music row and the /now cell show beside the artist: none when it is named as the
