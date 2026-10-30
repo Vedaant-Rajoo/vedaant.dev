@@ -1,117 +1,123 @@
 {
   "updated": "2026-10-28",
-  "summary": "Albums, films and books I would push across the table at you, each with the one sentence I would say while doing it.",
+  "summary": "Albums, films and books I'd hand you, with a sentence on why I like each one.",
   "reading": {
-    "title": "Infinite Jest",
-    "creator": "David Foster Wallace",
-    "started": "2026-09",
-    "page": 981
+    "title": "A Game of Thrones",
+    "creator": "George R. R. Martin",
+    "started": "2026-10",
+    "page": 120
   },
   "lastWatched": {
-    "title": "I Saw the Devil",
-    "year": 2010,
-    "rating": 4.5,
-    "date": "2026-10-11"
+    "title": "Clueless",
+    "year": 1995,
+    "rating": 3.5,
+    "date": "2026-10-28"
+  },
+  "listening": {
+    "title": "UNFORGIVEN",
+    "creator": "LE SSERAFIM",
+    "plays": 9
   },
   "albums": [
     {
       "title": "OK Computer",
       "creator": "Radiohead",
       "year": 1997,
-      "sentence": "The album I play to anyone who says guitars ran out of ideas in the nineties.",
+      "sentence": "I put this on when someone tells me guitars ran out of ideas in the nineties.",
       "link": "https://en.wikipedia.org/wiki/OK_Computer"
-    },
-    {
-      "title": "When the Pawn Hits the Conflicts He Thinks Like a King What He Knows Throws the Blows When He Goes to the Fight and He'll Win the Whole Thing 'Fore He Enters the Ring There's No Body to Batter When Your Mind Is Your Might So When You Go Solo, You Hold Your Own Hand and Remember That Depth Is the Greatest of Heights and If You Know Where You Stand, Then You Know Where to Land and If You Fall It Won't Matter, Cuz You'll Know That You're Right",
-      "creator": "Fiona Apple",
-      "year": 1999,
-      "sentence": "Ninety words of title and not one of them wasted, which is more than most records manage in forty minutes.",
-      "link": "https://en.wikipedia.org/wiki/When_the_Pawn..."
-    },
-    {
-      "title": "( )",
-      "creator": "Sigur Rós",
-      "year": 2002,
-      "sentence": "Eight untitled songs sung in a language that does not exist, and I still know what every one of them means.",
-      "link": "https://en.wikipedia.org/wiki/(_)_(album)"
-    },
-    {
-      "title": "無罪モラトリアム",
-      "creator": "Ringo Sheena",
-      "year": 1999,
-      "sentence": "A debut that sounds like someone kicking the door in, even if you understand none of the Japanese."
     },
     {
       "title": "1",
       "creator": "The Beatles",
       "year": 2000,
-      "sentence": "Yes."
+      "sentence": "Putting twenty-seven number ones on one CD is showing off, even for the Beatles."
     },
     {
-      "title": "Lift Your Skinny Fists like Antennas to Heaven",
-      "creator": "Godspeed You! Black Emperor",
-      "year": 2000,
-      "sentence": "Four long pieces of slow orchestral rock, with an old man on Coney Island halfway through talking about how things used to be, that swell for twenty minutes at a time until the strings and three guitars and two drummers are all pushing on the same wall, and then fall back to almost nothing, which is exactly how a long night of debugging feels when the fix finally lands and the room goes quiet."
+      "title": "Fearless",
+      "creator": "Taylor Swift",
+      "year": 2008,
+      "sentence": "This made me a Swiftie; I still play it when I need reminding to send the text before writing an album about it.",
+      "link": "https://en.wikipedia.org/wiki/Fearless_(Taylor_Swift_album)"
     },
     {
-      "title": "Kind of Blue",
-      "creator": "Miles Davis",
-      "year": 1959,
-      "sentence": "Calmer than anything else I own, and the only word I have for it is Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch: too long to say, worth every letter."
+      "title": "All the Right Reasons",
+      "creator": "Nickelback",
+      "year": 2005,
+      "sentence": "\"Photograph\" is best sung badly, with the car windows up for everyone's sake.",
+      "link": "https://en.wikipedia.org/wiki/All_the_Right_Reasons"
+    },
+    {
+      "title": "Discovery",
+      "creator": "Daft Punk",
+      "year": 2001,
+      "sentence": "\"One More Time\" is terrible advice when I have somewhere to be.",
+      "link": "https://en.wikipedia.org/wiki/Discovery_(Daft_Punk_album)"
     }
   ],
   "films": [
+    {
+      "title": "Parasite",
+      "creator": "Bong Joon-ho",
+      "year": 2019,
+      "sentence": "So good I had to watch it twice to get everything.",
+      "link": "https://en.wikipedia.org/wiki/Parasite_(2019_film)"
+    },
+    {
+      "title": "The Dark Knight",
+      "creator": "Christopher Nolan",
+      "year": 2008,
+      "sentence": "This is the best three hours I've spent watching a dark movie.",
+      "link": "https://en.wikipedia.org/wiki/The_Dark_Knight"
+    },
+    {
+      "title": "Interstellar",
+      "creator": "Christopher Nolan",
+      "year": 2014,
+      "sentence": "I love how earnestly it goes for the big feelings, and the score makes me want bigger speakers.",
+      "link": "https://www.paramountmovies.com/movies/interstellar"
+    },
+    {
+      "title": "Pulp Fiction",
+      "creator": "Quentin Tarantino",
+      "year": 1994,
+      "sentence": "The dialogue makes me want to quote it in situations where I absolutely shouldn't.",
+      "link": "https://www.miramax.com/movie/pulp-fiction/"
+    },
+    {
+      "title": "3 Idiots",
+      "creator": "Rajkumar Hirani",
+      "year": 2009,
+      "sentence": "I love a comedy that takes the pressure to succeed this seriously.",
+      "link": "https://en.wikipedia.org/wiki/3_Idiots"
+    },
+    {
+      "title": "Up",
+      "creator": "Pete Docter",
+      "year": 2009,
+      "sentence": "The opening is emotional blackmail, and I am an embarrassingly easy target.",
+      "link": "https://www.pixar.com/upfilm",
+      "rating": 4
+    },
+    {
+      "title": "The Odyssey",
+      "creator": "Christopher Nolan",
+      "year": 2026,
+      "sentence": "I have a weakness for films that seem personally offended by the size of a television.",
+      "link": "https://www.universalpictures.com/movies/the-odyssey"
+    },
     {
       "title": "Spirited Away",
       "creator": "Hayao Miyazaki",
       "year": 2001,
       "sentence": "The film I rewatch when I need to remember that hard work and kindness can be the same thing.",
-      "rating": 5,
-      "link": "https://en.wikipedia.org/wiki/Spirited_Away"
-    },
-    {
-      "title": "جدایی نادر از سیمین",
-      "creator": "Asghar Farhadi",
-      "year": 2011,
-      "sentence": "A divorce hearing that turns into a thriller about truth, where every character is right and nobody is innocent.",
-      "rating": 4.5,
-      "link": "https://fa.wikipedia.org/wiki/جدایی_نادر_از_سیمین"
-    },
-    {
-      "title": "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
-      "creator": "Stanley Kubrick",
-      "year": 1964,
-      "sentence": "Proof that the funniest film ever made can also be the most frightening one.",
-      "rating": 5,
-      "link": "https://en.wikipedia.org/wiki/Dr._Strangelove"
+      "link": "https://en.wikipedia.org/wiki/Spirited_Away",
+      "rating": 5
     },
     {
       "title": "Shoah",
       "creator": "Claude Lanzmann",
       "year": 1985,
       "sentence": "Nine and a half hours with no archive footage, and the one film I would never put a rating on."
-    },
-    {
-      "title": "L'Arrivée d'un train en gare de La Ciotat",
-      "creator": "Auguste and Louis Lumière",
-      "year": 1896,
-      "sentence": "Fifty seconds of a train pulling into a station, and still the reason I think every film is a small magic trick.",
-      "rating": 3
-    },
-    {
-      "title": "The Room",
-      "creator": "Tommy Wiseau",
-      "year": 2003,
-      "sentence": "Half a star, fairly earned: I saw it in a cinema where the audience threw spoons at the screen, and it was the best night out of that year.",
-      "rating": 0.5,
-      "link": "https://en.wikipedia.org/wiki/The_Room"
-    },
-    {
-      "title": "8½",
-      "creator": "Federico Fellini",
-      "year": 1963,
-      "sentence": "A film about a director who cannot finish his film, and the best argument I know for shipping the unfinished thing.",
-      "rating": 4
     }
   ],
   "books": [
@@ -119,45 +125,49 @@
       "title": "Structure and Interpretation of Computer Programs",
       "creator": "Harold Abelson and Gerald Jay Sussman with Julie Sussman",
       "year": 1985,
-      "sentence": "The book that made \"(define (square x) (* x x))\" read like a sentence, & the reason I still write <3 in code reviews.",
+      "sentence": "This made \"(define (square x) (* x x))\" read like a sentence to me, and it's why I still write <3 in code reviews.",
       "link": "https://en.wikipedia.org/wiki/Structure_and_Interpretation_of_Computer_Programs"
-    },
-    {
-      "title": "Gödel, Escher, Bach: An Eternal Golden Braid",
-      "creator": "Douglas Hofstadter",
-      "year": 1979,
-      "sentence": "A seven-hundred-page argument that a mind is a loop, written as a fugue, and somehow fun the whole way through."
-    },
-    {
-      "title": "The Pragmatic Programmer",
-      "creator": "Andrew Hunt and David Thomas",
-      "year": 1999,
-      "sentence": "The book I hand every new engineer, mostly for the chapter about broken windows."
-    },
-    {
-      "title": "The Tale of Genji",
-      "creator": "Murasaki Shikibu",
-      "year": 1021,
-      "sentence": "Finished by about 1021, and it still reads like gossip from the next desk over.",
-      "link": "https://en.wikipedia.org/wiki/The_Tale_of_Genji"
-    },
-    {
-      "title": "Война и мир",
-      "creator": "Лев Толстой",
-      "year": 1869,
-      "sentence": "Long enough to read across a whole winter, and the battle chapters are the short part."
-    },
-    {
-      "title": "Cien años de soledad",
-      "creator": "Gabriel García Márquez",
-      "year": 1967,
-      "sentence": "Seven generations, one name used over and over, and a family tree I drew on the inside cover to keep up."
     },
     {
       "title": "It",
       "creator": "Stephen King",
       "year": 1986,
-      "sentence": "Read it at twelve, slept with the light on for a month 🎈, and I would still recommend it."
+      "sentence": "I read it at twelve and slept with the light on for a month; I still recommend it 🎈."
+    },
+    {
+      "title": "The Happiness Advantage",
+      "creator": "Shawn Achor",
+      "year": 2010,
+      "sentence": "This makes me want to put a good mood on the to-do list, somewhere above answering another email.",
+      "link": "https://www.penguinrandomhouse.com/books/200789/the-happiness-advantage-by-shawn-achor/"
+    },
+    {
+      "title": "Harry Potter series",
+      "creator": "J. K. Rowling",
+      "year": 1997,
+      "sentence": "Even the school shopping makes me want to move in.",
+      "link": "https://en.wikipedia.org/wiki/Harry_Potter"
+    },
+    {
+      "title": "Pride and Prejudice",
+      "creator": "Jane Austen",
+      "year": 1813,
+      "sentence": "The insults are so politely delivered that I almost want to be on the receiving end.",
+      "link": "https://en.wikipedia.org/wiki/Pride_and_Prejudice"
+    },
+    {
+      "title": "The Great Gatsby",
+      "creator": "F. Scott Fitzgerald",
+      "year": 1925,
+      "sentence": "I'd keep it for the sentences alone; I love prose that sounds this good read aloud.",
+      "link": "https://en.wikipedia.org/wiki/The_Great_Gatsby"
+    },
+    {
+      "title": "To Kill a Mockingbird",
+      "creator": "Harper Lee",
+      "year": 1960,
+      "sentence": "I like how a child's voice makes the adults' excuses harder to hide behind.",
+      "link": "https://en.wikipedia.org/wiki/To_Kill_a_Mockingbird"
     }
   ]
 }
