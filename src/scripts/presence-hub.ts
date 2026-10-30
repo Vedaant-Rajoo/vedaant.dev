@@ -25,7 +25,9 @@ let last: NowPlaying | undefined;
 function schedule() {
   clearTimeout(timer);
   if (widgets.length > 0 && !busy && !document.hidden) {
-    timer = setTimeout(poll, due - Date.now());
+    // setTimeout reads its delay as a signed 32-bit number, so the negative wait before the first
+    // poll, or a long one after the clock moves back, could wrap into weeks: keep it in 0–600 s.
+    timer = setTimeout(poll, Math.min(Math.max(due - Date.now(), 0), 600_000));
   }
 }
 
