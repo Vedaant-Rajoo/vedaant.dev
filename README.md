@@ -330,7 +330,12 @@ bun run gate
 
 [scripts/gate.sh](scripts/gate.sh) runs diagnostics and tests, then builds with
 the network blocked by `sandbox-exec`. gitleaks scans the git history and
-`dist/` for secrets, and a grep rejects environment reads outside `astro:env`.
+`dist/` for secrets, and a grep rejects environment reads outside `astro:env` in
+`src/` and outside `context.env` in `functions/`. The gate then builds the Pages
+Functions with Wrangler, scans the bundle with gitleaks and requires the
+generated routes to be `/api/now-playing` alone, with no `_routes.json` of the
+site's own, so a request for a file never runs a Function. A grep checks
+`dist/_astro/*.js` for the Last.fm, MusicBrainz and Cover Art Archive API hosts.
 [scripts/pages.ts](scripts/pages.ts) checks that the music widgets show the
 snapshot and that every page has a unique title and description. It also
 enforces 5,120 B of gzipped executable JavaScript per page (JSON-LD does not
