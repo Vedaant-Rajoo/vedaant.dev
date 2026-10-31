@@ -4,9 +4,18 @@ import { type NowPlaying, recentTracks, toNowPlaying } from '../../src/data/now-
 // Workers add `default` to the global CacheStorage; this module is its only user.
 declare const caches: CacheStorage & { default: Cache };
 
-// Set, encrypted, in both Pages environments; `wrangler pages dev` reads a gitignored .env.
+// LASTFM_API_KEY: set, encrypted, in both Pages environments; `wrangler pages dev` reads a
+// gitignored .env. ARTWORK: an optional KV namespace binding; `wrangler pages dev --kv ARTWORK`
+// simulates it.
 interface Env {
   LASTFM_API_KEY?: string;
+  ARTWORK?: Kv;
+}
+
+// The part of a KV namespace the Function uses.
+interface Kv {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
 }
 
 // The part of the Pages context the Function uses.
@@ -71,9 +80,10 @@ async function load(key: string | undefined): Promise<NowPlaying | null> {
   }
 }
 
-// The artwork URL from the Cache API, kept for 30 days, or from a lookup the answer waits 1.5 s
-// for. A slower lookup finishes after the answer and is kept for the next one; artwork.ts keeps
-// misses in memory while the Worker instance lives.
+// The artwork URL from this data centre's Cache API (30 days), then from the ARTWORK KV namespace
+// when it is bound (every data centre and preview, no expiry), or from a lookup. A slower lookup
+// finishes after the answer and is kept in both for the next one; artwork.ts keeps misses in memory
+// while the Worker instance lives.
 async function withArtwork(value: NowPlaying, context: Context, cache: Cache, origin: string) {
   if (value.state === 'empty') {
     return { ...value, artwork: null };
@@ -86,20 +96,37 @@ async function withArtwork(value: NowPlaying, context: Context, cache: Cache, or
   if (stored) {
     return { ...value, artwork: stored };
   }
+  // One 1.5 s wait covers the KV read and the lookup, so neither can hold the answer.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(resolve, 1_500, null);
+  });
+  // A failing or slow KV, or a key over KV's 512 bytes, counts as a miss; async functions turn even
+  // a synchronous throw into a rejection, which each caller catches.
+  const kv = context.env.ARTWORK;
+  const name = `artwork:${artworkKey(value)}`;
+  const read = async () => (kv ? kv.get(name) : null);
+  const write = async (url: string) => kv?.put(name, url);
+  const kept = await Promise.race([read().catch(() => null), late]);
+  if (kept) {
+    clearTimeout(timer);
+    // Refill this data centre's cache, so its next miss skips KV.
+    context.waitUntil(cache.put(key, new Response(kept, month)).catch(() => {}));
+    return { ...value, artwork: kept };
+  }
   // The answer races the lookup alone; storing its result happens after, under waitUntil.
   const lookup = getArtwork(value);
   context.waitUntil(
     lookup.then(async (url) => {
       if (url) {
-        // A failed put only means the next answer looks the artwork up again.
-        await cache.put(key, new Response(url, month)).catch(() => {});
+        // A failed put only means a later answer looks the artwork up again.
+        await Promise.all([
+          cache.put(key, new Response(url, month)).catch(() => {}),
+          write(url).catch(() => {}),
+        ]);
       }
     }),
   );
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<null>((resolve) => {
-    timer = setTimeout(resolve, 1_500, null);
-  });
   const artwork = await Promise.race([lookup, late]);
   clearTimeout(timer);
   return { ...value, artwork };

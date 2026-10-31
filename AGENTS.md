@@ -90,9 +90,10 @@ only names tokens and components; where it differs, the pages win.
 - The now-playing Function reads Last.fm's `user.getRecentTracks` with
   `LASTFM_API_KEY` from `context.env` and caches a successful answer for 30 s
   where the Cache API is available. It looks up artwork through MusicBrainz
-  release search and Cover Art Archive thumbnails, caching each lookup and
-  keeping MusicBrainz requests at least 1.1 seconds apart within each isolate;
-  a failed or slow lookup only leaves `artwork` `null`.
+  release search and Cover Art Archive thumbnails, caching each lookup (a found
+  URL also in the `ARTWORK` KV namespace, when bound) and keeping MusicBrainz
+  requests at least 1.1 seconds apart within each isolate; a failed or slow
+  lookup, or a slow KV read, only leaves `artwork` `null`.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never

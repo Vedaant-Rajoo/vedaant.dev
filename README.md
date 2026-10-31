@@ -55,7 +55,8 @@ Without a key the build uses the committed snapshot, and the Function answers
 Wrangler both read it, and Wrangler prints it only as `(hidden)`. Run Wrangler
 from the checkout root: it binds a `.env` only from the directory it runs in,
 and its `--env-file` option does not bind the key in 4.150.0. Never commit, log
-or paste the key.
+or paste the key. Add `--kv ARTWORK` to keep artwork URLs in a local KV
+namespace, as the deployed Function does once the binding exists.
 
 Astro's `dev`, `preview` and `build` need no `.env` file or Cloudflare
 credentials. Only the first install needs the network; builds fall back to the
@@ -246,10 +247,12 @@ the hub treats that as a failed poll.
 [Artwork](src/data/artwork.ts) comes from MusicBrainz release search and Cover
 Art Archive 250px thumbnails (including Internet Archive redirects), with no key.
 The build looks it up once; the Function looks it up for each new track, waits
-1.5 seconds at most, and keeps a found URL for 30 days. MusicBrainz requests are
-at least 1.1 seconds apart, and a failure keeps the music glyph. Last.fm and
-MusicBrainz see Cloudflare's requests, not visitors'; browsers load only the
-artwork image from Cover Art Archive.
+1.5 seconds at most, and keeps a found URL for 30 days in each data centre's
+cache. When the `ARTWORK` KV namespace is bound, it also keeps the URL there,
+with no expiry, so other data centres and previews skip the lookup. MusicBrainz
+requests are at least 1.1 seconds apart, and a failure keeps the music glyph.
+Last.fm and MusicBrainz see Cloudflare's requests, not visitors'; browsers load
+only the artwork image from Cover Art Archive.
 
 ### The Last.fm key
 
@@ -353,7 +356,7 @@ cleans up only branches deleted after it lands there.
 Cloudflare builds [functions/api/now-playing.ts](functions/api/now-playing.ts)
 from the same commit as the pages, with no adapter and no deploy of its own.
 Only `/api/now-playing` runs it; every other request is a file and stays free.
-The gate checks that the generated routes name that path alone. Three dashboard
+The gate checks that the generated routes name that path alone. Four dashboard
 settings on the `vedaant-dev` project belong to it, and the owner sets them.
 Switch the Settings page to Preview first for Preview's values:
 
@@ -366,6 +369,18 @@ Switch the Settings page to Preview first for Preview's values:
   answer with an error page instead.
 - Settings > Variables and Secrets: `LASTFM_API_KEY` in Production and in
   Preview, as above.
+- Settings > Bindings > Add > KV namespace: variable name `ARTWORK`, bound to
+  one KV namespace you create first (for example `vedaant-dev-artwork`), in
+  Production and in Preview, so a preview's lookups also serve production.
+  Start a new deployment afterwards. The binding is optional: without it, the
+  Function keeps artwork in the Cache API alone. KV is read when a data centre's
+  artwork entry misses (on previews, every poll that reaches the Function) and
+  written by each request whose lookup finds a URL, so overlapping misses can
+  write the same URL twice, and KV's one write a second per key may refuse the
+  second harmlessly. Each read and write also counts as a Function request. An
+  entry has no expiry. Deleting a wrong cover's `artwork:` key clears only KV:
+  each data centre's cache can keep the URL for up to 30 days, and a warm Worker
+  instance can write its remembered URL back.
 
 Its log is a live stream, not an archive: open a deployment's Functions tab in
 the dashboard, or run
@@ -451,7 +466,7 @@ Chores:
 
 - Monthly: run the gate after a frozen install, and check Cloudflare Pages and
   GitHub Actions usage, including the Function's requests against the 100,000 a
-  day allowance.
+  day allowance and the `ARTWORK` KV reads and writes.
 - Quarterly: review dependency updates and Astro's upgrade guide. Run
   `npx @astrojs/upgrade` on its own branch, since it edits package files, review
   majors, keep the Bun lockfile in sync and rerun the checks. Stay within 12

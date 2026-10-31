@@ -97,7 +97,7 @@ const release = (id: string, title: string, artist: string) =>
 // A visitor's request, with a query string and headers the Function must not pass on. waitUntil
 // checks it is called on the context, as workerd requires.
 const get = (
-  env: { LASTFM_API_KEY?: string } = { LASTFM_API_KEY: key },
+  env: Parameters<typeof handle>[0]['env'] = { LASTFM_API_KEY: key },
   path = '/api/now-playing?user=x&api_key=y',
   using = cache,
 ) => {
@@ -410,6 +410,232 @@ test('storing the artwork never holds the answer', async () => {
   const body = await (await get(undefined, undefined, stuck)).json();
   assert.equal(body.artwork, `https://coverartarchive.org/release/${id}/front-250`);
   assert.equal(deadlines[0].cleared, true);
+});
+
+// A KV namespace as a Map, recording its reads and writes; `broken` makes both reject.
+function kvStore(entries: [string, string][] = [], broken = false) {
+  const data = new Map(entries);
+  const kv = {
+    data,
+    gets: [] as string[],
+    puts: [] as [string, string][],
+    get: async (name: string) => {
+      kv.gets.push(name);
+      if (broken) {
+        throw new Error('unavailable');
+      }
+      return data.get(name) ?? null;
+    },
+    put: async (name: string, url: string) => {
+      kv.puts.push([name, url]);
+      if (broken) {
+        throw new Error('unavailable');
+      }
+      data.set(name, url);
+    },
+  };
+  return kv;
+}
+const kvName = (value: Pick<NowPlaying, 'artist' | 'track' | 'album'>) =>
+  `artwork:${artworkKey(value as NowPlaying)}`;
+const searches = () => requests.filter(({ url }) => url.hostname === 'musicbrainz.org').length;
+
+test('a bound KV answers artwork the Cache API lacks, with no lookup, and refills the cache', async () => {
+  const value = { artist: 'Store', track: 'Kept', album: 'Shelf' };
+  const cover =
+    'https://coverartarchive.org/release/7d1c2f8e-3a4b-4c5d-8e9f-0a1b2c3d4e5f/front-250';
+  const kv = kvStore([[kvName(value), cover]]);
+  lastfm(() =>
+    recent([{ ...track, name: 'Kept', artist: { '#text': 'Store' }, album: { '#text': 'Shelf' } }]),
+  );
+  const body = await (await get({ LASTFM_API_KEY: key, ARTWORK: kv })).json();
+  await Promise.all(waits);
+  assert.equal(body.artwork, cover);
+  assert.equal(searches(), 0);
+  // The KV read ran under the 1.5 s deadline, which was cleared once KV answered.
+  assert.equal(deadlines.length, 1);
+  assert.equal(deadlines[0].cleared, true);
+  assert.deepEqual(kv.puts, []);
+  const refilled = store.get(artworkUrl(value));
+  assert.equal(refilled?.headers.get('cache-control'), 'public, max-age=2592000');
+  assert.equal(await refilled?.clone().text(), cover);
+  // The Cache API answers first: with its entry back, KV is not read again.
+  store.delete(answerUrl);
+  await get({ LASTFM_API_KEY: key, ARTWORK: kv });
+  assert.equal(kv.gets.length, 1);
+});
+
+test('a found artwork is put in KV once, and a lookup that finds nothing is not', async () => {
+  const id = '9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d';
+  const value = { artist: 'Twice', track: 'Once', album: 'Written' };
+  const kv = kvStore();
+  musicbrainz = () => release(id, 'Written', 'Twice');
+  lastfm(() =>
+    recent([
+      { ...track, name: 'Once', artist: { '#text': 'Twice' }, album: { '#text': 'Written' } },
+    ]),
+  );
+  const cover = `https://coverartarchive.org/release/${id}/front-250`;
+  assert.equal((await (await get({ LASTFM_API_KEY: key, ARTWORK: kv })).json()).artwork, cover);
+  await Promise.all(waits);
+  assert.deepEqual(kv.puts, [[kvName(value), cover]]);
+  // Another data centre: no answer and no artwork in its Cache API, so KV answers.
+  store.clear();
+  const looked = searches();
+  assert.equal((await (await get({ LASTFM_API_KEY: key, ARTWORK: kv })).json()).artwork, cover);
+  await Promise.all(waits);
+  // The answer came from KV's second read, not from artwork.ts's remembered lookup.
+  assert.equal(kv.gets.length, 2);
+  assert.equal(searches(), looked);
+  assert.equal(kv.puts.length, 1);
+  // A track MusicBrainz cannot match writes nothing.
+  musicbrainz = () => Response.json({ releases: [] });
+  lastfm(() =>
+    recent([{ ...track, name: 'None', artist: { '#text': 'Bare' }, album: { '#text': 'Plain' } }]),
+  );
+  store.clear();
+  assert.equal((await (await get({ LASTFM_API_KEY: key, ARTWORK: kv })).json()).artwork, null);
+  await Promise.all(waits);
+  assert.equal(kv.puts.length, 1);
+});
+
+test('a failing KV counts as a miss and never holds or breaks the answer', async () => {
+  const id = '1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e';
+  const kv = kvStore([], true);
+  musicbrainz = () => release(id, 'Broken', 'Kv');
+  lastfm(() =>
+    recent([{ ...track, name: 'Fails', artist: { '#text': 'Kv' }, album: { '#text': 'Broken' } }]),
+  );
+  const response = await get({ LASTFM_API_KEY: key, ARTWORK: kv });
+  await Promise.all(waits);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), shared);
+  assert.equal(
+    (await response.json()).artwork,
+    `https://coverartarchive.org/release/${id}/front-250`,
+  );
+  assert.equal(kv.gets.length, 1);
+  assert.equal(kv.puts.length, 1);
+  assert.deepEqual(warnings, []);
+});
+
+test('a stalled KV costs at most the 1.5 s wait, and the lookup still fills the cache', async () => {
+  const id = '3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f';
+  const value = { artist: 'Stuck', track: 'Hangs', album: 'Never' };
+  // A KV that never settles, read or write.
+  const kv = { get: () => new Promise<null>(() => {}), put: () => new Promise<void>(() => {}) };
+  musicbrainz = () => release(id, 'Never', 'Stuck');
+  lastfm(() =>
+    recent([
+      { ...track, name: 'Hangs', artist: { '#text': 'Stuck' }, album: { '#text': 'Never' } },
+    ]),
+  );
+  const answered = get({ LASTFM_API_KEY: key, ARTWORK: kv });
+  (await deadline()).fire();
+  const response = await answered;
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).artwork, null);
+  // The lookup runs after the wait and still keeps the artwork for the next answer.
+  for (let turn = 0; turn < 200 && !store.has(artworkUrl(value)); turn++) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  assert.equal(
+    await store.get(artworkUrl(value))?.clone().text(),
+    `https://coverartarchive.org/release/${id}/front-250`,
+  );
+});
+
+test('a KV that throws synchronously counts as a miss', async () => {
+  const id = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b';
+  const kv = {
+    get: () => {
+      throw new TypeError('key too long');
+    },
+    put: () => {
+      throw new TypeError('key too long');
+    },
+  };
+  musicbrainz = () => release(id, 'Thrown', 'Sync');
+  lastfm(() =>
+    recent([
+      { ...track, name: 'Throws', artist: { '#text': 'Sync' }, album: { '#text': 'Thrown' } },
+    ]),
+  );
+  const response = await get({ LASTFM_API_KEY: key, ARTWORK: kv });
+  assert.equal(response.status, 200);
+  assert.equal(
+    (await response.json()).artwork,
+    `https://coverartarchive.org/release/${id}/front-250`,
+  );
+});
+
+test('a KV key over 512 bytes misses quietly, and the lookup answers', async () => {
+  const id = '7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
+  const title = 'é'.repeat(300);
+  // A KV that rejects any key longer than its 512-byte limit, as Cloudflare's does.
+  const kv = kvStore();
+  const limited = {
+    get: (name: string) =>
+      new TextEncoder().encode(name).length > 512
+        ? Promise.reject(new TypeError('key too long'))
+        : kv.get(name),
+    put: (name: string, url: string) =>
+      new TextEncoder().encode(name).length > 512
+        ? Promise.reject(new TypeError('key too long'))
+        : kv.put(name, url),
+  };
+  musicbrainz = () => release(id, title, 'Long');
+  lastfm(() =>
+    recent([{ ...track, name: 'Wide', artist: { '#text': 'Long' }, album: { '#text': title } }]),
+  );
+  const response = await get({ LASTFM_API_KEY: key, ARTWORK: limited });
+  await Promise.all(waits);
+  assert.equal(response.status, 200);
+  assert.equal(
+    (await response.json()).artwork,
+    `https://coverartarchive.org/release/${id}/front-250`,
+  );
+  assert.equal(kv.data.size, 0);
+});
+
+test('the cache and KV puts both start, and neither holds the answer', async () => {
+  const id = '9c0d1e2f-3a4b-4c5d-8e6f-7a8b9c0d1e2f';
+  const value = { artist: 'Both', track: 'Pending', album: 'Puts' };
+  let cachePuts = 0;
+  const stuck = {
+    match: async () => undefined,
+    put: () => {
+      cachePuts++;
+      return new Promise(() => {});
+    },
+  } as unknown as Cache;
+  const kvPuts: string[] = [];
+  const kv = {
+    get: async () => null,
+    put: (name: string) => {
+      kvPuts.push(name);
+      return new Promise<void>(() => {});
+    },
+  };
+  musicbrainz = () => release(id, 'Puts', 'Both');
+  lastfm(() =>
+    recent([
+      { ...track, name: 'Pending', artist: { '#text': 'Both' }, album: { '#text': 'Puts' } },
+    ]),
+  );
+  const response = await get({ LASTFM_API_KEY: key, ARTWORK: kv }, undefined, stuck);
+  assert.equal(
+    (await response.json()).artwork,
+    `https://coverartarchive.org/release/${id}/front-250`,
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  // The artwork entry and the KV entry are both being written; the answer's own put is the third.
+  assert.equal(cachePuts, 2);
+  assert.deepEqual(kvPuts, [kvName(value)]);
+  // A KV hit's refill of a stuck cache never holds the answer either.
+  const hit = kvStore([[kvName(value), 'https://coverartarchive.org/release/x/front-250']]);
+  const again = await get({ LASTFM_API_KEY: key, ARTWORK: hit }, undefined, stuck);
+  assert.equal((await again.json()).artwork, 'https://coverartarchive.org/release/x/front-250');
 });
 
 // Any other export (onRequest, onRequestPost) would make Pages answer more than GET.
