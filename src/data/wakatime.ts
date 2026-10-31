@@ -36,6 +36,6 @@ async function load(): Promise<Coding> {
 }
 
 // Today's coding when the site is built, for the /now cell's frontmatter; the hub reads
-// /api/coding. A module's top level runs once per build, so every page that imports this shares
+// /api/activity. A module's top level runs once per build, so every page that imports this shares
 // one set of requests.
 export const coding = await load();

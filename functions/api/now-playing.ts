@@ -24,10 +24,10 @@ const month = { headers: { 'Cache-Control': 'public, max-age=2592000' } };
 export const onRequestGet = (context: Context<Env>) => handle(context, caches.default);
 
 // GET /api/now-playing: the owner's latest Last.fm track in the committed snapshot's shape, kept
-// 30 s per data centre. Only the request's origin is read, so no query string or visitor header
-// reaches Last.fm.
+// 60 s per data centre and by the browser. Only the request's origin is read, so no query string
+// or visitor header reaches Last.fm.
 export const handle = (context: Context<Env>, cache: Cache) =>
-  answer(context, cache, '/api/now-playing', 30, async (origin) => {
+  answer(context, cache, '/api/now-playing', 60, async (origin) => {
     const value = await load(context.env.LASTFM_API_KEY);
     return value && withArtwork(value, context, cache, origin);
   });

@@ -6,12 +6,19 @@ import {
   presenceState,
   presenceText,
 } from '../data/now-playing';
+import type { Shelf } from '../data/shelf-live';
 
-// The one <presence-hub> per page polls the site's own feeds while the page is visible.
-// Music uses /api/now-playing; the coding cell adds /api/coding from its own script.
-// A successful answer is followed by a poll a minute later, failures by a longer wait.
-// Only widgets built from the build-time value refresh; fixtures carry data-fixture.
-type Value = NowPlaying | Coding;
+// The one <presence-hub> per page (Base.astro) keeps the live widgets current. Each feed reads one
+// of the site's own endpoints: the music widgets /api/now-playing, and, added by its page's own
+// script, the /now coding cell or /shelf's three rows /api/activity, so a page asks each endpoint
+// once per poll. A feed with widgets on the page polls at once, then, while the page is shown,
+// when its answer goes stale: the answer's Expires, which the Function sets from its Date and
+// max-age, so the Function alone sets the cadence, a minute for the music and up to a day for
+// activity. One request at a time, later after failures, each feed on its own (FR-LV-4). The same
+// max-age keeps an answer in the browser's cache, so a poll or another page before it goes stale
+// reaches no Function. The hub drives only widgets built from the build-time value; a state
+// fixture carries data-fixture.
+type Value = NowPlaying | Coding | Shelf;
 // Seconds before the next poll after one, two and three or more failures in a row.
 const waits = [120, 240, 600];
 
@@ -27,9 +34,13 @@ class Feed {
     readonly path: string,
     readonly kinds: string[],
     readonly read: (body: unknown) => Value | null,
-    readonly every = 60,
-    // The coding cell supplies its own text formatter.
-    readonly text?: (value: never) => Record<string, string | null | undefined>,
+    // An added feed's texts, from its own read's value (hence never), for one of its widgets: the
+    // coding cell's, or a shelf row's by its data-row hooks, with the date for its <time>; none
+    // leaves the widget as it is.
+    readonly text?: (
+      value: never,
+      widget: HTMLElement,
+    ) => Record<string, string | null | undefined> | undefined,
   ) {}
 
   schedule = () => {
@@ -37,31 +48,47 @@ class Feed {
     if (this.widgets.length > 0 && !this.busy && !document.hidden) {
       // setTimeout reads its delay as a signed 32-bit number, so the negative wait before the first
       // poll, or a long one after the clock moves back, could wrap into weeks: keep it within the
-      // longest wait, 0–3,600 s.
-      this.timer = setTimeout(this.poll, Math.min(Math.max(this.due - Date.now(), 0), 3_600_000));
+      // longest wait, 0–86,400 s.
+      this.timer = setTimeout(this.poll, Math.min(Math.max(this.due - Date.now(), 0), 86_400_000));
     }
   };
 
   poll = async () => {
     this.busy = true;
     let value: Value | null = null;
+    // Unknown, as after a failure, until an answer names it.
+    let stale: number | undefined;
     try {
-      // One 5 s budget for the request and its body; the Functions answer within about 4 s.
+      // One 5 s budget for the request and its body; the Functions answer within about 4 s. The
+      // browser's cache answers while the last answer is fresh.
       const response = await fetch(this.path, { signal: AbortSignal.timeout(5_000) });
       value = response.ok ? this.read(await response.json()) : null;
+      // When the answer goes stale, as the Function says.
+      stale = Date.parse(response.headers.get('expires') as string);
     } catch {}
     this.failures = value ? 0 : this.failures + 1;
     this.last = value ?? this.last;
     for (const widget of this.widgets) {
-      if (value) {
+      if (!value) {
+        fail(widget, this.last);
+      } else if ('state' in value) {
         show(widget, value.state, value, this.text);
       } else {
-        fail(widget, this.last);
+        const texts = this.text?.(value as never, widget);
+        if (texts) {
+          write(widget, 'row', texts, texts.date);
+        }
       }
     }
     this.busy = false;
-    this.due =
-      Date.now() + (this.failures ? waits[Math.min(this.failures, 3) - 1] : this.every) * 1000;
+    // After a success, when the answer goes stale, so the next poll finds the browser's copy stale
+    // too; never within a minute, which also bounds a clock ahead of the Function's, and a minute
+    // when the answer names no time. After failures, the backoff.
+    // shortcut: a client clock behind the server delays polling; correct for skew if reported.
+    const now = Date.now();
+    this.due = this.failures
+      ? now + waits[Math.min(this.failures, 3) - 1] * 1000
+      : Math.max(stale as number, now + 60_000) || now + 60_000;
     this.schedule();
   };
 }
@@ -111,7 +138,7 @@ function show(widget: HTMLElement, state: string, value: NowPlaying | Coding, te
   write(
     widget,
     kind,
-    text?.(value as never) ?? texts(kind, shown, value as NowPlaying, widget),
+    text?.(value as never, widget) ?? texts(kind, shown, value as NowPlaying, widget),
     value.at,
   );
 }
@@ -137,10 +164,14 @@ function write(
 }
 
 // A failed poll keeps every text and marks a kept value offline. Live is the exception: "now"
-// would no longer be true, so it shows the same value as offline, worded as idle.
+// would no longer be true, so it shows the same value as offline, worded as idle. A shelf row has
+// no state, so it only keeps its text.
 function fail(widget: HTMLElement, last: Value | undefined) {
   const state = widget.dataset.state;
-  if (state === 'live' && last) {
+  if (!state) {
+    return;
+  }
+  if (state === 'live' && last && 'state' in last) {
     show(widget, 'offline', last);
   } else {
     widget.dataset.state = state === 'idle' || state === 'offline' ? 'offline' : 'empty';
@@ -184,7 +215,8 @@ customElements.define(
       }
     }
 
-    // Cell-local registration keeps the coding code off other pages.
+    // A feed a page's own script adds, as the coding cell's and /shelf's do, so no other page loads
+    // its code. The hub still makes every request.
     add(...feed: ConstructorParameters<typeof Feed>) {
       start(new Feed(...feed));
     }

@@ -1,4 +1,4 @@
-import { ago, minute } from './now-playing';
+import { minute } from './now-playing';
 
 // The same public value at build and in the hub; private WakaTime fields never reach the page.
 export interface Coding {
@@ -76,10 +76,11 @@ const known = new Set(
 const language = (value: unknown) => (typeof value === 'string' && known.has(value) ? value : null);
 const states = new Set<unknown>(['idle', 'empty']);
 
-// Checks a parsed /api/coding body in the form the Function writes; null for
+// Checks the coding value of a parsed /api/activity body in the form the Function writes; null for
 // anything else, so the hub treats it as a failure.
 export function codingFromLive(body: unknown): Coding | null {
-  const { state, language: name, today, at, shares } = (body ?? {}) as Record<string, unknown>;
+  const value = (body as { coding?: unknown } | null)?.coding;
+  const { state, language: name, today, at, shares } = (value ?? {}) as Record<string, unknown>;
   const validShares =
     Array.isArray(shares) &&
     shares.length <= 6 &&
@@ -95,8 +96,8 @@ export function codingFromLive(body: unknown): Coding | null {
     new Set(shares.map(({ name }) => name)).size === shares.length &&
     (shares.length < 6 || shares[5].name === 'other') &&
     (shares.length === 0 || shares.reduce((sum, { percent }) => sum + percent, 0) === 100);
+  // Only an object has a state, so states.has also rejects every other value.
   const valid =
-    typeof body === 'object' &&
     states.has(state) &&
     // Only an empty day has no time, so an idle cell always has one to show.
     (state === 'empty') === (today === null) &&
@@ -115,16 +116,17 @@ export function codingFromLive(body: unknown): Coding | null {
     : null;
 }
 
-// The /now cell's text: today's time, the day's top language, and the last heartbeat's age.
-// Empty, or offline with nothing known, reads "—".
+// The /now cell's text: the day's time and top language, and the last heartbeat's UTC minute. The value can
+// be up to a day old, kept by the build or by /api/activity, so its day is the last heartbeat's,
+// "that day", not "today". Empty, or offline with nothing known, reads "—".
 export function codingText({ language: name, today, at }: Coding) {
   if (!today) {
     return { today: '—', language: '', time: '' };
   }
   return {
-    today: `${today} today`,
+    today: `${today} that day`,
     language: name ? `top language ${name}` : '',
-    time: at ? `last heartbeat ${ago(at)}` : '',
+    time: at ? `heartbeat ${at.slice(0, 16)}Z` : '',
   };
 }
 

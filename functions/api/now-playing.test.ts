@@ -146,7 +146,16 @@ const fixed = {
 
 async function assertAnswer(response: Response, body: unknown, cache: string, from = 'miss') {
   assert.equal(response.status, 200);
-  assert.deepEqual(Object.fromEntries(response.headers), {
+  // Every answer says when it was made, a kept one when it goes stale, and a hit how long ago.
+  const { date, expires, age, ...rest } = Object.fromEntries(response.headers);
+  assert.ok(Date.parse(date) > 0, `no Date: ${date}`);
+  assert.equal(
+    expires,
+    cache === 'no-store' ? undefined : new Date(Date.parse(date) + 60_000).toUTCString(),
+  );
+  // Date has whole seconds, so a hit made within the test can be a second old.
+  assert.ok(from === 'hit' ? /^[01]$/.test(age) : age === undefined, `Age: ${age}`);
+  assert.deepEqual(rest, {
     ...fixed,
     'cache-control': cache,
     'x-cache': from,
@@ -155,7 +164,7 @@ async function assertAnswer(response: Response, body: unknown, cache: string, fr
 }
 
 const failed = (response: Response) => assertAnswer(response, null, 'no-store');
-const shared = 'public, max-age=0, s-maxage=30';
+const shared = 'public, max-age=60, s-maxage=60';
 const idle = {
   state: 'idle',
   track: 'Song',
@@ -167,7 +176,7 @@ const idle = {
 };
 const answerUrl = `${origin}/api/now-playing`;
 
-test('live and idle values in the snapshot shape, with cached artwork, kept for 30 s', async () => {
+test('live and idle values in the snapshot shape, with cached artwork, kept for 60 s', async () => {
   const { date: _, ...playing } = track;
   lastfm(() => recent([{ ...playing, '@attr': { nowplaying: 'true' } }]));
   // A live track's `at` is the moment it was seen, coarsened to the minute.
@@ -368,7 +377,7 @@ test('a slower lookup answers without artwork and finishes under waitUntil', asy
   const kept = store.get(artworkUrl(value));
   assert.equal(kept?.headers.get('cache-control'), 'public, max-age=2592000');
   assert.equal(await kept?.clone().text(), cover);
-  // The answer's 30 s pass; the next answer takes the artwork from the cache.
+  // The answer's 60 s pass; the next answer takes the artwork from the cache.
   store.delete(answerUrl);
   const searches = requests.filter(({ url }) => url.hostname === 'musicbrainz.org').length;
   assert.equal((await (await get()).json()).artwork, cover);

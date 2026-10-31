@@ -90,7 +90,7 @@ test('duration reads hours and minutes', () => {
 });
 
 test('the committed snapshot is a value the hub accepts', () => {
-  assert.deepEqual(codingFromLive(snapshot), snapshot as Coding);
+  assert.deepEqual(codingFromLive({ coding: snapshot }), snapshot as Coding);
 });
 
 test('codingFromLive keeps only the shape the Function writes', () => {
@@ -101,9 +101,9 @@ test('codingFromLive keeps only the shape the Function writes', () => {
     at: '2026-10-31T11:50:00.000Z',
     shares: [{ name: 'C++', percent: 100 }],
   };
-  assert.deepEqual(codingFromLive(live), live);
+  assert.deepEqual(codingFromLive({ coding: live }), live);
   assert.deepEqual(
-    codingFromLive({ ...live, state: 'empty', language: null, today: null, at: null }),
+    codingFromLive({ coding: { ...live, state: 'empty', language: null, today: null, at: null } }),
     {
       state: 'empty',
       language: null,
@@ -162,32 +162,38 @@ test('codingFromLive keeps only the shape the Function writes', () => {
       })),
     },
   ]) {
-    assert.equal(codingFromLive(bad), null, JSON.stringify(bad));
+    assert.equal(codingFromLive({ coding: bad }), null, JSON.stringify(bad));
+  }
+  // An /api/activity body without a coding value, as when WakaTime failed, is no value either.
+  for (const body of [null, 'x', [], {}, { reading: null }, live]) {
+    assert.equal(codingFromLive(body), null, JSON.stringify(body));
   }
   // Extra fields are dropped, so nothing else reaches the page.
-  assert.deepEqual(codingFromLive({ ...live, project: 'secret' }), live);
+  assert.deepEqual(codingFromLive({ coding: { ...live, project: 'secret' } }), live);
   assert.deepEqual(
-    codingFromLive({ ...live, shares: [{ name: 'C++', percent: 100, project: 'secret' }] }),
+    codingFromLive({
+      coding: { ...live, shares: [{ name: 'C++', percent: 100, project: 'secret' }] },
+    }),
     live,
   );
 });
 
-test('codingText: the heartbeat with its age, never "now"; empty and unknown a dash', () => {
+test('codingText: the absolute heartbeat minute stays true for a daily snapshot', () => {
   const value: Coding = {
     state: 'idle',
     language: 'TypeScript',
     today: '1h 20m',
-    at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+    at: '2026-11-01T11:55:00.000Z',
     shares: [],
   };
   assert.deepEqual(codingText(value), {
-    today: '1h 20m today',
+    today: '1h 20m that day',
     language: 'top language TypeScript',
-    time: 'last heartbeat 3h ago',
+    time: 'heartbeat 2026-11-01T11:55Z',
   });
   assert.equal(
-    codingText({ ...value, at: new Date().toISOString() }).time,
-    'last heartbeat 1m ago',
+    codingText({ ...value, at: '2026-10-31T23:59:00.000Z' }).time,
+    'heartbeat 2026-10-31T23:59Z',
   );
   assert.equal(codingText({ ...value, language: null }).language, '');
   assert.equal(codingText({ ...value, at: null }).time, '');

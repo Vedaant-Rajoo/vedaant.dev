@@ -99,10 +99,11 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
   import { codingFromLive, codingText, type Share } from '../data/coding';
   import type { Hub } from '../scripts/presence-hub';
 
-  // The cell's feed, added to the hub once it is defined, so its checks load with the cell alone.
+  // The cell's feed, added to the hub once it is defined, so its checks load with the cell alone. It
+  // reads the coding value of /api/activity, which /shelf's rows share, at most once a day.
   customElements.whenDefined('presence-hub').then(() => {
     const hub = document.querySelector('presence-hub') as Hub;
-    hub.add('/api/coding', ['coding'], codingFromLive, 60, codingText);
+    hub.add('/api/activity', ['coding'], codingFromLive, codingText);
   });
 
   customElements.define('language-mix', class extends HTMLElement {

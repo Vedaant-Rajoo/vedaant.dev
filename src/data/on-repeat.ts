@@ -4,7 +4,7 @@ import { shelf } from './shelf';
 
 // /shelf's on-repeat row: the week's most played album from Last.fm when the site is built, read
 // with the same key as lastfm.ts. Without the key, or on failure, it is shelf.json's `listening`
-// row, with one `shelf:` warning; a week with no plays leaves the row out. Nothing builds on a
+// row, with one `shelf:` warning; a week with no plays shows the row as "—". Nothing builds on a
 // schedule, so the row is as fresh as the last build.
 async function load(): Promise<OnRepeat | undefined> {
   let reason = 'no LASTFM_API_KEY';

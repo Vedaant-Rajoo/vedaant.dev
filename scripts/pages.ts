@@ -1,17 +1,24 @@
-// Reads every page in dist/: the live widgets and /shelf's on-repeat row show the committed
+// Reads every page in dist/: the live widgets and /shelf's three live rows show the committed
 // values, client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each)
 // stays within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
 // reported, never failed. Run after `bun run build`; exits 1 on a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
 
 const BUDGET = 5120;
 const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
 const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
-const { listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
+const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
+// /shelf's rows as a build without the key shows them, each once, "—" for a row shelf.json leaves out.
+const rows = {
+  reading: readingText(reading ?? null).title,
+  'last-watched': watchedText(lastWatched ?? null).title,
+  'on-repeat': listeningText(listening ?? null).title,
+};
 // gzip(1), not zlib: every earlier measurement used it, and the two differ by a few bytes.
 const gz = (input: string | Buffer) =>
   spawnSync('gzip', ['-6', '-c', '-n'], { input }).stdout.length;
@@ -61,7 +68,7 @@ for (const page of pages.sort()) {
     .map(decode)
     .filter(Boolean);
   const language = coding.today && coding.language ? `top language ${coding.language}` : '';
-  const today = coding.today ? `${coding.today} today` : '—';
+  const today = coding.today ? `${coding.today} that day` : '—';
   const codes =
     cells.length === (page === 'now/index.html' ? 1 : 0) &&
     cells.every((c) => attr(c, 'data-state') === coding.state) &&
@@ -80,10 +87,14 @@ for (const page of pages.sort()) {
     problems.push(`${page}: the coding cell does not show the snapshot`);
   }
 
-  // The on-repeat row on /shelf: shelf.json's own, as a build without the key shows it.
-  const row = `on repeat · ${listening?.title}`;
-  if (page === 'shelf/index.html' && listening && !decode(html).includes(row)) {
-    problems.push(`${page}: the on-repeat row does not show shelf.json's album`);
+  for (const [name, title] of Object.entries(rows)) {
+    const shelfPage = page === 'shelf/index.html';
+    const count = html.split(`data-widget="${name}"`).length - 1;
+    if (count !== Number(shelfPage) || (shelfPage && !decode(html).includes(title))) {
+      problems.push(
+        `${page}: the ${name} row does not show shelf.json's value once, on /shelf alone`,
+      );
+    }
   }
 
   const seen = new Map<string, number>();

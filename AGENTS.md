@@ -80,28 +80,41 @@ only names tokens and components; where it differs, the pages win.
   Internet Archive redirects). Those thumbnails are exempt from NFR-P7's 20 KB
   target; do not reject them for their byte size or a missing Content-Length
   header.
-- Each `/api/*` endpoint is a Pages Function in `functions/api/`, one per data
-  source, built by Cloudflare with the pages, from the same commit. Only
-  `/api/*` runs a Function, so static requests stay free. `_headers` never
-  applies to a Function, so each sets its own headers. Each serves GET only,
-  ignores the query string and answers with its committed snapshot's shape and
-  nothing more. When its source fails or sends an unusable body, or its key is
-  missing, it answers 200 `null` with `no-store`, never a 5xx.
+- Two `/api/*` endpoints exist, each a Pages Function in `functions/api/`,
+  built by Cloudflare with the pages, from the same commit: `/api/now-playing`
+  and `/api/activity`. Only they run a Function, so static requests stay free;
+  modules beside them (`functions/answer.ts`, `functions/sources/`) export no
+  `onRequest*`, so they are no routes. `_headers` never applies to a Function,
+  so each sets its own headers. Each serves GET only, ignores the query string
+  and answers with its committed snapshot's shape and nothing more. When nothing
+  usable comes back, it answers 200 `null` with `no-store`, never a 5xx.
+- A success carries `public, max-age=N, s-maxage=N` and `Expires`, so the Cache
+  API and the browser keep it alike and a poll or another page within N seconds
+  runs no Function. A hit keeps the `Date` and `Expires` its answer was made
+  with and adds `Age`. The hub polls at `Expires`, at least a minute apart, so
+  N alone sets each endpoint's cadence.
 - The now-playing Function reads Last.fm's `user.getRecentTracks` with
-  `LASTFM_API_KEY` from `context.env` and caches a successful answer for 30 s
-  where the Cache API is available. It looks up artwork through MusicBrainz
-  release search and Cover Art Archive thumbnails, caching each lookup (a found
-  URL also in the `ARTWORK` KV namespace, when bound) and keeping MusicBrainz
-  requests at least 1.1 seconds apart within each isolate; a failed or slow
-  lookup, or a slow KV read, only leaves `artwork` `null`.
-- The coding Function reads WakaTime's `status_bar/today`, `users/current` and
-  `users/current/stats/last_30_days`
-  with `WAKATIME_API_KEY` from `context.env` and caches a successful answer for
-  60 s. It answers today's time, the day's top language and the last
-  heartbeat's minute, plus the rolling 30-day top five languages and `other`.
-  The hub refreshes the mix with the same poll, with space reserved to avoid
-  layout shifts. It never exposes a project, branch, file or editor name. Its
-  client code loads only with the cell, whose script adds its feed to the hub.
+  `LASTFM_API_KEY` from `context.env` and keeps a successful answer 60 s. It
+  looks up artwork through MusicBrainz release search and Cover Art Archive
+  thumbnails, caching each lookup (a found URL also in the `ARTWORK` KV
+  namespace, when bound) and keeping MusicBrainz requests at least 1.1 seconds
+  apart within each isolate; a failed or slow lookup, or a slow KV read, only
+  leaves `artwork` `null`.
+- The activity Function answers `{ coding, reading, lastWatched, listening }`
+  from four sources in `functions/sources/`, run at once: WakaTime's
+  `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
+  with `WAKATIME_API_KEY`; Hardcover with `HARDCOVER_TOKEN`; the public
+  Letterboxd diary feed; Last.fm's `user.getTopAlbums`. It keeps an answer with
+  all four a day (86,400 s). A failed source is left out, so only its widget
+  keeps its text, and the answer is kept 600 s; a shelf row is `null` when
+  nothing is current, which is a value.
+- `coding` is a daily snapshot: the day's time ("that day", never "today"), top
+  language and last heartbeat's minute, plus the rolling 30-day top five
+  languages and `other`, with space reserved to avoid layout shifts. It never
+  exposes a project, branch, file or editor name.
+- A page asks `/api/activity` once per poll, from one feed its own script adds
+  to the hub: the coding cell's on `/now`, the three rows' on `/shelf`. Each
+  loads only its own checks and texts.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never

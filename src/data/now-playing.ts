@@ -180,7 +180,7 @@ export interface OnRepeat {
 }
 
 // Maps a parsed user.getTopAlbums body: the week's top album; undefined for a week with no plays,
-// which leaves the row out; null when the body is not one.
+// which shows the row as "—"; null when the body is not one.
 export function toOnRepeat(body: unknown): OnRepeat | undefined | null {
   const albums = (body as { topalbums?: { album?: unknown } } | null)?.topalbums?.album;
   if (typeof albums !== 'object' || albums === null) {

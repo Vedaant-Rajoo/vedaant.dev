@@ -51,7 +51,7 @@ grep -rnoE --include='*.astro' --include='*.[jt]s' --include='*.[cm][jt]s' --inc
   grep -vE '^src/.*:import\.meta\.env\.(ASSETS_PREFIX|BASE_URL|DEV|MODE|PROD|SITE|SSR)$' &&
   fail 'read secrets through astro:env/server or context.env, not at the lines above'
 
-step '5/10 the Functions: built, no secret in the bundle, routed only at /api/now-playing and /api/coding'
+step '5/10 the Functions: built, no secret in the bundle, routed only at their two /api/ paths'
 run env WRANGLER_SEND_METRICS=false WRANGLER_WRITE_LOGS=false bunx wrangler@4.150.0 pages \
   functions build --outdir "$tmp/functions" --output-routes-path "$tmp/routes.json"
 run gitleaks dir --redact --no-banner -c scripts/gitleaks.toml "$tmp/functions"
@@ -59,14 +59,15 @@ run gitleaks dir --redact --no-banner -c scripts/gitleaks.toml "$tmp/functions"
 # and no _routes.json of the site's own may replace them.
 routes=$(bun -e 'const r = await Bun.stdin.json(); console.log(JSON.stringify([r.include, r.exclude]))' \
   < "$tmp/routes.json") || fail 'the generated routes are missing or not JSON'
-[ "$routes" = '[["/api/now-playing","/api/coding"],[]]' ] ||
+# Wrangler's order, not the hub's.
+[ "$routes" = '[["/api/now-playing","/api/activity"],[]]' ] ||
   fail "the Functions are routed at $routes (include, exclude), not only at their two paths"
 [ ! -e dist/_routes.json ] || fail 'dist/_routes.json would replace the generated routes'
 
 step '6/10 client JavaScript names no third-party API host'
 # The browser reads only /api/*, and the artwork is an <img>. fromLive's escaped pattern for
 # Cover Art Archive (coverartarchive\.org\/release) is not a match.
-grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release|wakatime\.com' \
+grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release|wakatime\.com|letterboxd\.com|hardcover\.app' \
   dist/_astro/*.js && fail 'a script names a third-party API host, in the files above'
 # grep exits 2 when it cannot read a file, or when no file matches the glob.
 [ "$?" -eq 1 ] || fail 'grep could not read dist/_astro/*.js'

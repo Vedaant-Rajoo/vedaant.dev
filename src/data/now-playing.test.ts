@@ -189,7 +189,7 @@ test('toOnRepeat maps the week top album to the shelf row', () => {
   assert.deepEqual(toOnRepeat(week([{ ...top, playcount: 1 }]))?.plays, 1);
 });
 
-test('toOnRepeat: a week with no plays leaves the row out; anything malformed is null', () => {
+test('toOnRepeat: a week with no plays is undefined; anything malformed is null', () => {
   assert.equal(toOnRepeat(week([])), undefined);
   for (const body of [
     null,
