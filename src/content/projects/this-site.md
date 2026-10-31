@@ -36,7 +36,7 @@ Everything: the choices, the content, the code and the checks. The site is built
 <dt>over</dt>
 <dd>Vercel, which the design pages name</dd>
 <dt>because</dt>
-<dd>my DNS was already on Cloudflare, a static build needs no adapter, and Pages serves static requests free and without a cap, so the deploy is one GitHub Actions job that checks, builds and uploads <code>dist/</code>.</dd>
+<dd>my DNS was already on Cloudflare, a static build needs no adapter, and Pages serves static requests free and without a cap. Pages also builds the repository itself on every push, so there is no deploy job to keep.</dd>
 </dl>
 
 <dl>
@@ -82,14 +82,14 @@ Astro 7, prerendered, with Tailwind 4 reading one token file, `tokens.css`, wher
 Pages brought two small things with it. A top-level `404.html` has to exist, because Pages otherwise answers unknown paths with the home page, and the `/resume` redirect lives in `public/_redirects`. The theme switch reveals the new theme in a circle from the clock with a view transition, and swaps at once when the two themes paint the same, when the browser lacks the API, or under reduced motion.
 
 ```text
-build (GitHub Actions, on push)                      visitor
+build (Cloudflare Pages, on push)                    visitor
   src/content, src/data ---+                           prerendered page
   Last.fm, 5 s budget -----+-- astro build --> dist/ --> Cloudflare Pages --> head script restores the theme
   snapshots/lastfm.json ---+   (fallback)                                    clock ticks once a minute
-                                                                             presence hub polls Last.fm (next step)
+                                                                             presence hub polls Last.fm
 ```
 
-The live layer is thin. At build, `lastfm.ts` fetches the latest track once with a five-second budget and falls back to a committed snapshot, which a test proves is a valid idle value, so a page always has a value, with JavaScript off too. The row that shows it and the `<presence-hub>` element that polls Last.fm from the browser are the next steps, and the browser fetches nothing else.
+The live layer is thin. At build, `lastfm.ts` fetches the latest track once with a five-second budget and falls back to a committed snapshot, which a test proves is a valid idle value, so a page always has a value, with JavaScript off too. With JavaScript, one `<presence-hub>` element per page polls Last.fm from the browser about once a minute while the page is visible, and updates the rows that show the track. Besides Last.fm, the browser fetches only album artwork, from MusicBrainz and the Cover Art Archive.
 
 ## A piece of it
 
@@ -117,7 +117,7 @@ async function load(): Promise<NowPlaying> {
 
 ## Trade-offs
 
-Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. The repository stayed private while the site was built, so its source links were dead until launch. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
+Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
 
 ## Outcome
 

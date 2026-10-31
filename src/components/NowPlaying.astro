@@ -1,5 +1,4 @@
 ---
-import { artworkKey } from '../data/artwork';
 import { nowPlaying } from '../data/lastfm';
 import { type NowPlaying, nowPlayingText } from '../data/now-playing';
 import Arrow from './Arrow.astro';
@@ -28,7 +27,6 @@ const root = {
   'data-variant': variant === 'cell' ? 'cell' : undefined,
   'data-state': state,
   'data-fixture': Astro.props.value || Astro.props.state ? '' : undefined,
-  'data-artwork-key': artwork ? artworkKey(value) : undefined,
   'aria-live': 'off',
   'aria-busy': state === 'loading' ? 'true' : undefined,
 } as const;

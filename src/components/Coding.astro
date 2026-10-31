@@ -1,0 +1,44 @@
+---
+import { type Coding, codingText } from '../data/coding';
+import { coding } from '../data/wakatime';
+
+interface Props {
+  // /now passes neither: the build-time value, idle even when WakaTime said live, and empty as "—".
+  // A state fixture passes both.
+  value?: Coding;
+  state?: Coding['state'] | 'offline' | 'loading';
+}
+
+const { value = coding, state = value.state === 'empty' ? 'empty' : 'idle' } = Astro.props;
+const text = codingText(state, value);
+const When = value.at ? 'time' : 'span';
+// The time fills a fixed cell, so a state change moves nothing beside it.
+const cell = 'meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3';
+const time = 'grow self-stretch text-right leading-5';
+---
+
+{/* The /now coding cell, in the music cell's anatomy: the label with the state on its right, then
+    the day's top language over today's time (FR-CD-1). Every line has a fixed height and truncates,
+    and the state fills the row's fixed cell, so no state or text changes the cell's height. The hub
+    sets data-state and the three texts; aria-live="off" keeps the changes silent. */}
+<div class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-1.5">
+  <div
+    data-widget="coding"
+    data-state={state}
+    data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
+    aria-live="off"
+    aria-busy={state === 'loading' ? 'true' : undefined}
+    class="flex flex-col gap-2.5 py-2"
+  >
+    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="meta text-xs text-fg-3">coding</span>
+      <span class={cell}><When data-coding="time" datetime={value.at} class={time}>{text.time}</When></span>
+    </span>
+    <span class="flex min-w-0 flex-col">
+      <span data-coding="language" class="h-lh truncate font-medium leading-(--lh-snug)">{text.language}</span>
+      <span data-coding="today" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
+        >{text.today}</span
+      >
+    </span>
+  </div>
+</div>

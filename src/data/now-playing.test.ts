@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { shownAlbum, toNowPlaying } from './now-playing';
+import { fromLive, shownAlbum, toNowPlaying, toOnRepeat, topAlbums } from './now-playing';
 import snapshot from './snapshots/lastfm.json';
 
 const now = Date.parse('2026-10-14T09:30:59Z');
@@ -118,4 +118,107 @@ test('shownAlbum drops an album named as its track', () => {
   assert.equal(value && shownAlbum(value), 'Record');
   const single = toNowPlaying(recent([{ ...scrobble, album: { '#text': 'Song' } }]), now);
   assert.equal(single && shownAlbum(single), null);
+});
+
+test('fromLive keeps a body in the snapshot shape, the committed snapshot included', () => {
+  assert.deepEqual(fromLive(snapshot), snapshot);
+  const live = toNowPlaying(recent([{ ...scrobble, '@attr': { nowplaying: 'true' } }]), now);
+  assert.ok(live);
+  assert.deepEqual(fromLive({ ...live, artwork: null }), { ...live, artwork: null });
+  const empty = { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
+  assert.deepEqual(fromLive({ ...empty, artwork: null }), { ...empty, artwork: null });
+  // Extra fields are dropped, never passed on.
+  assert.deepEqual(fromLive({ ...snapshot, extra: '<b>' }), snapshot);
+  // artwork.ts accepts a release id in either case and keeps it in the URL.
+  const upper = {
+    ...snapshot,
+    artwork: 'https://coverartarchive.org/release/391FEB5B-ED43-459B-ADFE-F7AE874175FE/front-250',
+  };
+  assert.deepEqual(fromLive(upper), upper);
+});
+
+test('fromLive rejects anything else, so the hub treats it as a failure', () => {
+  const art = (artwork: unknown) => ({ ...snapshot, artwork });
+  for (const body of [
+    null,
+    'x',
+    [],
+    {},
+    { ...snapshot, state: 'offline' },
+    { ...snapshot, state: 'loading' },
+    { ...snapshot, track: 1 },
+    { ...snapshot, album: undefined },
+    { ...snapshot, at: '2026-10-13T21:49:30.000Z' },
+    { ...snapshot, at: '2026-10-13T21:49:00Z' },
+    { ...snapshot, at: '2026-13-13T21:49:00.000Z' },
+    { ...snapshot, at: 1760425439 },
+    { ...snapshot, url: 'http://www.last.fm/music/SHINee/_/Married+to+the+Music' },
+    { ...snapshot, url: 'https://example.com/music/SHINee' },
+    { ...snapshot, url: 'https://user@www.last.fm/music/SHINee' },
+    { ...snapshot, url: 'javascript:alert(1)' },
+    art(undefined),
+    art('https://example.com/release/391feb5b-ed43-459b-adfe-f7ae874175fe/front-250'),
+    art('http://coverartarchive.org/release/391feb5b-ed43-459b-adfe-f7ae874175fe/front-250'),
+    art('https://coverartarchive.org/release/391feb5b-ed43-459b-adfe-f7ae874175fe/front-500'),
+    art('https://coverartarchive.org/release/not-a-uuid/front-250'),
+    art('https://coverartarchive.org/release/391feb5b-ed43-459b-adfe-f7ae874175fe/front-250?x=1'),
+    art(
+      'https://example.com/?https://coverartarchive.org/release/391feb5b-ed43-459b-adfe-f7ae874175fe/front-250',
+    ),
+  ]) {
+    assert.equal(fromLive(body), null, JSON.stringify(body));
+  }
+});
+
+// user.getTopAlbums, as Last.fm answers it, trimmed to what toOnRepeat reads.
+const week = (album: unknown) => ({ topalbums: { album, '@attr': { user: 'newedia' } } });
+const top = { name: 'UNFORGIVEN', playcount: '9', artist: { name: 'LE SSERAFIM' }, mbid: '' };
+
+test('toOnRepeat maps the week top album to the shelf row', () => {
+  assert.deepEqual(toOnRepeat(week([top])), {
+    title: 'UNFORGIVEN',
+    creator: 'LE SSERAFIM',
+    plays: 9,
+  });
+  // One album may come as an object, not a list.
+  assert.deepEqual(toOnRepeat(week(top)), {
+    title: 'UNFORGIVEN',
+    creator: 'LE SSERAFIM',
+    plays: 9,
+  });
+  assert.deepEqual(toOnRepeat(week([{ ...top, playcount: 1 }]))?.plays, 1);
+});
+
+test('toOnRepeat: a week with no plays leaves the row out; anything malformed is null', () => {
+  assert.equal(toOnRepeat(week([])), undefined);
+  for (const body of [
+    null,
+    {},
+    { topalbums: {} },
+    week([{ ...top, name: '' }]),
+    week([{ ...top, name: '  ' }]),
+    week([{ ...top, artist: {} }]),
+    week([{ ...top, playcount: '0' }]),
+    week([{ ...top, playcount: '2.5' }]),
+    week([{ ...top, playcount: 'many' }]),
+    week([{ ...top, playcount: true }]),
+    week([{ ...top, playcount: [9] }]),
+    week([{ ...top, playcount: '9007199254740993' }]),
+    week([null]),
+  ]) {
+    assert.equal(toOnRepeat(body), null, JSON.stringify(body));
+  }
+});
+
+test('topAlbums asks for the last 7 days, one album, as JSON, with the given key', () => {
+  const url = new URL(topAlbums('test-key'));
+  assert.equal(url.origin + url.pathname, 'https://ws.audioscrobbler.com/2.0/');
+  assert.deepEqual(Object.fromEntries(url.searchParams), {
+    method: 'user.gettopalbums',
+    user: 'newedia',
+    period: '7day',
+    limit: '1',
+    format: 'json',
+    api_key: 'test-key',
+  });
 });

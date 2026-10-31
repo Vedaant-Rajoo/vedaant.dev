@@ -6,9 +6,9 @@ import Clock from './Clock.astro';
 const path = Astro.url.pathname;
 ---
 
-<header class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-5">
+<header class="flex flex-wrap items-center justify-between gap-x-1 gap-y-2 pt-5 sm:gap-x-6">
   <a href="/" class="flex min-h-11 min-w-11 items-center font-medium">{site.name}</a>
-  <nav aria-label="Site" class="flex flex-wrap gap-2 text-sm">
+  <nav aria-label="Site" class="flex flex-wrap gap-y-2 text-sm sm:gap-x-2">
     {
       words.map(({ word, href }) => {
         const current = path === href || path.startsWith(`${href}/`);

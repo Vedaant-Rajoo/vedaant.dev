@@ -8,7 +8,8 @@ cd "$(dirname "$0")/.."
 port=${PORT:-4331}
 out=$(mktemp -d)
 WRANGLER_SEND_METRICS=false WRANGLER_WRITE_LOGS=false bunx wrangler@4.150.0 pages dev dist \
-  --ip 127.0.0.1 --port "$port" --inspector-port $((port + 5000)) > "$out/server.log" 2>&1 &
+  --compatibility-date 2024-10-31 --ip 127.0.0.1 --port "$port" --inspector-port $((port + 5000)) \
+  > "$out/server.log" 2>&1 &
 server=$!
 trap 'kill $server; rm -rf "$out"' EXIT
 tries=0

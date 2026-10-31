@@ -8,17 +8,30 @@ export interface NowPlaying {
   artwork?: string | null;
 }
 
-// user.getRecentTracks needs no authentication, and the key ships in the page.
+// user.getRecentTracks needs a key but no authentication. The build and the Function each pass
+// the LASTFM_API_KEY from their host's environment; the hub reads /api/now-playing and has no key.
 const user = 'newedia';
-const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
 
-export const recentTracks = `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
-  method: 'user.getrecenttracks',
-  user,
-  limit: '1',
-  format: 'json',
-  api_key: apiKey,
-})}`;
+// The request for one key.
+export const recentTracks = (key: string) =>
+  `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
+    method: 'user.getrecenttracks',
+    user,
+    limit: '1',
+    format: 'json',
+    api_key: key,
+  })}`;
+
+// The week's most played album, for /shelf's on-repeat row (user.getTopAlbums).
+export const topAlbums = (key: string) =>
+  `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
+    method: 'user.gettopalbums',
+    user,
+    period: '7day',
+    limit: '1',
+    format: 'json',
+    api_key: key,
+  })}`;
 
 interface Track {
   name?: unknown;
@@ -83,6 +96,32 @@ export function toNowPlaying(body: unknown, now = Date.now()): NowPlaying | null
   };
 }
 
+const states = new Set<unknown>(['live', 'idle', 'empty']);
+const cover =
+  /^https:\/\/coverartarchive\.org\/release\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/front-250$/i;
+const optional = (value: unknown) => value === null || typeof value === 'string';
+// A whole minute, written as toNowPlaying writes it.
+export const minute = (value: unknown) => {
+  const time = typeof value === 'string' ? Date.parse(value) : Number.NaN;
+  return time % 60_000 === 0 && new Date(time).toISOString() === value;
+};
+
+// Checks a parsed /api/now-playing body: the committed snapshot's seven fields and nothing else,
+// each in the form the Function writes; null for anything else, so the hub treats it as a failure.
+// The link must pass page() unchanged and the artwork must be a Cover Art Archive thumbnail, because
+// they end up in an href and an <img src>.
+export function fromLive(body: unknown): NowPlaying | null {
+  const { state, track, artist, album, at, url, artwork } = (body ?? {}) as Record<string, unknown>;
+  const valid =
+    typeof body === 'object' &&
+    states.has(state) &&
+    [track, artist, album].every(optional) &&
+    (at === null || minute(at)) &&
+    (url === null || (typeof url === 'string' && page(url) === url)) &&
+    (artwork === null || (typeof artwork === 'string' && cover.test(artwork)));
+  return valid ? ({ state, track, artist, album, at, url, artwork } as NowPlaying) : null;
+}
+
 // The album the music row and the /now cell show beside the artist: none when it is named as the
 // track, as a single's is, so the name is not read twice.
 export const shownAlbum = ({ track, album }: NowPlaying) => (album === track ? null : album);
@@ -131,4 +170,36 @@ export function presenceText(state: string, { track, artist }: NowPlaying) {
     track: shown ? (track ?? '') : '',
     artist: live ? ` · \u2068${artist}\u2069` : '',
   };
+}
+
+// /shelf's on-repeat row, in shelf.json's `listening` shape.
+export interface OnRepeat {
+  title: string;
+  creator: string;
+  plays: number;
+}
+
+// Maps a parsed user.getTopAlbums body: the week's top album; undefined for a week with no plays,
+// which leaves the row out; null when the body is not one.
+export function toOnRepeat(body: unknown): OnRepeat | undefined | null {
+  const albums = (body as { topalbums?: { album?: unknown } } | null)?.topalbums?.album;
+  if (typeof albums !== 'object' || albums === null) {
+    return null;
+  }
+  if (Array.isArray(albums) && albums.length === 0) {
+    return undefined;
+  }
+  const first = (Array.isArray(albums) ? albums[0] : albums) as {
+    name?: unknown;
+    artist?: { name?: unknown };
+    playcount?: unknown;
+  } | null;
+  const title = text(first?.name)?.trim();
+  const creator = text(first?.artist?.name)?.trim();
+  // Last.fm writes the count as a string; nothing else may stand in for it.
+  const count = first?.playcount;
+  const plays = typeof count === 'string' || typeof count === 'number' ? Number(count) : Number.NaN;
+  return title && creator && Number.isSafeInteger(plays) && plays >= 1
+    ? { title, creator, plays }
+    : null;
 }

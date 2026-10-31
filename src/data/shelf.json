@@ -1,0 +1,173 @@
+{
+  "updated": "2026-10-28",
+  "summary": "Albums, films and books I'd hand you, with a sentence on why I like each one.",
+  "reading": {
+    "title": "A Game of Thrones",
+    "creator": "George R. R. Martin",
+    "started": "2026-10",
+    "page": 120
+  },
+  "lastWatched": {
+    "title": "Clueless",
+    "year": 1995,
+    "rating": 3.5,
+    "date": "2026-10-28"
+  },
+  "listening": {
+    "title": "UNFORGIVEN",
+    "creator": "LE SSERAFIM",
+    "plays": 9
+  },
+  "albums": [
+    {
+      "title": "OK Computer",
+      "creator": "Radiohead",
+      "year": 1997,
+      "sentence": "I put this on when someone tells me guitars ran out of ideas in the nineties.",
+      "link": "https://en.wikipedia.org/wiki/OK_Computer"
+    },
+    {
+      "title": "1",
+      "creator": "The Beatles",
+      "year": 2000,
+      "sentence": "Putting twenty-seven number ones on one CD is showing off, even for the Beatles."
+    },
+    {
+      "title": "Fearless",
+      "creator": "Taylor Swift",
+      "year": 2008,
+      "sentence": "This made me a Swiftie; I still play it when I need reminding to send the text before writing an album about it.",
+      "link": "https://en.wikipedia.org/wiki/Fearless_(Taylor_Swift_album)"
+    },
+    {
+      "title": "All the Right Reasons",
+      "creator": "Nickelback",
+      "year": 2005,
+      "sentence": "\"Photograph\" is best sung badly, with the car windows up for everyone's sake.",
+      "link": "https://en.wikipedia.org/wiki/All_the_Right_Reasons"
+    },
+    {
+      "title": "Discovery",
+      "creator": "Daft Punk",
+      "year": 2001,
+      "sentence": "\"One More Time\" is terrible advice when I have somewhere to be.",
+      "link": "https://en.wikipedia.org/wiki/Discovery_(Daft_Punk_album)"
+    }
+  ],
+  "films": [
+    {
+      "title": "Parasite",
+      "creator": "Bong Joon-ho",
+      "year": 2019,
+      "sentence": "So good I had to watch it twice to get everything.",
+      "link": "https://en.wikipedia.org/wiki/Parasite_(2019_film)"
+    },
+    {
+      "title": "The Dark Knight",
+      "creator": "Christopher Nolan",
+      "year": 2008,
+      "sentence": "This is the best three hours I've spent watching a dark movie.",
+      "link": "https://en.wikipedia.org/wiki/The_Dark_Knight"
+    },
+    {
+      "title": "Interstellar",
+      "creator": "Christopher Nolan",
+      "year": 2014,
+      "sentence": "I love how earnestly it goes for the big feelings, and the score makes me want bigger speakers.",
+      "link": "https://www.paramountmovies.com/movies/interstellar"
+    },
+    {
+      "title": "Pulp Fiction",
+      "creator": "Quentin Tarantino",
+      "year": 1994,
+      "sentence": "The dialogue makes me want to quote it in situations where I absolutely shouldn't.",
+      "link": "https://www.miramax.com/movie/pulp-fiction/"
+    },
+    {
+      "title": "3 Idiots",
+      "creator": "Rajkumar Hirani",
+      "year": 2009,
+      "sentence": "I love a comedy that takes the pressure to succeed this seriously.",
+      "link": "https://en.wikipedia.org/wiki/3_Idiots"
+    },
+    {
+      "title": "Up",
+      "creator": "Pete Docter",
+      "year": 2009,
+      "sentence": "The opening is emotional blackmail, and I am an embarrassingly easy target.",
+      "link": "https://www.pixar.com/upfilm",
+      "rating": 4
+    },
+    {
+      "title": "The Odyssey",
+      "creator": "Christopher Nolan",
+      "year": 2026,
+      "sentence": "I have a weakness for films that seem personally offended by the size of a television.",
+      "link": "https://www.universalpictures.com/movies/the-odyssey"
+    },
+    {
+      "title": "Spirited Away",
+      "creator": "Hayao Miyazaki",
+      "year": 2001,
+      "sentence": "The film I rewatch when I need to remember that hard work and kindness can be the same thing.",
+      "link": "https://en.wikipedia.org/wiki/Spirited_Away",
+      "rating": 5
+    },
+    {
+      "title": "Shoah",
+      "creator": "Claude Lanzmann",
+      "year": 1985,
+      "sentence": "Nine and a half hours with no archive footage, and the one film I would never put a rating on."
+    }
+  ],
+  "books": [
+    {
+      "title": "Structure and Interpretation of Computer Programs",
+      "creator": "Harold Abelson and Gerald Jay Sussman with Julie Sussman",
+      "year": 1985,
+      "sentence": "This made \"(define (square x) (* x x))\" read like a sentence to me, and it's why I still write <3 in code reviews.",
+      "link": "https://en.wikipedia.org/wiki/Structure_and_Interpretation_of_Computer_Programs"
+    },
+    {
+      "title": "It",
+      "creator": "Stephen King",
+      "year": 1986,
+      "sentence": "I read it at twelve and slept with the light on for a month; I still recommend it 🎈."
+    },
+    {
+      "title": "The Happiness Advantage",
+      "creator": "Shawn Achor",
+      "year": 2010,
+      "sentence": "This makes me want to put a good mood on the to-do list, somewhere above answering another email.",
+      "link": "https://www.penguinrandomhouse.com/books/200789/the-happiness-advantage-by-shawn-achor/"
+    },
+    {
+      "title": "Harry Potter series",
+      "creator": "J. K. Rowling",
+      "year": 1997,
+      "sentence": "Even the school shopping makes me want to move in.",
+      "link": "https://en.wikipedia.org/wiki/Harry_Potter"
+    },
+    {
+      "title": "Pride and Prejudice",
+      "creator": "Jane Austen",
+      "year": 1813,
+      "sentence": "The insults are so politely delivered that I almost want to be on the receiving end.",
+      "link": "https://en.wikipedia.org/wiki/Pride_and_Prejudice"
+    },
+    {
+      "title": "The Great Gatsby",
+      "creator": "F. Scott Fitzgerald",
+      "year": 1925,
+      "sentence": "I'd keep it for the sentences alone; I love prose that sounds this good read aloud.",
+      "link": "https://en.wikipedia.org/wiki/The_Great_Gatsby"
+    },
+    {
+      "title": "To Kill a Mockingbird",
+      "creator": "Harper Lee",
+      "year": 1960,
+      "sentence": "I like how a child's voice makes the adults' excuses harder to hide behind.",
+      "link": "https://en.wikipedia.org/wiki/To_Kill_a_Mockingbird"
+    }
+  ]
+}

@@ -322,8 +322,8 @@
   }
 }
 
-/* The now-playing row. NowPlaying.astro sets data-state. Idle and
-   offline show the row's meta time; empty and loading, which has no snapshot and so no value, show
+/* The now-playing row and the coding cell; NowPlaying.astro and Coding.astro set data-state. Idle
+   and offline show the meta time; empty and loading, which has no snapshot and so no value, show
    none. live sets "now" in --c-live at text-sm medium after a dot, which pulses at the signature
    tier as a ring that grows and fades, and stays still when reduced motion is asked for. Forced
    colours would paint the dot in the Canvas colour, so there it takes CanvasText. The row is an <a>
@@ -334,13 +334,13 @@
       background-color: var(--c-surface);
     }
   }
-  [data-widget="now-playing"][data-state="live"] .meta > * {
+  :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > * {
     font-family: var(--ff-sans);
     font-size: var(--fs-sm);
     font-weight: var(--fw-medium);
     color: var(--c-live);
   }
-  [data-widget="now-playing"][data-state="live"] .meta > ::before {
+  :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
     content: "";
     display: inline-block;
     vertical-align: middle;
@@ -351,12 +351,12 @@
     background: currentColor;
   }
   @media (prefers-reduced-motion: no-preference) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
       animation: now-pulse var(--d-sig) var(--ez-out) infinite;
     }
   }
   @media (forced-colors: active) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
       forced-color-adjust: none;
       background: CanvasText;
     }

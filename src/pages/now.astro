@@ -1,5 +1,6 @@
 ---
 import Arrow from '../components/Arrow.astro';
+import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import { day } from '../data/format';
 import { words as nav } from '../data/navigation';
@@ -27,7 +28,12 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
 
 <Base title="now" description={sub} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
-    <h1 class="text-2xl font-semibold">now</h1>
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold">now</h1>
+      <a href="/uses" class="meta target link -my-3.5 shrink-0 justify-end text-sm text-fg-3">
+        <span>how I work <Arrow>→</Arrow></span>
+      </a>
+    </div>
     <p class="meta text-xs text-fg-3">
       updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="target link"><span>history <Arrow>↗</Arrow></span></a>
     </p>
@@ -46,6 +52,7 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
     <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
       <NowPlaying variant="cell" />
+      <Coding />
     </div>
   </section>
 </Base>

@@ -1,8 +1,9 @@
 # vedaant.dev
 
 Vedaant Rajoo's Ledger site, built with Astro, plain Markdown and Tailwind CSS v4
-over local design tokens. Pages are static and music updates in the browser. The
-site lives at https://vedaantrajoo.com; `vedaant.dev` is only the project's name.
+over local design tokens. Pages are static, and two Pages Functions serve the
+live music value and today's coding. The site lives at
+https://vedaantrajoo.com; `vedaant.dev` is only the project's name.
 
 ## Run locally
 
@@ -35,9 +36,32 @@ If a server command returns while the server keeps running, Astro chose
 background mode (`--background` asks for it). Stop it with `bun run dev stop` or
 `bun run preview stop` from the same checkout.
 
-Running or building needs no `.env` file or Cloudflare credentials. Only the
-first install needs the network; builds fall back to the committed fonts and
-music snapshot when external APIs are down.
+Neither `dev` nor `preview` runs the Pages Functions
+([now-playing](functions/api/now-playing.ts), [coding](functions/api/coding.ts)),
+so there the music widgets and the coding cell show the build-time values and
+turn offline after the first poll (an empty value stays `—`). To run the site
+with the Functions, as Cloudflare does, serve the build with Wrangler's Pages
+runtime, which applies [public/_headers](public/_headers) too:
+
+```sh
+bun run build
+bunx wrangler@4.150.0 pages dev dist --compatibility-date 2024-10-31 --ip 127.0.0.1 --port 8788
+```
+
+Without a key the build uses the committed snapshots, and the Functions answer
+`null`, so the music widgets show offline and the coding cell keeps its `—`. For a
+live answer, put `LASTFM_API_KEY=<your key>`, and `WAKATIME_API_KEY=<your key>`
+for the coding cell, in a gitignored `.env` in the checkout, with no
+`.dev.vars` beside it, which Wrangler would read instead. `bun run build` and
+Wrangler both read it, and Wrangler prints it only as `(hidden)`. Run Wrangler
+from the checkout root: it binds a `.env` only from the directory it runs in,
+and its `--env-file` option does not bind the key in 4.150.0. Never commit, log
+or paste the key. Add `--kv ARTWORK` to keep artwork URLs in a local KV
+namespace, as the deployed Function does once the binding exists.
+
+Astro's `dev`, `preview` and `build` need no `.env` file or Cloudflare
+credentials. Only the first install needs the network; builds fall back to the
+committed fonts and music snapshot when external APIs are down.
 
 Other scripts in [package.json](package.json):
 
@@ -48,15 +72,20 @@ Other scripts in [package.json](package.json):
 ## Edit content
 
 Content lives in these files, never in components.
-[src/content.config.ts](src/content.config.ts) validates collection fields and
-[src/data/site.ts](src/data/site.ts) validates site settings.
+[src/content.config.ts](src/content.config.ts) validates collection fields,
+[src/data/site.ts](src/data/site.ts) validates site settings,
+[src/data/uses.ts](src/data/uses.ts) validates the uses rows and
+[src/data/shelf.ts](src/data/shelf.ts) validates the shelf.
 
 | Content | File |
 | --- | --- |
 | Project rows and case studies | `src/content/projects/*.md` |
 | Posts and notes | `src/content/writing/*.md` |
-| Now page, city, building and watched rows | [src/content/now/now.md](src/content/now/now.md) |
+| Now page, city and building row | [src/content/now/now.md](src/content/now/now.md) |
 | Work history | [src/data/work.json](src/data/work.json) |
+| Uses rows | [src/data/uses.json](src/data/uses.json) |
+| Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
+| Shelf lists, reading and last-watched rows, the on-repeat fallback, date and intro | [src/data/shelf.json](src/data/shelf.json) |
 | Name, hero, time zone, email, links and résumé date | [src/data/site.json](src/data/site.json) |
 | Résumé PDF | [public/resume.pdf](public/resume.pdf) |
 | Offline music value | [src/data/snapshots/lastfm.json](src/data/snapshots/lastfm.json) |
@@ -144,16 +173,15 @@ the 404 or dev-only `/_states`. Every page head and the footer link the feed.
 If the origin ever changes, update `site`, the sitemap's `customPages` and
 [public/robots.txt](public/robots.txt) together.
 
-### Now, work and résumé
+### Now, work, uses, shelf and résumé
 
 - `now.md` is the only file read from its directory. Its frontmatter requires a
-  quoted `updated`, `from` (the city), `building`, and `watched` with `title`, an
-  integer `year` and a quoted `date`; `rating` is optional, 0.5–5 in half steps.
-  The body is unique, lowercase `## label` sections of paragraphs, at most 400
-  words in all. Links, emphasis, strikethrough, code spans and line breaks work;
-  lists, images and code blocks do not, and `bun test` checks that shape. Bump
-  `updated` when you edit. Launch needs a date within the last 14 days, and the
-  page shows stale after 60 days.
+  quoted `updated`, `from` (the city) and `building`. The body is unique,
+  lowercase `## label` sections of paragraphs, at most 400 words in all. Links,
+  emphasis, strikethrough, code spans and line breaks work; lists, images and
+  code blocks do not, and `bun test` checks that shape. Bump `updated` when you
+  edit. Launch needs a date within the last 14 days, and a build made more than
+  60 days after it marks the page stale.
 - `work.json` is a nonempty object keyed by stable role ids. Each role needs
   `employer`, `role`, a quoted `start: "YYYY-MM"`, `end` (a quoted month, or
   `null` while ongoing) and a `summary` of 1–140 characters. `url` is optional
@@ -163,60 +191,126 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
 - When work changes, replace `public/resume.pdf` and set `resume.updated` in
   `site.json` to the PDF's date. `/resume` redirects to `/resume.pdf`. The build
   checks that the file exists, not that it is current.
+- `uses.json` is a nonempty array of `/uses` rows. Each needs `group`
+  (`hardware`, `editor and shell` or `desktop`, shown in that order), `name`
+  and `note`; `url` (an `https://` link on the name) and `retired` (a year,
+  which strikes the row through) are optional. Rows keep their file order.
+  Retire a row instead of deleting it. A new group needs a line in
+  [src/data/uses.ts](src/data/uses.ts). Keep hex colour codes out of this file:
+  the gate allows them only under `src/content/`.
+- `uses.md` is the only file read from its directory. Its frontmatter requires
+  a quoted `updated` day and `summary`, the intro under the heading and the
+  page's description. Its body is the colophon and must not be empty. Bump
+  `updated` when you edit either file. Tailwind scans both files, so after an
+  edit compare each page's `<style>` with the previous build, as for the music
+  snapshot.
+- `shelf.json` is `/shelf`. It requires a quoted `updated` day, a `summary` (the
+  intro under the heading and the page's description) and three arrays,
+  `albums`, `films` and `books`, shown in that order. Each row needs `title`,
+  `creator` (the artist, director or author), an integer `year` and its one
+  `sentence`; `link` (an `https://` link on the row) is optional, and a film may
+  have a `rating`, 0.5–5 in half steps. Rows keep their file order, and an empty
+  array leaves its list out. `reading` (`title`, `creator`, and optionally
+  `started`, a quoted `"YYYY-MM"`, and `page`), `lastWatched` (`title`, an
+  integer `year`, a quoted `date` and an optional `rating`) are optional rows at
+  the top; leave one out to hide it. `listening` (`title`, `creator` and a
+  positive integer `plays`) is only the on-repeat row's fallback. The row itself
+  shows the most played album over the 7 days before the build:
+  [src/data/on-repeat.ts](src/data/on-repeat.ts) asks Last.fm with
+  `LASTFM_API_KEY`, and a week with no plays leaves the row out. Without the
+  key, or when Last.fm fails, it logs one `shelf:` warning and shows `listening`
+  from this file instead. Nothing builds on a schedule, so the row is as fresh
+  as the last push to its branch. An unknown field fails the build, and
+  `bun run check` names the file when the JSON itself is broken. Bump `updated`
+  when you edit. Keep hex colour codes out of this file, and compare each page's
+  `<style>` with the previous build after an edit, since Tailwind scans it.
 
 ## Music
 
 [src/data/lastfm.ts](src/data/lastfm.ts) fetches the latest Last.fm value once
-per build, with a five-second timeout. On failure it logs a warning and uses the
-committed snapshot, which a normal build never rewrites. Artwork lookup has its
-own timeout.
+per build when `LASTFM_API_KEY` is set, with a five-second timeout. Without the
+key, or on failure, it logs one warning and uses the committed snapshot, which a
+normal build never rewrites. Artwork lookup has its own timeout.
 
 Without JavaScript, music widgets show the build-time track as idle, or `—` when
 empty. With JavaScript, one [presence hub](src/scripts/presence-hub.ts) per page
-updates them; pages without music widgets never poll. A visible page polls at
-once, then 60 seconds after each success. Failures back off to 120, 240 and 600
-seconds, and hidden pages stop polling. A failed poll keeps the last value, marks it offline and turns "now"
-wording idle, with no error text for visitors.
+updates them; pages without music widgets never poll. A visible page asks the
+site's own `/api/now-playing` at once, then 60 seconds after each success.
+Failures back off to 120, 240 and 600 seconds, and hidden pages stop polling. A
+failed poll keeps the last value, marks it offline and turns "now" wording idle,
+with no error text for visitors. The hub keeps an answer only if it has the
+committed snapshot's shape, any link is a Last.fm page and any artwork is a
+Cover Art Archive thumbnail.
+
+The [Function](functions/api/now-playing.ts) answers `GET /api/now-playing`. It
+asks Last.fm with the `LASTFM_API_KEY` secret, waits 2.5 seconds at most, and
+answers in the snapshot's shape. Cloudflare's Cache API keeps a successful
+answer for 30 seconds per data centre; a request in that window gets it without
+asking Last.fm, though each poll still runs the Function. When Last.fm fails or
+the key is missing, the Function answers `200` with `null` and `no-store`, and
+the hub treats that as a failed poll.
 
 [Artwork](src/data/artwork.ts) comes from MusicBrainz release search and Cover
 Art Archive 250px thumbnails (including Internet Archive redirects), with no key.
-Lookups and misses are cached until reload, MusicBrainz requests are at least
-1.1 seconds apart, and a failure keeps the music glyph. Visitors' browsers talk
-to Last.fm and these services directly, so those services see visitor IPs.
+The build looks it up once; the Function looks it up for each new track, waits
+1.5 seconds at most, and keeps a found URL for 30 days in each data centre's
+cache. When the `ARTWORK` KV namespace is bound, it also keeps the URL there,
+with no expiry, so other data centres and previews skip the lookup. MusicBrainz
+requests are at least 1.1 seconds apart, and a failure keeps the music glyph.
+Last.fm and MusicBrainz see Cloudflare's requests, not visitors'; browsers load
+only the artwork image from Cover Art Archive.
 
-### Replace the Last.fm identifier
+### The Last.fm key
 
-`apiKey` in [src/data/now-playing.ts](src/data/now-playing.ts) is a public,
-read-only identifier that ships in browser code. It does not belong in Actions
-secrets or `.env`.
+One key reads Last.fm: `LASTFM_API_KEY`, an encrypted Pages secret that must be
+set for both the Production and the Preview environment. The build reads it
+through `astro:env/server` and the Function from its context. It never appears
+in the repository, a log or a page. The public key the source used to hold is
+retired; it stays in the git history, where `scripts/gitleaks.toml` allows it.
 
-1. Get a new one from [Last.fm's API account page](https://www.last.fm/api/account/create).
-2. Change only the `apiKey` value, keeping the `gitleaks:allow: public and
-   read-only` marker on its line. Change `user` only to show someone else's
-   listening. Keep the identifier and request URLs out of logs and screenshots.
-3. Run `bun test`, `bun run check` and `bun run build`. A fallback warning means
-   the build used the snapshot, not that the new key works; confirm a fresh
-   Last.fm response in the local widget.
-4. Merge to `main` to deploy. Already open pages keep the old bundle until reload.
+To rotate the key:
 
-To rehearse, set the constant to `invalid-readme-example` in a disposable
-checkout, build, and confirm the snapshot fallback. Never publish that copy.
+1. Create a key on [Last.fm's API account page](https://www.last.fm/api/account/create).
+2. In the Cloudflare dashboard, open the `vedaant-dev` project, then Settings >
+   Variables and Secrets. Set `LASTFM_API_KEY` as an encrypted secret there,
+   which is Production, then switch the Settings page to Preview at the top of
+   the page and set it again. Cloudflare never shows the value again.
+3. Start a new Production and a new Preview deployment, since a secret reaches
+   only deployments made after it is set: a push to `main` starts one, and a
+   push to any other branch starts the other. Each rebuilds the pages with the
+   new key too.
+4. Check each deployment. Its build log has no `lastfm:` or `shelf:` warning, and
+   `/api/now-playing` answers a value, not `null`, with `X-Cache: miss`. A hit
+   can be an answer from before the change, so ask again after 30 seconds. The
+   preview opens only in a browser logged in through Access. If the answer
+   stays `null`, check the compatibility date (below) and the Function's log.
+5. For local runs, update the gitignored `.env`. Never commit, log or
+   paste the key.
+
+To rehearse the fallback, blank the key for one build:
+`LASTFM_API_KEY= bun run build` overrides `.env`, logs one `lastfm:` and one
+`shelf:` warning, each naming `no LASTFM_API_KEY`, and builds the pages from the
+committed snapshot and shelf.json's `listening` row.
 
 ### Refresh the offline snapshot
 
 Back up the current JSON first. Stop playback and wait for Last.fm to show an
-idle track. From the checkout root, this makes one request, maps it through the
-site's own code and writes only an idle value; it prints neither the URL nor the
-response, and leaves the file alone on an invalid, live or empty answer.
+idle track. From the checkout root, with the key in `.env` (Bun reads it), this
+makes one request, maps it through the site's own code and writes only an idle
+value; it prints neither the URL nor the response, and leaves the file alone on
+an invalid, live or empty answer or a missing key.
 
 ```sh
 bun --eval '
 import { writeFile } from "node:fs/promises";
 import { recentTracks, toNowPlaying } from "./src/data/now-playing.ts";
-let value;
+const key = process.env.LASTFM_API_KEY;
+let value = null;
 try {
-  const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5000) });
-  value = response.ok ? toNowPlaying(await response.json()) : null;
+  if (key) {
+    const response = await fetch(recentTracks(key), { signal: AbortSignal.timeout(5000) });
+    value = response.ok ? toNowPlaying(await response.json()) : null;
+  }
 } catch {
   value = null;
 }
@@ -239,11 +333,35 @@ size with the previous build, because Tailwind scans text under `src/` and a
 track name can add a utility. Restore the backup if anything fails. Nothing
 refreshes the snapshot on a schedule.
 
+## Coding
+
+The `/now` coding cell shows today's coding time from WakaTime and the day's top
+language, with "now" while the last heartbeat is under 15 minutes old, or how
+long ago it was. A day without coding reads `—`. Only the language is shown,
+never a project, branch, file or editor.
+[src/data/wakatime.ts](src/data/wakatime.ts) reads it once per build when
+`WAKATIME_API_KEY` is set, and otherwise, or on failure, logs one `wakatime:`
+warning and uses the committed
+[snapshot](src/data/snapshots/wakatime.json), a day without coding. With
+JavaScript, the hub asks [`/api/coding`](functions/api/coding.ts) at once and a
+minute after each answer, with a backoff of its own. The Function asks
+WakaTime's `status_bar/today` and `users/current` with the key, waits 2.5
+seconds at most, keeps an answer for 60 seconds per data centre, and answers
+`200` with `null` on any failure.
+
+WakaTime's key gives full access to the account, so it lives only in the
+host's environment: the encrypted secret `WAKATIME_API_KEY` in Production and in
+Preview (switch the Settings page to Preview), and `.env` locally. To rotate it,
+make a new key in WakaTime's account settings, set it in both environments, and
+start a new deployment in each, as for the Last.fm key.
+
 ## Deployment and secrets
 
 The `vedaant-dev` Cloudflare Pages project is connected to this repository and
-builds every push itself, with no GitHub Actions deploy. Its build settings,
-kept in the Cloudflare dashboard, are:
+builds every push itself, with no GitHub Actions deploy. The project's Settings
+page shows one environment at a time, Production first; switch the Settings
+page to Preview at the top of the page before you read or change Preview's
+values. Its build settings, kept in the Cloudflare dashboard, are:
 
 - Build command: `bun install --frozen-lockfile && bun run build`
 - Build output directory: `dist`
@@ -262,15 +380,63 @@ Cloudflare Access policy limits previews to the owner, and Cloudflare marks them
 when a branch is deleted. GitHub runs it from `main`'s copy of the file, so it
 cleans up only branches deleted after it lands there.
 
-The site has no adapter, Worker, Pages Function or server endpoint. Only the
-preview cleanup gets these Actions secrets:
+### The Pages Functions
+
+Cloudflare builds [functions/api/now-playing.ts](functions/api/now-playing.ts)
+and [functions/api/coding.ts](functions/api/coding.ts) from the same commit as
+the pages, with no adapter and no deploy of its own; both share
+[functions/answer.ts](functions/answer.ts), which is no route. Only
+`/api/now-playing` and `/api/coding` run a Function; every other request is a
+file and stays free. The gate checks that the generated routes name those two
+paths alone. Five dashboard settings on the `vedaant-dev` project belong to
+them, and the owner sets them. Switch the Settings page to Preview first for
+Preview's values:
+
+- Settings > Functions > Compatibility date: `2024-10-31`. The date is per
+  environment, so set it in Production and in Preview. Local runs pass the same
+  date to Wrangler.
+- Settings > Runtime: fail open. Requests to the Functions share the Workers
+  Free allowance of 100,000 a day, and `/now` polls both; past the allowance,
+  fail open keeps serving the static site and the hub keeps its last values,
+  marked offline, while fail closed would answer with an error page instead.
+- Settings > Variables and Secrets: `LASTFM_API_KEY` and `WAKATIME_API_KEY` in
+  Production and in Preview, as above. Without `WAKATIME_API_KEY`,
+  `/api/coding` answers `null` and the cell keeps its build-time value.
+- Settings > Bindings > Add > KV namespace: variable name `ARTWORK`, bound to
+  one KV namespace you create first (for example `vedaant-dev-artwork`), in
+  Production and in Preview, so a preview's lookups also serve production.
+  Start a new deployment afterwards. The binding is optional: without it, the
+  Function keeps artwork in the Cache API alone. KV is read when a data centre's
+  artwork entry misses (on previews, every poll that reaches the Function) and
+  written by each request whose lookup finds a URL, so overlapping misses can
+  write the same URL twice, and KV's one write a second per key may refuse the
+  second harmlessly. Each read and write also counts as a Function request. An
+  entry has no expiry. Deleting a wrong cover's `artwork:` key clears only KV:
+  each data centre's cache can keep the URL for up to 30 days, and a warm Worker
+  instance can write its remembered URL back.
+
+Its log is a live stream, not an archive: open a deployment's Functions tab in
+the dashboard, or run
+`bunx wrangler@4.150.0 pages deployment tail --project-name vedaant-dev` while
+logged in. A failure logs one line such as
+`now-playing: no value from Last.fm (HTTP 503)` or
+`coding: no value from WakaTime (no WAKATIME_API_KEY)`, never a key.
+
+On previews behind Access, Cloudflare's Cache API stores nothing, so every
+request there reaches Last.fm or WakaTime. A preview answers only a logged-in
+browser, so check `/api/now-playing` and `/api/coding` there by hand.
+
+### Secrets
+
+The Functions read `LASTFM_API_KEY` and `WAKATIME_API_KEY` from their context
+and the build through `astro:env/server`, never through `import.meta.env`, which
+inlines values into the build. Only the preview cleanup gets these Actions
+secrets:
 
 - `CLOUDFLARE_API_TOKEN`: permits deleting Pages deployments.
 - `CLOUDFLARE_ACCOUNT_ID`: the account the token belongs to; not a credential.
 
-Never put either in source or build environment variables. The site has no
-application secrets. A future server secret must go through `astro:env/server`,
-because `import.meta.env` inlines values into the build.
+Never put either in source or build environment variables.
 
 ### Rotate the cleanup token
 
@@ -297,15 +463,23 @@ bun run gate
 ```
 
 [scripts/gate.sh](scripts/gate.sh) runs diagnostics and tests, then builds with
-the network blocked by `sandbox-exec`. gitleaks scans the git history and
-`dist/` for secrets, and a grep rejects environment reads outside `astro:env`.
-[scripts/pages.ts](scripts/pages.ts) checks that the music widgets show the
-snapshot and that every page has a unique title and description. It also
-enforces 5,120 B of gzipped executable JavaScript per page (JSON-LD does not
-count) and reports HTML and CSS sizes against 30 KB and 12 KB gzip targets. The
-gate then checks the CSP theme-script hash, contrast, and that colours come from
-tokens. It rebuilds `dist/`. A failure prints the failing tool's output; redact
-credentials and keyed URLs before sharing it.
+the network blocked by `sandbox-exec` and both keys blank, overriding a local
+`.env`, so the build takes the no-key path, as CI does, with one `lastfm:`, one
+`wakatime:` and one `shelf:` warning. gitleaks scans the git history and
+`dist/` for secrets, and a grep rejects environment reads outside `astro:env` in
+`src/` and outside `context.env` in `functions/`. The gate then builds the Pages
+Functions with Wrangler, scans the bundle with gitleaks and requires the
+generated routes to be `/api/now-playing` and `/api/coding` alone, with no
+`_routes.json` of the site's own, so a request for a file never runs a Function.
+A grep checks `dist/_astro/*.js` for the Last.fm, MusicBrainz, Cover Art Archive
+and WakaTime API hosts. [scripts/pages.ts](scripts/pages.ts) checks that the
+music widgets, the coding cell and the on-repeat row show their committed values
+and that every page has a unique title and description. It also enforces 5,120
+B of gzipped executable JavaScript per page (JSON-LD does not count) and reports
+HTML and CSS sizes against 30 KB and 12 KB gzip targets. The gate then checks
+the CSP theme-script hash, contrast, and that colours come from tokens. It
+rebuilds `dist/`. A failure prints the failing tool's output; redact credentials
+and keyed URLs before sharing it.
 
 [scripts/audit.sh](scripts/audit.sh) runs the launch audits after a build:
 Lighthouse mobile at least 95 in every category, LCP at most 1.8 s and CLS 0
@@ -327,25 +501,26 @@ revalidates HTML, `dist/404.html` serves real 404s and `_redirects` handles
 Chores:
 
 - Monthly: run the gate after a frozen install, and check Cloudflare Pages and
-  GitHub Actions usage.
+  GitHub Actions usage, including the Functions' requests against the 100,000 a
+  day allowance and the `ARTWORK` KV reads and writes.
 - Quarterly: review dependency updates and Astro's upgrade guide. Run
   `npx @astrojs/upgrade` on its own branch, since it edits package files, review
   majors, keep the Bun lockfile in sync and rerun the checks. Stay within 12
   direct packages and 20 components.
 - Before the token expires, at least yearly: rotate it as above. The Last.fm
-  identifier has no expiry.
+  and WakaTime keys have no expiry; rotate either if it may have leaked.
 - When work changes: update the résumé and its date. Keep `now.md` current.
 
-Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages,
-Last.fm straight from the browser with a committed fallback, keyless artwork and
-no analytics. Fonts are committed and load through Astro's Fonts API. Geist sans
-is preloaded with `font-display: optional`, so a slow first visit may keep the
-fallback font throughout; mono uses swap and the hero's serif is optional. CSS is
-inlined into each page, so there is no `dist/_astro/*.css` to compare; compare
-each page's `<style>` instead.
+Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with
+two Pages Functions for the live values with committed fallbacks, keyless
+artwork and no analytics. Fonts are committed and load through Astro's Fonts
+API. Geist sans is preloaded with `font-display: optional`, so a slow first visit
+may keep the fallback font throughout; mono uses swap and the hero's serif is
+optional. CSS is inlined into each page, so there is no `dist/_astro/*.css` to
+compare; compare each page's `<style>` instead.
 
 The gate and audits do not cover every launch check. Owner accessibility and
 browser passes, domain cutover and the timed "add a project in under five
 minutes" check happen at launch. Before then, the owner reads this
-README cold and uses it to run the site, add a project and replace the Last.fm
-identifier.
+README cold and uses it to run the site, add a project, rotate the Last.fm key
+and find the Function's log.
