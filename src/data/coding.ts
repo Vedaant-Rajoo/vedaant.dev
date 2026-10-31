@@ -14,7 +14,7 @@ export interface Coding {
 // WakaTime's API reads the secret key as HTTP Basic auth: the key alone, base64-encoded.
 export const statusBar = 'https://wakatime.com/api/v1/users/current/status_bar/today';
 export const currentUser = 'https://wakatime.com/api/v1/users/current';
-export const authorization = (key: string) => ({ Authorization: `Basic ${btoa(key)}` });
+export const authorization = (key: string) => ({ Authorization: `Bearer ${key}` });
 
 // A heartbeat this recent means the owner is coding now.
 const liveFor = 15 * 60_000;
