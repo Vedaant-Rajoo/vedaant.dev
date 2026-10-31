@@ -21,8 +21,8 @@ export default defineConfig({
   // per family, so the build needs no network. The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
   // The fallback stacks are repeated in tokens.css; Astro puts a metric-matched face
-  // before them. The sans is optional: used if it is ready within its short block
-  // period and never swapped in later, so it cannot re-wrap text; the mono keeps swap.
+  // before them. Sans and mono are optional: used if ready within their short block
+  // period and never swapped in later, so they cannot re-wrap text.
   fonts: [
     {
       provider: fontProviders.local(),

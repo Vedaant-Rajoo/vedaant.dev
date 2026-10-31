@@ -7,11 +7,12 @@ set -eu
 cd "$(dirname "$0")/.."
 port=${PORT:-4331}
 out=$(mktemp -d)
+[ -z "${GITHUB_OUTPUT:-}" ] || printf 'reports=%s\n' "$out" >> "$GITHUB_OUTPUT"
 WRANGLER_SEND_METRICS=false WRANGLER_WRITE_LOGS=false bunx wrangler@4.150.0 pages dev dist \
   --compatibility-date 2024-10-31 --ip 127.0.0.1 --port "$port" --inspector-port $((port + 5000)) \
   > "$out/server.log" 2>&1 &
 server=$!
-trap 'kill $server; rm -rf "$out"' EXIT
+trap 'kill "$server"; [ -n "${GITHUB_OUTPUT:-}" ] || rm -rf "$out"' EXIT
 tries=0
 until curl -fso /dev/null "http://127.0.0.1:$port/"; do
   tries=$((tries + 1))
@@ -24,9 +25,9 @@ urls=$(cd dist && find . -name '*.html' | sort | sed -e 's#^\.##; s#index\.html$
 for url in $urls; do
   # axe still reads /404; its noindex is deliberate and would fail Lighthouse SEO.
   [ "${url%/404}" = "$url" ] || continue
-  npx -y lighthouse@13.5.0 "$url" --form-factor=mobile --output=json --quiet \
+  npx -y lighthouse@13.5.0 "$url" --form-factor=mobile --output=json --save-assets --quiet \
     --only-categories=performance,accessibility,best-practices,seo \
-    --chrome-flags='--headless=new --no-sandbox' --output-path="$out/$(echo "$url" | tr -c 'a-z0-9\n' _).json"
+    --chrome-flags='--headless=new --no-sandbox' --output-path="$out/$(echo "$url" | tr -c 'a-z0-9\n' _).report.json"
 done
 bun -e '
 let failed = 0;
@@ -34,13 +35,16 @@ for (const file of process.argv.slice(1)) {
   const { finalDisplayedUrl: url, categories, audits } = await Bun.file(file).json();
   const scores = Object.values(categories).map((c) => [c.id, Math.round(c.score * 100)]);
   const lcp = Math.round(audits["largest-contentful-paint"].numericValue);
+  const fcp = Math.round(audits["first-contentful-paint"].numericValue);
+  const speed = Math.round(audits["speed-index"].numericValue);
+  const tbt = Math.round(audits["total-blocking-time"].numericValue);
   const cls = audits["cumulative-layout-shift"].numericValue;
   const ok = scores.every(([, s]) => s >= 95) && lcp <= 1800 && cls === 0;
   failed += ok ? 0 : 1;
-  console.log(`${ok ? "pass" : "FAIL"} ${new URL(url).pathname}: ${scores.flat().join(" ")}, LCP ${lcp} ms, CLS ${cls}`);
+  console.log(`${ok ? "pass" : "FAIL"} ${new URL(url).pathname}: ${scores.flat().join(" ")}, FCP ${fcp} ms, LCP ${lcp} ms, Speed Index ${speed} ms, TBT ${tbt} ms, CLS ${cls}`);
 }
 process.exitCode = failed ? 1 : 0;
-' "$out"/*.json || failed=1
+' "$out"/*.report.json || failed=1
 
 for scheme in 1 0; do # light, dark
   npx -y @axe-core/cli@4.14.0 $urls --exit ${CHROMEDRIVER:+--chromedriver-path "$CHROMEDRIVER"} \

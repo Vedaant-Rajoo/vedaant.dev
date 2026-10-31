@@ -3,7 +3,7 @@ import { afterEach, beforeEach, test } from 'node:test';
 import { currentUser, statusBar } from '../../src/data/coding';
 import { handle } from './coding';
 
-const key = 'waka-test-key';
+const key = 'waka-test-token';
 const origin = 'https://vedaantrajoo.com';
 const original = { fetch: globalThis.fetch, warn: console.warn, timeout: AbortSignal.timeout };
 let requests: { url: string; init?: RequestInit }[];
@@ -99,7 +99,7 @@ test('answers today in the four-field shape, kept 60 s, then from the cache', as
   assert.equal(requests.length, 2);
 });
 
-test('asks WakaTime with the key as Basic auth, and passes on nothing of the request', async () => {
+test('asks WakaTime with a Bearer token, and passes on nothing of the request', async () => {
   wakatime({});
   await get();
   assert.deepEqual(
@@ -107,7 +107,7 @@ test('asks WakaTime with the key as Basic auth, and passes on nothing of the req
     [statusBar, currentUser],
   );
   for (const { init } of requests) {
-    assert.deepEqual(init?.headers, { Authorization: `Basic ${btoa(key)}` });
+    assert.deepEqual(init?.headers, { Authorization: `Bearer ${key}` });
     assert.ok(init?.signal instanceof AbortSignal);
   }
 });

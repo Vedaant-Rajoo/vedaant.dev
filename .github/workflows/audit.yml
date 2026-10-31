@@ -26,4 +26,10 @@ jobs:
       - run: google-chrome --version && "$CHROMEWEBDRIVER/chromedriver" --version
       - run: bun install --frozen-lockfile
       - run: bun run build
-      - run: CHROMEDRIVER="$CHROMEWEBDRIVER/chromedriver" sh scripts/audit.sh
+      - id: audit
+        run: CHROMEDRIVER="$CHROMEWEBDRIVER/chromedriver" sh scripts/audit.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() && steps.audit.outputs.reports != '' }}
+        with:
+          name: lighthouse-reports
+          path: ${{ steps.audit.outputs.reports }}/*.json

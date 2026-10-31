@@ -10,8 +10,7 @@ import { answer, type Context } from '../answer';
 // Workers add `default` to the global CacheStorage.
 declare const caches: CacheStorage & { default: Cache };
 
-// WAKATIME_API_KEY: set, encrypted, in both Pages environments; `wrangler pages dev` reads a
-// gitignored .env. WakaTime asks never to use it on a public website: it stays in this Function.
+// WAKATIME_API_KEY holds an OAuth access token; keep the deployed secret name.
 interface Env {
   WAKATIME_API_KEY?: string;
 }

@@ -11,7 +11,7 @@ export interface Coding {
   at: string | null;
 }
 
-// WakaTime's API reads the secret key as HTTP Basic auth: the key alone, base64-encoded.
+// WakaTime requires an OAuth access token for reads; plugin API keys are write-only.
 export const statusBar = 'https://wakatime.com/api/v1/users/current/status_bar/today';
 export const currentUser = 'https://wakatime.com/api/v1/users/current';
 export const authorization = (key: string) => ({ Authorization: `Bearer ${key}` });

@@ -50,7 +50,7 @@ bunx wrangler@4.150.0 pages dev dist --compatibility-date 2024-10-31 --ip 127.0.
 
 Without a key the build uses the committed snapshots, and the Functions answer
 `null`, so the music widgets show offline and the coding cell keeps its `—`. For a
-live answer, put `LASTFM_API_KEY=<your key>`, and `WAKATIME_API_KEY=<your key>`
+live answer, put `LASTFM_API_KEY=<your key>`, and `WAKATIME_API_KEY=<your OAuth token>`
 for the coding cell, in a gitignored `.env` in the checkout, with no
 `.dev.vars` beside it, which Wrangler would read instead. `bun run build` and
 Wrangler both read it, and Wrangler prints it only as `(hidden)`. Run Wrangler
@@ -345,14 +345,16 @@ warning and uses the committed
 [snapshot](src/data/snapshots/wakatime.json), a day without coding. With
 JavaScript, the hub asks [`/api/coding`](functions/api/coding.ts) at once and a
 minute after each answer, with a backoff of its own. The Function asks
-WakaTime's `status_bar/today` and `users/current` with the key, waits 2.5
+WakaTime's `status_bar/today` and `users/current` with a Bearer token, waits 2.5
 seconds at most, keeps an answer for 60 seconds per data centre, and answers
 `200` with `null` on any failure.
 
-WakaTime's key gives full access to the account, so it lives only in the
-host's environment: the encrypted secret `WAKATIME_API_KEY` in Production and in
-Preview (switch the Settings page to Preview), and `.env` locally. To rotate it,
-make a new key in WakaTime's account settings, set it in both environments, and
+WakaTime requires an [OAuth access token](https://wakatime.com/developers#authentication)
+for these reads; plugin API keys are write-only. Get a personal token at
+https://wakatime.com/oauth, and store it only in the host's environment:
+the encrypted secret `WAKATIME_API_KEY` in Production and in Preview (switch
+the Settings page to Preview), and `.env` locally. The existing secret name
+stays unchanged. To rotate the token, replace it in both environments and
 start a new deployment in each, as for the Last.fm key.
 
 ## Deployment and secrets
@@ -491,6 +493,8 @@ For pull requests to `main`, the [gate workflow](.github/workflows/gate.yml) run
 the gate on macOS and the [audit workflow](.github/workflows/audit.yml) runs the
 audits on Ubuntu, both without secrets. They block merges only if branch
 protection requires them. Pushes to `main` run `check` and `build` only.
+The audit prints every performance metric and uploads Lighthouse reports,
+traces and network logs as `lighthouse-reports`, including after a failure.
 
 [public/_headers](public/_headers) sets the CSP and caching, and
 [scripts/csp-hash.ts](scripts/csp-hash.ts) verifies the theme hash.
@@ -515,8 +519,8 @@ Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with
 two Pages Functions for the live values with committed fallbacks, keyless
 artwork and no analytics. Fonts are committed and load through Astro's Fonts
 API. Geist sans is preloaded with `font-display: optional`, so a slow first visit
-may keep the fallback font throughout; mono uses swap and the hero's serif is
-optional. CSS is inlined into each page, so there is no `dist/_astro/*.css` to
+may keep the fallback font throughout; mono and the hero's serif are optional
+too. CSS is inlined into each page, so there is no `dist/_astro/*.css` to
 compare; compare each page's `<style>` instead.
 
 The gate and audits do not cover every launch check. Owner accessibility and
