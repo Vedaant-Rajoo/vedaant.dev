@@ -322,9 +322,9 @@
   }
 }
 
-/* The now-playing row and the coding cell; NowPlaying.astro and Coding.astro set data-state. Idle
-   and offline show the meta time; empty and loading, which has no snapshot and so no value, show
-   none. live sets "now" in --c-live at text-sm medium after a dot, which pulses at the signature
+/* The now-playing row and cell; NowPlaying.astro sets data-state. The coding cell has no live
+   state, so none of this reaches it. Idle and offline show the meta time; empty and loading, which
+   has no snapshot and so no value, show none. live sets "now" in --c-live at text-sm medium after a dot, which pulses at the signature
    tier as a ring that grows and fades, and stays still when reduced motion is asked for. Forced
    colours would paint the dot in the Canvas colour, so there it takes CanvasText. The row is an <a>
    in every state, so only one with a URL takes the hover fill. */
@@ -334,13 +334,13 @@
       background-color: var(--c-surface);
     }
   }
-  :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > * {
+  [data-widget="now-playing"][data-state="live"] .meta > * {
     font-family: var(--ff-sans);
     font-size: var(--fs-sm);
     font-weight: var(--fw-medium);
     color: var(--c-live);
   }
-  :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
+  [data-widget="now-playing"][data-state="live"] .meta > ::before {
     content: "";
     display: inline-block;
     vertical-align: middle;
@@ -351,12 +351,12 @@
     background: currentColor;
   }
   @media (prefers-reduced-motion: no-preference) {
-    :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
       animation: now-pulse var(--d-sig) var(--ez-out) infinite;
     }
   }
   @media (forced-colors: active) {
-    :is([data-widget="now-playing"], [data-widget="coding"])[data-state="live"] .meta > ::before {
+    [data-widget="now-playing"][data-state="live"] .meta > ::before {
       forced-color-adjust: none;
       background: CanvasText;
     }

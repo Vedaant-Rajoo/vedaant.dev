@@ -3,7 +3,7 @@ import type { GetStaticPaths } from 'astro';
 import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import Presence from '../components/Presence.astro';
-import type { Coding as Today } from '../data/coding';
+import type { Share, Coding as Today } from '../data/coding';
 import type { NowPlaying as Value } from '../data/now-playing';
 import snapshot from '../data/snapshots/lastfm.json';
 import Base from '../layouts/Base.astro';
@@ -24,14 +24,25 @@ const day: Today = {
   language: 'TypeScript',
   today: '2h 10m',
   at: new Date(Math.floor((Date.now() - 3_600_000) / 60_000) * 60_000).toISOString(),
+  shares: [],
 };
-const noDay: Today = { state: 'empty', language: null, today: null, at: null };
+const noDay: Today = { state: 'empty', language: null, today: null, at: null, shares: [] };
+// A made-up 30-day mix, never the owner's: the dev page shows the bar and an empty mix.
+const mix: Share[] = [
+  { name: 'TypeScript', percent: 52 },
+  { name: 'Astro', percent: 21 },
+  { name: 'CSS', percent: 12 },
+  { name: 'Rust', percent: 8 },
+  { name: 'Shell', percent: 5 },
+  { name: 'other', percent: 2 },
+];
+// Coding has no live state, so its live row shows the idle cell.
 const states = [
-  { state: 'live', value: { ...idle, state: 'live' }, coding: { ...day, state: 'live' } },
-  { state: 'idle', value: idle, coding: day },
-  { state: 'offline', value: idle, coding: day },
-  { state: 'empty', value: none, coding: noDay },
-  { state: 'loading', value: none, coding: noDay },
+  { state: 'live', value: { ...idle, state: 'live' }, coding: day, codingState: 'idle', mix },
+  { state: 'idle', value: idle, coding: day, codingState: 'idle', mix },
+  { state: 'offline', value: idle, coding: day, codingState: 'offline', mix },
+  { state: 'empty', value: none, coding: noDay, codingState: 'empty', mix: [] },
+  { state: 'loading', value: none, coding: noDay, codingState: 'loading', mix: [] },
 ] as const;
 const widgets = [
   { name: 'NowPlaying', Widget: NowPlaying, props: {} },
@@ -59,7 +70,7 @@ const widgets = [
     {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
     <ol role="list" class="divide-y divide-line wrap-anywhere">
       {
-        states.map(({ state, value, coding }) => (
+        states.map(({ state, value, coding, codingState, mix }) => (
           <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
             {widgets.map(({ name, Widget, props }) => (
               <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
@@ -76,7 +87,7 @@ const widgets = [
                 <span>{state} · Coding</span>
                 <span data-height class="whitespace-nowrap">unmeasured</span>
               </p>
-              <Coding value={coding} state={state} />
+              <Coding value={{ ...coding, shares: [...mix] }} state={codingState} />
             </div>
           </li>
         ))

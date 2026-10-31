@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Coding, codingFromLive, codingText, duration, toCoding } from './coding';
+import { type Coding, codingFromLive, codingText, duration, toCoding, toShares } from './coding';
 import snapshot from './snapshots/wakatime.json';
 
-const now = Date.parse('2026-10-31T12:00:30Z');
 // status_bar/today and users/current, as WakaTime answers them, trimmed to what toCoding reads plus
 // the project and editor names it must never pass on.
 const bar = (
@@ -23,21 +22,23 @@ const bar = (
 const user = (heartbeat: unknown) => ({
   data: { last_heartbeat_at: heartbeat, last_project: 'secret-client-work', last_branch: 'main' },
 });
+const stats = { data: { languages: [], range: 'last_30_days', is_up_to_date: true } };
 
-test('maps today and the last heartbeat: live within 15 minutes, idle after', () => {
-  assert.deepEqual(toCoding(bar(4860), user('2026-10-31T11:50:45Z'), now), {
-    state: 'live',
+test('maps today and the last heartbeat, idle however recent: a heartbeat is never presence', () => {
+  const recent = new Date(Date.now() - 30_000).toISOString();
+  assert.deepEqual(toCoding(bar(4860), user('2026-10-31T11:50:45Z'), stats), {
+    state: 'idle',
     language: 'TypeScript',
     today: '1h 21m',
     at: '2026-10-31T11:50:00.000Z',
+    shares: [],
   });
-  assert.equal(toCoding(bar(4860), user('2026-10-31T11:45:00Z'), now)?.state, 'idle');
-  assert.equal(toCoding(bar(4860), user('2026-10-31T09:00:00Z'), now)?.state, 'idle');
+  assert.equal(toCoding(bar(4860), user(recent), stats)?.state, 'idle');
 });
 
 test('passes on the top language only, never a project, branch or editor', () => {
-  const value = toCoding(bar(4860), user('2026-10-31T11:50:45Z'), now);
-  assert.deepEqual(Object.keys(value ?? {}), ['state', 'language', 'today', 'at']);
+  const value = toCoding(bar(4860), user('2026-10-31T11:50:45Z'), stats);
+  assert.deepEqual(Object.keys(value ?? {}), ['state', 'language', 'today', 'at', 'shares']);
   assert.doesNotMatch(JSON.stringify(value), /secret|main|Zed|Markdown/);
   // "Other", a name with markup, or none at all, is no language.
   for (const languages of [
@@ -50,22 +51,25 @@ test('passes on the top language only, never a project, branch or editor', () =>
     [{ name: 'Zed', total_seconds: 9 }],
     [],
   ]) {
-    assert.equal(toCoding(bar(4860, languages), user('2026-10-31T11:50:45Z'), now)?.language, null);
+    assert.equal(
+      toCoding(bar(4860, languages), user('2026-10-31T11:50:45Z'), stats)?.language,
+      null,
+    );
   }
 });
 
 test('a day under a minute is empty, and a body that is not WakaTime is null', () => {
-  const empty = { state: 'empty', language: null, today: null, at: null };
-  assert.deepEqual(toCoding(bar(0), user('2026-10-30T23:00:00Z'), now), empty);
-  assert.deepEqual(toCoding(bar(59), user(null), now), empty);
+  const empty = { state: 'empty', language: null, today: null, at: null, shares: [] };
+  assert.deepEqual(toCoding(bar(0), user('2026-10-30T23:00:00Z'), stats), empty);
+  assert.deepEqual(toCoding(bar(59), user(null), stats), empty);
   // An empty day still needs a users/current body; a malformed one is a failure, not "empty".
   for (const body of [null, {}, { data: {} }, user(42)]) {
-    assert.equal(toCoding(bar(0), body, now), null, JSON.stringify(body));
+    assert.equal(toCoding(bar(0), body, stats), null, JSON.stringify(body));
   }
   // An invalid heartbeat, or a total that is no finite number, is a failure too.
-  assert.equal(toCoding(bar(0), user('not a time'), now), null);
-  assert.equal(toCoding(bar(Number.POSITIVE_INFINITY), user('2026-10-31T11:50:45Z'), now), null);
-  assert.equal(toCoding(bar(Number.NaN), user('2026-10-31T11:50:45Z'), now), null);
+  assert.equal(toCoding(bar(0), user('not a time'), stats), null);
+  assert.equal(toCoding(bar(Number.POSITIVE_INFINITY), user('2026-10-31T11:50:45Z'), stats), null);
+  assert.equal(toCoding(bar(Number.NaN), user('2026-10-31T11:50:45Z'), stats), null);
   for (const [a, b] of [
     [null, user('2026-10-31T11:50:45Z')],
     [{ data: {} }, user('2026-10-31T11:50:45Z')],
@@ -74,7 +78,7 @@ test('a day under a minute is empty, and a body that is not WakaTime is null', (
     [bar(4860), user('yesterday')],
     [bar(4860), null],
   ]) {
-    assert.equal(toCoding(a, b, now), null);
+    assert.equal(toCoding(a, b, stats), null);
   }
 });
 
@@ -91,10 +95,11 @@ test('the committed snapshot is a value the hub accepts', () => {
 
 test('codingFromLive keeps only the shape the Function writes', () => {
   const live: Coding = {
-    state: 'live',
+    state: 'idle',
     language: 'C++',
     today: '2h 10m',
     at: '2026-10-31T11:50:00.000Z',
+    shares: [{ name: 'C++', percent: 100 }],
   };
   assert.deepEqual(codingFromLive(live), live);
   assert.deepEqual(
@@ -104,11 +109,14 @@ test('codingFromLive keeps only the shape the Function writes', () => {
       language: null,
       today: null,
       at: null,
+      shares: live.shares,
     },
   );
   for (const bad of [
     null,
     'live',
+    // Coding has no live state, so an answer that claims one is not the Function's.
+    { ...live, state: 'live' },
     { ...live, state: 'offline' },
     { ...live, language: '<img>' },
     { ...live, language: 'Other' },
@@ -119,34 +127,178 @@ test('codingFromLive keeps only the shape the Function writes', () => {
     { state: 'empty', language: null, today: '5m', at: null },
     { ...live, at: '2026-10-31T11:50:30.000Z' },
     { ...live, at: 'now' },
+    { ...live, shares: undefined },
+    { ...live, shares: null },
+    { ...live, shares: [null] },
+    { ...live, shares: [{ name: 'secret', percent: 100 }] },
+    { ...live, shares: [{ name: 'Go', percent: 99 }] },
+    { ...live, shares: [{ name: 'Go', percent: -1 }] },
+    {
+      ...live,
+      shares: [
+        { name: 'Go', percent: 99.5 },
+        { name: 'other', percent: 0.5 },
+      ],
+    },
+    {
+      ...live,
+      shares: [
+        { name: 'Go', percent: 50 },
+        { name: 'Go', percent: 50 },
+      ],
+    },
+    {
+      ...live,
+      shares: [
+        { name: 'other', percent: 50 },
+        { name: 'Go', percent: 50 },
+      ],
+    },
+    {
+      ...live,
+      shares: ['Go', 'Rust', 'Astro', 'CSS', 'Shell', 'Lua'].map((name) => ({
+        name,
+        percent: name === 'Go' ? 50 : 10,
+      })),
+    },
   ]) {
     assert.equal(codingFromLive(bad), null, JSON.stringify(bad));
   }
   // Extra fields are dropped, so nothing else reaches the page.
   assert.deepEqual(codingFromLive({ ...live, project: 'secret' }), live);
+  assert.deepEqual(
+    codingFromLive({ ...live, shares: [{ name: 'C++', percent: 100, project: 'secret' }] }),
+    live,
+  );
 });
 
-test('codingText: live says now, idle the age, empty and unknown a dash', () => {
+test('codingText: the heartbeat with its age, never "now"; empty and unknown a dash', () => {
   const value: Coding = {
     state: 'idle',
     language: 'TypeScript',
     today: '1h 20m',
     at: new Date(Date.now() - 3 * 3_600_000).toISOString(),
+    shares: [],
   };
-  assert.deepEqual(codingText('live', value), {
-    language: 'TypeScript',
+  assert.deepEqual(codingText(value), {
     today: '1h 20m today',
-    time: 'now',
+    language: 'top language TypeScript',
+    time: 'last heartbeat 3h ago',
   });
-  assert.deepEqual(codingText('idle', value), {
-    language: 'TypeScript',
-    today: '1h 20m today',
-    time: '3h ago',
+  assert.equal(
+    codingText({ ...value, at: new Date().toISOString() }).time,
+    'last heartbeat 1m ago',
+  );
+  assert.equal(codingText({ ...value, language: null }).language, '');
+  assert.equal(codingText({ ...value, at: null }).time, '');
+  assert.deepEqual(
+    codingText({ state: 'empty', language: null, today: null, at: null, shares: [] }),
+    {
+      today: '—',
+      language: '',
+      time: '',
+    },
+  );
+});
+
+test('toShares: whole percents summing to 100, top five known languages, remaining names other', () => {
+  const body = (languages: unknown) => ({
+    data: { languages, range: 'last_30_days', is_up_to_date: true },
   });
-  assert.deepEqual(codingText('idle', { ...value, language: null }).language, 'coding');
-  assert.deepEqual(codingText('empty', { state: 'empty', language: null, today: null, at: null }), {
-    language: '—',
-    today: '',
-    time: '',
-  });
+  assert.deepEqual(
+    toShares(
+      body([
+        { name: 'TypeScript', percent: 50.4, color: 'unused' },
+        { name: 'Astro', percent: 20.3 },
+        { name: 'CSS', percent: 12.2 },
+        { name: 'Rust', percent: 8.6 },
+        // A plugin can report a project or file as a language: it joins other, unnamed.
+        { name: 'secret-client-work', percent: 5.5 },
+        { name: 'Other', percent: 3 },
+      ]),
+    ),
+    [
+      { name: 'TypeScript', percent: 50 },
+      { name: 'Astro', percent: 20 },
+      { name: 'CSS', percent: 12 },
+      { name: 'Rust', percent: 9 },
+      { name: 'other', percent: 9 },
+    ],
+  );
+  // Percents that do not sum to 100 are scaled; a share rounding to 0 is left out.
+  assert.deepEqual(
+    toShares(
+      body([
+        { name: 'Go', percent: 1 },
+        { name: 'Zig', percent: 1 },
+        { name: 'Lua', percent: 1 },
+      ]),
+    ),
+    [
+      { name: 'Go', percent: 34 },
+      { name: 'Lua', percent: 33 },
+      { name: 'Zig', percent: 33 },
+    ],
+  );
+  assert.deepEqual(
+    toShares(
+      body([
+        { name: 'Go', percent: 99.9 },
+        { name: 'Zig', percent: 0.1 },
+      ]),
+    ),
+    [{ name: 'Go', percent: 100 }],
+  );
+  // Nothing tracked is an empty mix; a body that is not the chart's is null.
+  assert.deepEqual(toShares(body([])), []);
+  assert.deepEqual(toShares(body([{ name: 'Go', percent: 0 }])), []);
+  for (const bad of [
+    null,
+    {},
+    { data: { languages: [], range: 'last_7_days', is_up_to_date: true } },
+    { data: { languages: [], range: 'last_30_days', is_up_to_date: false } },
+    body('Go'),
+    body([{ name: 'Go' }]),
+    body([{ name: 'Go', percent: -1 }]),
+    body([{ name: 'Go', percent: 101 }]),
+    body([{ name: 'Go', percent: Number.POSITIVE_INFINITY }]),
+    body([{ name: 'Go', percent: '50' }]),
+    body([{ percent: 50 }]),
+    body([
+      { name: 'Go', percent: Number.MAX_VALUE },
+      { name: 'Zig', percent: Number.MAX_VALUE },
+    ]),
+  ]) {
+    assert.equal(toShares(bad), null, JSON.stringify(bad));
+  }
+  assert.doesNotMatch(JSON.stringify(toShares(body([{ name: 'secret', percent: 9 }]))), /secret/);
+});
+
+test('toShares ranks all languages before grouping those below fifth with unknown names', () => {
+  assert.deepEqual(
+    toShares({
+      data: {
+        range: 'last_30_days',
+        is_up_to_date: true,
+        languages: [
+          { name: 'Go', percent: 2 },
+          { name: 'Shell', percent: 8 },
+          { name: 'secret-client-work', percent: 1 },
+          { name: 'Astro', percent: 20 },
+          { name: 'JavaScript', percent: 4 },
+          { name: 'Rust', percent: 10 },
+          { name: 'CSS', percent: 15 },
+          { name: 'TypeScript', percent: 40 },
+        ],
+      },
+    }),
+    [
+      { name: 'TypeScript', percent: 40 },
+      { name: 'Astro', percent: 20 },
+      { name: 'CSS', percent: 15 },
+      { name: 'Rust', percent: 10 },
+      { name: 'Shell', percent: 8 },
+      { name: 'other', percent: 7 },
+    ],
+  );
 });

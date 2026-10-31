@@ -94,10 +94,14 @@ only names tokens and components; where it differs, the pages win.
   URL also in the `ARTWORK` KV namespace, when bound) and keeping MusicBrainz
   requests at least 1.1 seconds apart within each isolate; a failed or slow
   lookup, or a slow KV read, only leaves `artwork` `null`.
-- The coding Function reads WakaTime's `status_bar/today` and `users/current`
+- The coding Function reads WakaTime's `status_bar/today`, `users/current` and
+  `users/current/stats/last_30_days`
   with `WAKATIME_API_KEY` from `context.env` and caches a successful answer for
   60 s. It answers today's time, the day's top language and the last
-  heartbeat's minute, never a project, branch, file or editor name.
+  heartbeat's minute, plus the rolling 30-day top five languages and `other`.
+  The hub refreshes the mix with the same poll, with space reserved to avoid
+  layout shifts. It never exposes a project, branch, file or editor name. Its
+  client code loads only with the cell, whose script adds its feed to the hub.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never

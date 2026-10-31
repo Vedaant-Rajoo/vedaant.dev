@@ -2,6 +2,7 @@ import {
   authorization,
   type Coding,
   currentUser,
+  lastMonth,
   statusBar,
   toCoding,
 } from '../../src/data/coding';
@@ -17,7 +18,7 @@ interface Env {
 
 export const onRequestGet = (context: Context<Env>) => handle(context, caches.default);
 
-// GET /api/coding: today's coding time, top language and last heartbeat, kept 60 s per data
+// GET /api/coding: today's coding time, top language, last heartbeat and 30-day mix, kept 60 s per data
 // centre (FR-CD-2). Only the request's origin is read, so nothing of the visitor reaches WakaTime.
 export const handle = (context: Context<Env>, cache: Cache) =>
   answer(context, cache, '/api/coding', 60, () => load(context.env.WAKATIME_API_KEY));
@@ -27,13 +28,20 @@ async function load(key: string | undefined): Promise<Coding | null> {
     return fail('no WAKATIME_API_KEY');
   }
   try {
-    // 2.5 s for both requests and their bodies, under the hub's 5 s.
+    // 2.5 s for all three requests and their bodies, under the hub's 5 s.
     const init = { headers: authorization(key), signal: AbortSignal.timeout(2_500) };
-    const [bar, user] = await Promise.all([fetch(statusBar, init), fetch(currentUser, init)]);
-    if (!bar.ok || !user.ok) {
-      return fail(`HTTP ${bar.ok ? user.status : bar.status}`);
+    const [bar, user, stats] = await Promise.all([
+      fetch(statusBar, init),
+      fetch(currentUser, init),
+      fetch(lastMonth, init),
+    ]);
+    const failed = [bar, user, stats].find((response) => response.status !== 200);
+    if (failed) {
+      return fail(`HTTP ${failed.status}`);
     }
-    return toCoding(await bar.json(), await user.json()) ?? fail('unexpected body');
+    return (
+      toCoding(await bar.json(), await user.json(), await stats.json()) ?? fail('unexpected body')
+    );
   } catch (error) {
     // The name only: an error's message can quote a request, and with it the key.
     return fail(error instanceof Error ? error.name : 'unknown error');

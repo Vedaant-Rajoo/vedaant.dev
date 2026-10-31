@@ -74,7 +74,8 @@ const time = 'grow self-stretch text-right leading-5';
   )
 }
 {/* The /now cell: the label with the state on its right, the 56px tile, the track over
-    artist · album, and Last.fm's credit, a link of its own outside the cell's link. Every line has
+    artist · album, and Last.fm's credit in the bottom right corner, a link of its own outside the
+    cell's link; mt-auto keeps it at the bottom beside a taller coding cell. Every line has
     a fixed height and truncates, the state fills the row's fixed cell, and only the width moves
     the text under the tile, so no state or text changes the cell's height. The label is
     a .meta of plain text: global.css paints an element inside a .meta live, never its text.
@@ -100,7 +101,7 @@ const time = 'grow self-stretch text-right leading-5';
           </span>
         </span>
       </a>
-      <a href="https://www.last.fm/" class="meta target link self-start text-xs text-fg-3">
+      <a href="https://www.last.fm/" class="meta target link mt-auto self-end text-xs text-fg-3">
         <span>via last.fm <Arrow>↗</Arrow></span>
       </a>
     </div>

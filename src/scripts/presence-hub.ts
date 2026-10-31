@@ -1,4 +1,4 @@
-import { type Coding, codingFromLive, codingText } from '../data/coding';
+import type { Coding } from '../data/coding';
 import {
   fromLive,
   type NowPlaying,
@@ -7,14 +7,13 @@ import {
   presenceText,
 } from '../data/now-playing';
 
-// The one <presence-hub> per page (Base.astro) keeps the live widgets current. Each of the site's
-// own endpoints is a feed: the music widgets read /api/now-playing and the coding cell /api/coding.
-// A feed with widgets on the page polls at once, then a minute after each answer while the page is
-// shown, one request at a time, and later after failures, each feed on its own (FR-LV-4). Answers
-// carry max-age=0, so every poll reaches the edge, which keeps them for 30 or 60 s. The hub drives
-// only widgets built from the build-time value; a state fixture carries data-fixture.
+// The one <presence-hub> per page polls the site's own feeds while the page is visible.
+// Music uses /api/now-playing; the coding cell adds /api/coding from its own script.
+// A successful answer is followed by a poll a minute later, failures by a longer wait.
+// Only widgets built from the build-time value refresh; fixtures carry data-fixture.
 type Value = NowPlaying | Coding;
-const waits = [60, 120, 240, 600];
+// Seconds before the next poll after one, two and three or more failures in a row.
+const waits = [120, 240, 600];
 
 class Feed {
   widgets: HTMLElement[] = [];
@@ -28,14 +27,18 @@ class Feed {
     readonly path: string,
     readonly kinds: string[],
     readonly read: (body: unknown) => Value | null,
+    readonly every = 60,
+    // The coding cell supplies its own text formatter.
+    readonly text?: (value: never) => Record<string, string | null | undefined>,
   ) {}
 
   schedule = () => {
     clearTimeout(this.timer);
     if (this.widgets.length > 0 && !this.busy && !document.hidden) {
       // setTimeout reads its delay as a signed 32-bit number, so the negative wait before the first
-      // poll, or a long one after the clock moves back, could wrap into weeks: keep it in 0–600 s.
-      this.timer = setTimeout(this.poll, Math.min(Math.max(this.due - Date.now(), 0), 600_000));
+      // poll, or a long one after the clock moves back, could wrap into weeks: keep it within the
+      // longest wait, 0–3,600 s.
+      this.timer = setTimeout(this.poll, Math.min(Math.max(this.due - Date.now(), 0), 3_600_000));
     }
   };
 
@@ -51,21 +54,19 @@ class Feed {
     this.last = value ?? this.last;
     for (const widget of this.widgets) {
       if (value) {
-        show(widget, value.state, value);
+        show(widget, value.state, value, this.text);
       } else {
         fail(widget, this.last);
       }
     }
     this.busy = false;
-    this.due = Date.now() + waits[Math.min(this.failures, 3)] * 1000;
+    this.due =
+      Date.now() + (this.failures ? waits[Math.min(this.failures, 3) - 1] : this.every) * 1000;
     this.schedule();
   };
 }
 
-const feeds = [
-  new Feed('/api/now-playing', ['now-playing', 'presence'], fromLive),
-  new Feed('/api/coding', ['coding'], codingFromLive),
-];
+const feeds = [new Feed('/api/now-playing', ['now-playing', 'presence'], fromLive)];
 const schedule = () => {
   for (const feed of feeds) {
     feed.schedule();
@@ -86,25 +87,43 @@ function showArtwork(widget: HTMLElement, { artwork = null }: NowPlaying) {
 const attribute = (element: Element, name: string, value: string | null) =>
   value ? element.setAttribute(name, value) : element.removeAttribute(name);
 
-function texts(kind: string | undefined, shown: string, value: Value, widget: HTMLElement) {
-  if (kind === 'coding') {
-    return codingText(shown, value as Coding);
-  }
+function texts(kind: string | undefined, shown: string, value: NowPlaying, widget: HTMLElement) {
   return kind === 'presence'
-    ? presenceText(shown, value as NowPlaying)
-    : nowPlayingText(shown, value as NowPlaying, widget.dataset.variant === 'cell' ? ' ' : ' · ');
+    ? presenceText(shown, value)
+    : nowPlayingText(shown, value, widget.dataset.variant === 'cell' ? ' ' : ' · ');
 }
 
-function show(widget: HTMLElement, state: string, value: Value) {
+// A feed's own texts, as the coding cell's, replace the music widgets'.
+function show(widget: HTMLElement, state: string, value: NowPlaying | Coding, text?: Feed['text']) {
   const kind = widget.dataset.widget;
   const shown = kind === 'presence' ? presenceState(state, value as NowPlaying) : state;
   widget.dataset.state = shown;
   widget.removeAttribute('aria-busy');
+  if (kind === 'coding') {
+    widget
+      .querySelector('language-mix')
+      ?.setAttribute('data-shares', JSON.stringify((value as Coding).shares));
+  }
   if (kind === 'now-playing') {
     showArtwork(widget, value as NowPlaying);
     attribute(widget, 'href', (value as NowPlaying).url);
   }
-  for (const [name, text] of Object.entries(texts(kind, shown, value, widget))) {
+  write(
+    widget,
+    kind,
+    text?.(value as never) ?? texts(kind, shown, value as NowPlaying, widget),
+    value.at,
+  );
+}
+
+// Writes each text into its holder, [data-<kind>="<name>"], and `at` on a <time>.
+function write(
+  widget: HTMLElement,
+  kind: string | undefined,
+  texts: object,
+  at: string | null = null,
+) {
+  for (const [name, text] of Object.entries(texts)) {
     // Always a new text node, even for the same text: a kept node that moves when the text before
     // it changes counts as a layout shift.
     const holder = widget.querySelector(`[data-${kind}="${name}"]`);
@@ -112,7 +131,7 @@ function show(widget: HTMLElement, state: string, value: Value) {
       holder.textContent = text;
     }
     if (holder instanceof HTMLTimeElement) {
-      attribute(holder, 'datetime', value.at);
+      attribute(holder, 'datetime', at);
     }
   }
 }
@@ -129,30 +148,32 @@ function fail(widget: HTMLElement, last: Value | undefined) {
   }
 }
 
+// Gives every feed its widgets on the page and polls those that have any.
+function start(...more: Feed[]) {
+  feeds.push(...more);
+  const widgets = [...document.querySelectorAll<HTMLElement>('[data-widget]:not([data-fixture])')];
+  for (const feed of feeds) {
+    feed.widgets = widgets.filter(({ dataset }) => feed.kinds.includes(dataset.widget ?? ''));
+  }
+  addEventListener('visibilitychange', schedule);
+  schedule();
+}
+
 customElements.define(
   'presence-hub',
   class extends HTMLElement {
     connectedCallback() {
-      const widgets = [
-        ...document.querySelectorAll<HTMLElement>('[data-widget]:not([data-fixture])'),
-      ];
-      for (const feed of feeds) {
-        feed.widgets = widgets.filter(({ dataset }) => feed.kinds.includes(dataset.widget ?? ''));
-      }
-      if (widgets.length > 0) {
-        for (const image of this.ownerDocument.querySelectorAll<HTMLImageElement>(
-          '[data-now-playing="artwork"]',
-        )) {
-          image.addEventListener('error', () => {
-            image.hidden = true;
-          });
-          if (image.complete && image.hasAttribute('src') && image.naturalWidth === 0) {
-            image.hidden = true;
-          }
+      for (const image of this.ownerDocument.querySelectorAll<HTMLImageElement>(
+        '[data-now-playing="artwork"]',
+      )) {
+        image.addEventListener('error', () => {
+          image.hidden = true;
+        });
+        if (image.complete && image.hasAttribute('src') && image.naturalWidth === 0) {
+          image.hidden = true;
         }
-        addEventListener('visibilitychange', schedule);
-        schedule();
       }
+      start();
     }
 
     disconnectedCallback() {
@@ -162,5 +183,13 @@ customElements.define(
         clearTimeout(feed.timer);
       }
     }
+
+    // Cell-local registration keeps the coding code off other pages.
+    add(...feed: ConstructorParameters<typeof Feed>) {
+      start(new Feed(...feed));
+    }
   },
 );
+
+// The hub element as a page's script sees it.
+export type Hub = HTMLElement & { add(...feed: ConstructorParameters<typeof Feed>): void };

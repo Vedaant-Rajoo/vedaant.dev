@@ -52,15 +52,26 @@ for (const page of pages.sort()) {
     problems.push(`${page}: now-playing widgets do not all show the snapshot`);
   }
 
-  // The coding cell, on /now only: idle, or empty as "—", with the snapshot's language and time.
+  // The coding cell, on /now only: idle, or empty as "—", with the snapshot's time and language,
+  // and WakaTime's credit.
   const cells = all(html, /(<[^>]*\bdata-widget="coding"[^>]*>)/g);
   const languages = all(html, /\bdata-coding="language"[^>]*>([^<]*)</g).map(decode);
   const todays = all(html, /\bdata-coding="today"[^>]*>([^<]*)</g).map(decode);
-  const language = coding.today ? (coding.language ?? 'coding') : '—';
-  const today = coding.today ? `${coding.today} today` : '';
+  const mix = all(html, /\bdata-mix-name[^>]*>([^<]*)</g)
+    .map(decode)
+    .filter(Boolean);
+  const language = coding.today && coding.language ? `top language ${coding.language}` : '';
+  const today = coding.today ? `${coding.today} today` : '—';
   const codes =
     cells.length === (page === 'now/index.html' ? 1 : 0) &&
-    cells.every((c) => attr(c, 'data-state') === (coding.state === 'empty' ? 'empty' : 'idle')) &&
+    cells.every((c) => attr(c, 'data-state') === coding.state) &&
+    (!cells.length || html.includes('via wakatime')) &&
+    (!cells.length ||
+      mix.join('|') ===
+        (coding.shares.length
+          ? coding.shares.map(({ name }: { name: string }) => name)
+          : ['—']
+        ).join('|')) &&
     languages.length === cells.length &&
     languages.every((l) => l === language) &&
     todays.length === cells.length &&

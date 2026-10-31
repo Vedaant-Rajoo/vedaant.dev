@@ -335,19 +335,32 @@ refreshes the snapshot on a schedule.
 
 ## Coding
 
-The `/now` coding cell shows today's coding time from WakaTime and the day's top
-language, with "now" while the last heartbeat is under 15 minutes old, or how
-long ago it was. A day without coding reads `—`. Only the language is shown,
-never a project, branch, file or editor.
+The `/now` coding cell shows today's coding time from WakaTime, the day's top
+language, how long ago the last heartbeat was, and the language mix of the last
+30 days. Coding has no live state: a heartbeat is tracked activity, never
+presence, so nothing in the cell is green or moves. A day without coding reads
+`—`. Only language names are shown, never a project, branch, file or editor;
+a name outside the list in [src/data/coding.ts](src/data/coding.ts) counts as
+`other`.
 [src/data/wakatime.ts](src/data/wakatime.ts) reads it once per build when
 `WAKATIME_API_KEY` is set, and otherwise, or on failure, logs one `wakatime:`
 warning and uses the committed
 [snapshot](src/data/snapshots/wakatime.json), a day without coding. With
 JavaScript, the hub asks [`/api/coding`](functions/api/coding.ts) at once and a
-minute after each answer, with a backoff of its own. The Function asks
-WakaTime's `status_bar/today` and `users/current` with a Bearer token, waits 2.5
+minute after each answer, with a backoff of its own. The cell's own script adds
+that feed, so other pages load none of its code. The Function asks
+WakaTime's `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
+with the same Bearer token, waits 2.5
 seconds at most, keeps an answer for 60 seconds per data centre, and answers
 `200` with `null` on any failure.
+
+The 30-day mix refreshes through the same `/api/coding` poll as today's time;
+it needs no share URL, scheduled build or data commit. The mix names the top
+five recognized languages and `other`, in whole percents that sum to 100.
+Only this sanitized mix reaches the browser. WakaTime stats that are still
+updating, or any failed request, keep the last known value until a later poll
+succeeds. Six reserved slots keep the card's height stable as shares change.
+With JavaScript off, the build-time value remains visible.
 
 WakaTime requires an [OAuth access token](https://wakatime.com/developers#authentication)
 for these reads; plugin API keys are write-only. Get a personal token at
@@ -356,6 +369,8 @@ the encrypted secret `WAKATIME_API_KEY` in Production and in Preview (switch
 the Settings page to Preview), and `.env` locally. The existing secret name
 stays unchanged. To rotate the token, replace it in both environments and
 start a new deployment in each, as for the Last.fm key.
+The token must allow reading language stats (`read_stats.languages` or
+`read_stats`), as well as today's summary and the current user's heartbeat.
 
 ## Deployment and secrets
 

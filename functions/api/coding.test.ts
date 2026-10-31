@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { currentUser, statusBar } from '../../src/data/coding';
+import { currentUser, lastMonth, statusBar } from '../../src/data/coding';
 import { handle } from './coding';
 
 const key = 'waka-test-token';
@@ -30,13 +30,42 @@ const bar = (seconds = 4860) =>
   });
 const user = (heartbeat: string | null = recent) =>
   Response.json({ data: { last_heartbeat_at: heartbeat, last_project: 'secret-client-work' } });
+const shares = [
+  { name: 'TypeScript', percent: 68 },
+  { name: 'Astro', percent: 20 },
+  { name: 'other', percent: 12 },
+];
+const stats = () =>
+  Response.json({
+    data: {
+      range: 'last_30_days',
+      is_up_to_date: true,
+      languages: [
+        { name: 'TypeScript', percent: 68 },
+        { name: 'Astro', percent: 20 },
+        { name: 'secret-client-work', percent: 12 },
+      ],
+      projects: [{ name: 'secret-client-work' }],
+      editors: [{ name: 'Zed' }],
+    },
+  });
 
-// Each test answers WakaTime's two endpoints and records the requests.
-function wakatime(answers: { bar?: () => Response | Promise<Response>; user?: () => Response }) {
+// Each test answers WakaTime's three endpoints and records the requests.
+function wakatime(answers: {
+  bar?: () => Response | Promise<Response>;
+  user?: () => Response;
+  stats?: () => Response | Promise<Response>;
+}) {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, init });
-    return url === statusBar ? (answers.bar ?? bar)() : (answers.user ?? user)();
+    if (url === statusBar) {
+      return (answers.bar ?? bar)();
+    }
+    if (url === lastMonth) {
+      return (answers.stats ?? stats)();
+    }
+    return (answers.user ?? user)();
   };
 }
 
@@ -77,7 +106,7 @@ const fixed = {
   'x-robots-tag': 'noindex',
 };
 
-test('answers today in the four-field shape, kept 60 s, then from the cache', async () => {
+test('answers today and the 30-day mix, kept 60 s, then from the cache', async () => {
   wakatime({});
   const response = await get();
   assert.equal(response.status, 200);
@@ -87,16 +116,18 @@ test('answers today in the four-field shape, kept 60 s, then from the cache', as
     'x-cache': 'miss',
   });
   const body = await response.json();
-  assert.deepEqual(Object.keys(body), ['state', 'language', 'today', 'at']);
-  assert.equal(body.state, 'live');
+  assert.deepEqual(Object.keys(body), ['state', 'language', 'today', 'at', 'shares']);
+  // A five-minute-old heartbeat is still past activity, never presence.
+  assert.equal(body.state, 'idle');
   assert.equal(body.language, 'TypeScript');
   assert.equal(body.today, '1h 21m');
-  assert.doesNotMatch(JSON.stringify(body), /secret/);
+  assert.deepEqual(body.shares, shares);
+  assert.doesNotMatch(JSON.stringify(body), /secret|projects|editors|Zed/);
   await Promise.all(waits);
   assert.ok(store.has(`${origin}/api/coding`));
   const again = await get();
   assert.equal(again.headers.get('x-cache'), 'hit');
-  assert.equal(requests.length, 2);
+  assert.equal(requests.length, 3);
 });
 
 test('asks WakaTime with a Bearer token, and passes on nothing of the request', async () => {
@@ -104,7 +135,7 @@ test('asks WakaTime with a Bearer token, and passes on nothing of the request', 
   await get();
   assert.deepEqual(
     requests.map(({ url }) => url),
-    [statusBar, currentUser],
+    [statusBar, currentUser, lastMonth],
   );
   for (const { init } of requests) {
     assert.deepEqual(init?.headers, { Authorization: `Bearer ${key}` });
@@ -130,6 +161,28 @@ test('an upstream error, a bad body or a thrown fetch answers null, never stored
   const cases: [Parameters<typeof wakatime>[0], string][] = [
     [{ bar: () => new Response('no', { status: 503 }) }, 'HTTP 503'],
     [{ user: () => new Response('no', { status: 401 }) }, 'HTTP 401'],
+    [{ stats: () => new Response('no', { status: 403 }) }, 'HTTP 403'],
+    [{ stats: () => Response.json({ data: {} }, { status: 202 }) }, 'HTTP 202'],
+    [
+      {
+        stats: () =>
+          Response.json({ data: { range: 'last_30_days', languages: [], is_up_to_date: false } }),
+      },
+      'unexpected body',
+    ],
+    [
+      {
+        stats: () =>
+          Response.json({
+            data: {
+              range: 'last_30_days',
+              languages: [{ name: 'Go', percent: -1 }],
+              is_up_to_date: true,
+            },
+          }),
+      },
+      'unexpected body',
+    ],
     [{ bar: () => Response.json({ data: {} }) }, 'unexpected body'],
     [{ bar: () => new Response('{') }, 'SyntaxError'],
     [
@@ -161,6 +214,7 @@ test('a day with no coding is a value, not a failure', async () => {
     language: null,
     today: null,
     at: null,
+    shares,
   });
 });
 
@@ -175,7 +229,7 @@ test('an empty day with a malformed users/current body is a failure, never store
   assert.equal(store.size, 0);
 });
 
-test('one 2.5 s timeout covers both requests and their bodies', async () => {
+test('one 2.5 s timeout covers all three requests and their bodies', async () => {
   const budgets: number[] = [];
   AbortSignal.timeout = (ms: number) => {
     budgets.push(ms);
@@ -185,6 +239,7 @@ test('one 2.5 s timeout covers both requests and their bodies', async () => {
   await get();
   assert.deepEqual(budgets, [2_500]);
   assert.equal(requests[0].init?.signal, requests[1].init?.signal);
+  assert.equal(requests[0].init?.signal, requests[2].init?.signal);
 });
 
 // Any other export (onRequest, onRequestPost) would make Pages answer more than GET.
