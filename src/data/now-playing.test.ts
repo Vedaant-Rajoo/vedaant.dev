@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fromLive, shownAlbum, toNowPlaying } from './now-playing';
+import { fromLive, shownAlbum, toNowPlaying, toOnRepeat, topAlbums } from './now-playing';
 import snapshot from './snapshots/lastfm.json';
 
 const now = Date.parse('2026-10-14T09:30:59Z');
@@ -168,4 +168,57 @@ test('fromLive rejects anything else, so the hub treats it as a failure', () => 
   ]) {
     assert.equal(fromLive(body), null, JSON.stringify(body));
   }
+});
+
+// user.getTopAlbums, as Last.fm answers it, trimmed to what toOnRepeat reads.
+const week = (album: unknown) => ({ topalbums: { album, '@attr': { user: 'newedia' } } });
+const top = { name: 'UNFORGIVEN', playcount: '9', artist: { name: 'LE SSERAFIM' }, mbid: '' };
+
+test('toOnRepeat maps the week top album to the shelf row', () => {
+  assert.deepEqual(toOnRepeat(week([top])), {
+    title: 'UNFORGIVEN',
+    creator: 'LE SSERAFIM',
+    plays: 9,
+  });
+  // One album may come as an object, not a list.
+  assert.deepEqual(toOnRepeat(week(top)), {
+    title: 'UNFORGIVEN',
+    creator: 'LE SSERAFIM',
+    plays: 9,
+  });
+  assert.deepEqual(toOnRepeat(week([{ ...top, playcount: 1 }]))?.plays, 1);
+});
+
+test('toOnRepeat: a week with no plays leaves the row out; anything malformed is null', () => {
+  assert.equal(toOnRepeat(week([])), undefined);
+  for (const body of [
+    null,
+    {},
+    { topalbums: {} },
+    week([{ ...top, name: '' }]),
+    week([{ ...top, name: '  ' }]),
+    week([{ ...top, artist: {} }]),
+    week([{ ...top, playcount: '0' }]),
+    week([{ ...top, playcount: '2.5' }]),
+    week([{ ...top, playcount: 'many' }]),
+    week([{ ...top, playcount: true }]),
+    week([{ ...top, playcount: [9] }]),
+    week([{ ...top, playcount: '9007199254740993' }]),
+    week([null]),
+  ]) {
+    assert.equal(toOnRepeat(body), null, JSON.stringify(body));
+  }
+});
+
+test('topAlbums asks for the last 7 days, one album, as JSON, with the given key', () => {
+  const url = new URL(topAlbums('test-key'));
+  assert.equal(url.origin + url.pathname, 'https://ws.audioscrobbler.com/2.0/');
+  assert.deepEqual(Object.fromEntries(url.searchParams), {
+    method: 'user.gettopalbums',
+    user: 'newedia',
+    period: '7day',
+    limit: '1',
+    format: 'json',
+    api_key: 'test-key',
+  });
 });

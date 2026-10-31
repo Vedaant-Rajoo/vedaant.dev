@@ -1,7 +1,7 @@
-// Reads every page in dist/: now-playing and coding widgets show the committed snapshots, client
-// JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each) stays within
-// budget, and titles and descriptions are present and unique. HTML and CSS sizes are reported,
-// never failed. Run after `bun run build`; exits 1 on a problem.
+// Reads every page in dist/: the live widgets and /shelf's on-repeat row show the committed
+// values, client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each)
+// stays within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
+// reported, never failed. Run after `bun run build`; exits 1 on a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -11,6 +11,7 @@ const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
 const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
+const { listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
 // gzip(1), not zlib: every earlier measurement used it, and the two differ by a few bytes.
 const gz = (input: string | Buffer) =>
   spawnSync('gzip', ['-6', '-c', '-n'], { input }).stdout.length;
@@ -66,6 +67,12 @@ for (const page of pages.sort()) {
     todays.every((t) => t === today);
   if (!codes) {
     problems.push(`${page}: the coding cell does not show the snapshot`);
+  }
+
+  // The on-repeat row on /shelf: shelf.json's own, as a build without the key shows it.
+  const row = `on repeat · ${listening?.title}`;
+  if (page === 'shelf/index.html' && listening && !decode(html).includes(row)) {
+    problems.push(`${page}: the on-repeat row does not show shelf.json's album`);
   }
 
   const seen = new Map<string, number>();

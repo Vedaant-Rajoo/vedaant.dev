@@ -85,7 +85,7 @@ Content lives in these files, never in components.
 | Work history | [src/data/work.json](src/data/work.json) |
 | Uses rows | [src/data/uses.json](src/data/uses.json) |
 | Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
-| Shelf lists, reading, last-watched and on-repeat rows, date and intro | [src/data/shelf.json](src/data/shelf.json) |
+| Shelf lists, reading and last-watched rows, the on-repeat fallback, date and intro | [src/data/shelf.json](src/data/shelf.json) |
 | Name, hero, time zone, email, links and résumé date | [src/data/site.json](src/data/site.json) |
 | Résumé PDF | [public/resume.pdf](public/resume.pdf) |
 | Offline music value | [src/data/snapshots/lastfm.json](src/data/snapshots/lastfm.json) |
@@ -212,10 +212,15 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   have a `rating`, 0.5–5 in half steps. Rows keep their file order, and an empty
   array leaves its list out. `reading` (`title`, `creator`, and optionally
   `started`, a quoted `"YYYY-MM"`, and `page`), `lastWatched` (`title`, an
-  integer `year`, a quoted `date` and an optional `rating`) and `listening`
-  (`title`, `creator` and a positive integer `plays`) are the optional rows at
-  the top; leave one out to hide it. The on-repeat row shows the most played
-  album over the last 7 days from Last.fm. An unknown field fails the build, and
+  integer `year`, a quoted `date` and an optional `rating`) are optional rows at
+  the top; leave one out to hide it. `listening` (`title`, `creator` and a
+  positive integer `plays`) is only the on-repeat row's fallback. The row itself
+  shows the most played album over the 7 days before the build:
+  [src/data/on-repeat.ts](src/data/on-repeat.ts) asks Last.fm with
+  `LASTFM_API_KEY`, and a week with no plays leaves the row out. Without the
+  key, or when Last.fm fails, it logs one `shelf:` warning and shows `listening`
+  from this file instead. Nothing builds on a schedule, so the row is as fresh
+  as the last push to its branch. An unknown field fails the build, and
   `bun run check` names the file when the JSON itself is broken. Bump `updated`
   when you edit. Keep hex colour codes out of this file, and compare each page's
   `<style>` with the previous build after an edit, since Tailwind scans it.
@@ -274,7 +279,7 @@ To rotate the key:
    only deployments made after it is set: a push to `main` starts one, and a
    push to any other branch starts the other. Each rebuilds the pages with the
    new key too.
-4. Check each deployment. Its build log has no `lastfm:` warning, and
+4. Check each deployment. Its build log has no `lastfm:` or `shelf:` warning, and
    `/api/now-playing` answers a value, not `null`, with `X-Cache: miss`. A hit
    can be an answer from before the change, so ask again after 30 seconds. The
    preview opens only in a browser logged in through Access. If the answer
@@ -283,8 +288,9 @@ To rotate the key:
    paste the key.
 
 To rehearse the fallback, blank the key for one build:
-`LASTFM_API_KEY= bun run build` overrides `.env`, logs one `lastfm:` warning
-naming `no LASTFM_API_KEY`, and builds the pages from the committed snapshot.
+`LASTFM_API_KEY= bun run build` overrides `.env`, logs one `lastfm:` and one
+`shelf:` warning, each naming `no LASTFM_API_KEY`, and builds the pages from the
+committed snapshot and shelf.json's `listening` row.
 
 ### Refresh the offline snapshot
 
@@ -458,22 +464,22 @@ bun run gate
 
 [scripts/gate.sh](scripts/gate.sh) runs diagnostics and tests, then builds with
 the network blocked by `sandbox-exec` and both keys blank, overriding a local
-`.env`, so the build takes the no-key path, as CI does, with one `lastfm:` and
-one `wakatime:` warning. gitleaks scans the git history and `dist/` for
-secrets, and a grep rejects environment reads outside `astro:env` in `src/` and
-outside `context.env` in `functions/`. The gate then builds the Pages Functions
-with Wrangler, scans the bundle with gitleaks and requires the generated routes
-to be `/api/now-playing` and `/api/coding` alone, with no `_routes.json` of the
-site's own, so a request for a file never runs a Function. A grep checks
-`dist/_astro/*.js` for the Last.fm, MusicBrainz, Cover Art Archive and WakaTime
-API hosts. [scripts/pages.ts](scripts/pages.ts) checks that the music widgets
-and the coding cell show their snapshots and that every page has a unique title
-and description. It also
-enforces 5,120 B of gzipped executable JavaScript per page (JSON-LD does not
-count) and reports HTML and CSS sizes against 30 KB and 12 KB gzip targets. The
-gate then checks the CSP theme-script hash, contrast, and that colours come from
-tokens. It rebuilds `dist/`. A failure prints the failing tool's output; redact
-credentials and keyed URLs before sharing it.
+`.env`, so the build takes the no-key path, as CI does, with one `lastfm:`, one
+`wakatime:` and one `shelf:` warning. gitleaks scans the git history and
+`dist/` for secrets, and a grep rejects environment reads outside `astro:env` in
+`src/` and outside `context.env` in `functions/`. The gate then builds the Pages
+Functions with Wrangler, scans the bundle with gitleaks and requires the
+generated routes to be `/api/now-playing` and `/api/coding` alone, with no
+`_routes.json` of the site's own, so a request for a file never runs a Function.
+A grep checks `dist/_astro/*.js` for the Last.fm, MusicBrainz, Cover Art Archive
+and WakaTime API hosts. [scripts/pages.ts](scripts/pages.ts) checks that the
+music widgets, the coding cell and the on-repeat row show their committed values
+and that every page has a unique title and description. It also enforces 5,120
+B of gzipped executable JavaScript per page (JSON-LD does not count) and reports
+HTML and CSS sizes against 30 KB and 12 KB gzip targets. The gate then checks
+the CSP theme-script hash, contrast, and that colours come from tokens. It
+rebuilds `dist/`. A failure prints the failing tool's output; redact credentials
+and keyed URLs before sharing it.
 
 [scripts/audit.sh](scripts/audit.sh) runs the launch audits after a build:
 Lighthouse mobile at least 95 in every category, LCP at most 1.8 s and CLS 0

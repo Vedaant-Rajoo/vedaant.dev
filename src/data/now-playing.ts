@@ -22,6 +22,17 @@ export const recentTracks = (key: string) =>
     api_key: key,
   })}`;
 
+// The week's most played album, for /shelf's on-repeat row (user.getTopAlbums).
+export const topAlbums = (key: string) =>
+  `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
+    method: 'user.gettopalbums',
+    user,
+    period: '7day',
+    limit: '1',
+    format: 'json',
+    api_key: key,
+  })}`;
+
 interface Track {
   name?: unknown;
   artist?: { '#text'?: unknown };
@@ -159,4 +170,36 @@ export function presenceText(state: string, { track, artist }: NowPlaying) {
     track: shown ? (track ?? '') : '',
     artist: live ? ` · \u2068${artist}\u2069` : '',
   };
+}
+
+// /shelf's on-repeat row, in shelf.json's `listening` shape.
+export interface OnRepeat {
+  title: string;
+  creator: string;
+  plays: number;
+}
+
+// Maps a parsed user.getTopAlbums body: the week's top album; undefined for a week with no plays,
+// which leaves the row out; null when the body is not one.
+export function toOnRepeat(body: unknown): OnRepeat | undefined | null {
+  const albums = (body as { topalbums?: { album?: unknown } } | null)?.topalbums?.album;
+  if (typeof albums !== 'object' || albums === null) {
+    return null;
+  }
+  if (Array.isArray(albums) && albums.length === 0) {
+    return undefined;
+  }
+  const first = (Array.isArray(albums) ? albums[0] : albums) as {
+    name?: unknown;
+    artist?: { name?: unknown };
+    playcount?: unknown;
+  } | null;
+  const title = text(first?.name)?.trim();
+  const creator = text(first?.artist?.name)?.trim();
+  // Last.fm writes the count as a string; nothing else may stand in for it.
+  const count = first?.playcount;
+  const plays = typeof count === 'string' || typeof count === 'number' ? Number(count) : Number.NaN;
+  return title && creator && Number.isSafeInteger(plays) && plays >= 1
+    ? { title, creator, plays }
+    : null;
 }

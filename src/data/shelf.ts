@@ -35,7 +35,7 @@ const result = z
         date: day,
       })
       .optional(),
-    // Most played album over the last week, from Last.fm.
+    // The on-repeat row's fallback; on-repeat.ts asks Last.fm for the week's top album at build.
     listening: z.strictObject({ title: text, creator: text, plays: z.int().min(1) }).optional(),
     albums: z.array(z.strictObject(item)),
     films: z.array(z.strictObject({ ...item, rating: rating.optional() })),

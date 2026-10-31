@@ -2,10 +2,11 @@
 import Row from '../components/Row.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import { day, initials, monthYear } from '../data/format';
+import { onRepeat as listening } from '../data/on-repeat';
 import { shelf } from '../data/shelf';
 import Base from '../layouts/Base.astro';
 
-const { updated, summary, reading, lastWatched, listening } = shelf;
+const { updated, summary, reading, lastWatched } = shelf;
 const lists = [
   { label: 'albums', items: shelf.albums },
   { label: 'films', items: shelf.films },

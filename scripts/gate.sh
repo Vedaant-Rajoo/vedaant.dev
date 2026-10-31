@@ -35,6 +35,9 @@ run env LASTFM_API_KEY= WAKATIME_API_KEY= sandbox-exec -p '(version 1)(allow def
 [ "$(grep -c 'wakatime: no value from WakaTime (no WAKATIME_API_KEY)' "$tmp/log")" -eq 1 ] &&
   [ "$(grep -c 'wakatime:' "$tmp/log")" -eq 1 ] ||
   fail 'the build did not fall back to the committed WakaTime snapshot exactly once, for no key'
+[ "$(grep -c 'shelf: no on-repeat album from Last.fm (no LASTFM_API_KEY)' "$tmp/log")" -eq 1 ] &&
+  [ "$(grep -c 'shelf:' "$tmp/log")" -eq 1 ] ||
+  fail 'the build did not fall back to the on-repeat row in shelf.json exactly once, for no key'
 
 step '4/10 no secret in the history or dist/, no environment read outside astro:env or context.env'
 command -v gitleaks > /dev/null || fail 'gitleaks is missing: brew install gitleaks'
