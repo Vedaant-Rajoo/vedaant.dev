@@ -1,7 +1,9 @@
 ---
 import type { GetStaticPaths } from 'astro';
+import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import Presence from '../components/Presence.astro';
+import type { Coding as Today } from '../data/coding';
 import type { NowPlaying as Value } from '../data/now-playing';
 import snapshot from '../data/snapshots/lastfm.json';
 import Base from '../layouts/Base.astro';
@@ -16,12 +18,20 @@ export const getStaticPaths = (() =>
 
 const idle: Value = { ...snapshot, state: 'idle' };
 const none: Value = { state: 'empty', track: null, artist: null, album: null, at: null, url: null };
+// A coding day as WakaTime reports it, an hour before the page is built.
+const day: Today = {
+  state: 'idle',
+  language: 'TypeScript',
+  today: '2h 10m',
+  at: new Date(Math.floor((Date.now() - 3_600_000) / 60_000) * 60_000).toISOString(),
+};
+const noDay: Today = { state: 'empty', language: null, today: null, at: null };
 const states = [
-  { state: 'live', value: { ...idle, state: 'live' } },
-  { state: 'idle', value: idle },
-  { state: 'offline', value: idle },
-  { state: 'empty', value: none },
-  { state: 'loading', value: none },
+  { state: 'live', value: { ...idle, state: 'live' }, coding: { ...day, state: 'live' } },
+  { state: 'idle', value: idle, coding: day },
+  { state: 'offline', value: idle, coding: day },
+  { state: 'empty', value: none, coding: noDay },
+  { state: 'loading', value: none, coding: noDay },
 ] as const;
 const widgets = [
   { name: 'NowPlaying', Widget: NowPlaying, props: {} },
@@ -49,7 +59,7 @@ const widgets = [
     {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
     <ol role="list" class="divide-y divide-line wrap-anywhere">
       {
-        states.map(({ state, value }) => (
+        states.map(({ state, value, coding }) => (
           <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
             {widgets.map(({ name, Widget, props }) => (
               <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
@@ -60,6 +70,14 @@ const widgets = [
                 <Widget value={value} state={state} {...props} />
               </div>
             ))}
+            {/* The coding cell takes its own value, so it is not in the widget list. */}
+            <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+              <p class="meta flex flex-col text-xs text-fg-3">
+                <span>{state} · Coding</span>
+                <span data-height class="whitespace-nowrap">unmeasured</span>
+              </p>
+              <Coding value={coding} state={state} />
+            </div>
           </li>
         ))
       }

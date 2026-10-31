@@ -87,12 +87,13 @@ export default defineConfig({
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
   // Vite's host check closed to DNS rebinding.
   server: { allowedHosts: ['.trycloudflare.com'] },
-  // The Last.fm key comes only from the host's environment: the encrypted Pages secret in a
-  // Cloudflare build, a gitignored .env locally. Astro reads a secret when the build runs and never
-  // inlines it; unset, lastfm.ts uses the committed snapshot.
+  // The Last.fm and WakaTime keys come only from the host's environment: encrypted Pages secrets
+  // in a Cloudflare build, a gitignored .env locally. Astro reads a secret when the build runs and
+  // never inlines it; unset, lastfm.ts and wakatime.ts use the committed snapshots.
   env: {
     schema: {
       LASTFM_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      WAKATIME_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
   vite: {

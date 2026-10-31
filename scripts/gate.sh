@@ -23,15 +23,18 @@ grep -q '^Result (' "$tmp/log" || fail 'astro check printed no Result line, so i
 step '2/10 bun test'
 run bun test
 
-step '3/10 bun run build with every remote host unreachable and no Last.fm key'
+step '3/10 bun run build with every remote host unreachable and no Last.fm or WakaTime key'
 command -v sandbox-exec > /dev/null || fail 'the offline build needs sandbox-exec (macOS)'
-# astro build opens a socket on this machine, so only localhost stays reachable. The blank key
-# overrides a local .env, so the gate builds the unset path, as CI does, and never reads the key.
-run env LASTFM_API_KEY= sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
+# astro build opens a socket on this machine, so only localhost stays reachable. The blank keys
+# override a local .env, so the gate builds the unset path, as CI does, and never reads a key.
+run env LASTFM_API_KEY= WAKATIME_API_KEY= sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
   (allow network-outbound (remote ip "localhost:*"))' bun run build
 [ "$(grep -c 'lastfm: no value from Last.fm (no LASTFM_API_KEY)' "$tmp/log")" -eq 1 ] &&
   [ "$(grep -c 'lastfm:' "$tmp/log")" -eq 1 ] ||
   fail 'the build did not fall back to the committed Last.fm snapshot exactly once, for no key'
+[ "$(grep -c 'wakatime: no value from WakaTime (no WAKATIME_API_KEY)' "$tmp/log")" -eq 1 ] &&
+  [ "$(grep -c 'wakatime:' "$tmp/log")" -eq 1 ] ||
+  fail 'the build did not fall back to the committed WakaTime snapshot exactly once, for no key'
 
 step '4/10 no secret in the history or dist/, no environment read outside astro:env or context.env'
 command -v gitleaks > /dev/null || fail 'gitleaks is missing: brew install gitleaks'
@@ -45,7 +48,7 @@ grep -rnoE --include='*.astro' --include='*.[jt]s' --include='*.[cm][jt]s' --inc
   grep -vE '^src/.*:import\.meta\.env\.(ASSETS_PREFIX|BASE_URL|DEV|MODE|PROD|SITE|SSR)$' &&
   fail 'read secrets through astro:env/server or context.env, not at the lines above'
 
-step '5/10 the Functions: built, no secret in the bundle, routed only at /api/now-playing'
+step '5/10 the Functions: built, no secret in the bundle, routed only at /api/now-playing and /api/coding'
 run env WRANGLER_SEND_METRICS=false WRANGLER_WRITE_LOGS=false bunx wrangler@4.150.0 pages \
   functions build --outdir "$tmp/functions" --output-routes-path "$tmp/routes.json"
 run gitleaks dir --redact --no-banner -c scripts/gitleaks.toml "$tmp/functions"
@@ -53,14 +56,14 @@ run gitleaks dir --redact --no-banner -c scripts/gitleaks.toml "$tmp/functions"
 # and no _routes.json of the site's own may replace them.
 routes=$(bun -e 'const r = await Bun.stdin.json(); console.log(JSON.stringify([r.include, r.exclude]))' \
   < "$tmp/routes.json") || fail 'the generated routes are missing or not JSON'
-[ "$routes" = '[["/api/now-playing"],[]]' ] ||
-  fail "the Functions are routed at $routes (include, exclude), not only at /api/now-playing"
+[ "$routes" = '[["/api/now-playing","/api/coding"],[]]' ] ||
+  fail "the Functions are routed at $routes (include, exclude), not only at their two paths"
 [ ! -e dist/_routes.json ] || fail 'dist/_routes.json would replace the generated routes'
 
 step '6/10 client JavaScript names no third-party API host'
 # The browser reads only /api/*, and the artwork is an <img>. fromLive's escaped pattern for
 # Cover Art Archive (coverartarchive\.org\/release) is not a match.
-grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release' \
+grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release|wakatime\.com' \
   dist/_astro/*.js && fail 'a script names a third-party API host, in the files above'
 # grep exits 2 when it cannot read a file, or when no file matches the glob.
 [ "$?" -eq 1 ] || fail 'grep could not read dist/_astro/*.js'

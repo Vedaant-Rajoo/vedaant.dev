@@ -94,6 +94,10 @@ only names tokens and components; where it differs, the pages win.
   URL also in the `ARTWORK` KV namespace, when bound) and keeping MusicBrainz
   requests at least 1.1 seconds apart within each isolate; a failed or slow
   lookup, or a slow KV read, only leaves `artwork` `null`.
+- The coding Function reads WakaTime's `status_bar/today` and `users/current`
+  with `WAKATIME_API_KEY` from `context.env` and caches a successful answer for
+  60 s. It answers today's time, the day's top language and the last
+  heartbeat's minute, never a project, branch, file or editor name.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never

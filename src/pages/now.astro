@@ -1,5 +1,6 @@
 ---
 import Arrow from '../components/Arrow.astro';
+import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import { day } from '../data/format';
 import { words as nav } from '../data/navigation';
@@ -51,6 +52,7 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
     <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
       <NowPlaying variant="cell" />
+      <Coding />
     </div>
   </section>
 </Base>
