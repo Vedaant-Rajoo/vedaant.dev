@@ -8,12 +8,11 @@ export interface NowPlaying {
   artwork?: string | null;
 }
 
-// user.getRecentTracks needs no authentication. The build reads Last.fm with this key, public in
-// the history and in earlier pages; the hub reads /api/now-playing and has no key.
+// user.getRecentTracks needs a key but no authentication. The build and the Function each pass
+// the LASTFM_API_KEY from their host's environment; the hub reads /api/now-playing and has no key.
 const user = 'newedia';
-export const apiKey = 'ad7d5f6085314e87eac8b6bc74a08ac2'; // gitleaks:allow: public and read-only
 
-// The request for one key: the build passes apiKey, the Function its LASTFM_API_KEY.
+// The request for one key.
 export const recentTracks = (key: string) =>
   `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
     method: 'user.getrecenttracks',

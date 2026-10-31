@@ -48,10 +48,14 @@ bun run build
 bunx wrangler@4.150.0 pages dev dist --compatibility-date 2024-10-31 --ip 127.0.0.1 --port 8788
 ```
 
-Without a key the Function answers `null` and the widgets show offline. For a
-live answer, put `LASTFM_API_KEY=<your key>` in a gitignored `.env` in the
-checkout, with no `.dev.vars` beside it, which Wrangler would read instead.
-Wrangler prints the key only as `(hidden)`. Never commit, log or paste the key.
+Without a key the build uses the committed snapshot, and the Function answers
+`null`, so the widgets show offline. For a live answer, put
+`LASTFM_API_KEY=<your key>` in a gitignored `.env` in the checkout, with no
+`.dev.vars` beside it, which Wrangler would read instead. `bun run build` and
+Wrangler both read it, and Wrangler prints it only as `(hidden)`. Run Wrangler
+from the checkout root: it binds a `.env` only from the directory it runs in,
+and its `--env-file` option does not bind the key in 4.150.0. Never commit, log
+or paste the key.
 
 Astro's `dev`, `preview` and `build` need no `.env` file or Cloudflare
 credentials. Only the first install needs the network; builds fall back to the
@@ -174,8 +178,8 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   lowercase `## label` sections of paragraphs, at most 400 words in all. Links,
   emphasis, strikethrough, code spans and line breaks work; lists, images and
   code blocks do not, and `bun test` checks that shape. Bump `updated` when you
-  edit. Launch needs a date within the last 14 days, and the page shows stale
-  after 60 days.
+  edit. Launch needs a date within the last 14 days, and a build made more than
+  60 days after it marks the page stale.
 - `work.json` is a nonempty object keyed by stable role ids. Each role needs
   `employer`, `role`, a quoted `start: "YYYY-MM"`, `end` (a quoted month, or
   `null` while ongoing) and a `summary` of 1–140 characters. `url` is optional
@@ -217,9 +221,9 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
 ## Music
 
 [src/data/lastfm.ts](src/data/lastfm.ts) fetches the latest Last.fm value once
-per build, with a five-second timeout. On failure it logs a warning and uses the
-committed snapshot, which a normal build never rewrites. Artwork lookup has its
-own timeout.
+per build when `LASTFM_API_KEY` is set, with a five-second timeout. Without the
+key, or on failure, it logs one warning and uses the committed snapshot, which a
+normal build never rewrites. Artwork lookup has its own timeout.
 
 Without JavaScript, music widgets show the build-time track as idle, or `—` when
 empty. With JavaScript, one [presence hub](src/scripts/presence-hub.ts) per page
@@ -247,55 +251,56 @@ at least 1.1 seconds apart, and a failure keeps the music glyph. Last.fm and
 MusicBrainz see Cloudflare's requests, not visitors'; browsers load only the
 artwork image from Cover Art Archive.
 
-### The Last.fm keys
+### The Last.fm key
 
-Two keys read Last.fm today:
+One key reads Last.fm: `LASTFM_API_KEY`, an encrypted Pages secret that must be
+set for both the Production and the Preview environment. The build reads it
+through `astro:env/server` and the Function from its context. It never appears
+in the repository, a log or a page. The public key the source used to hold is
+retired; it stays in the git history, where `scripts/gitleaks.toml` allows it.
 
-- The Function reads `LASTFM_API_KEY`, an encrypted Pages secret that must be
-  set for both the Production and the Preview environment. It never appears in
-  the repository, a log or a page.
-- The build still uses `apiKey` in
-  [src/data/now-playing.ts](src/data/now-playing.ts), a public, read-only
-  identifier marked `gitleaks:allow`. It no longer ships in browser code.
-
-To rotate the Function's key:
+To rotate the key:
 
 1. Create a key on [Last.fm's API account page](https://www.last.fm/api/account/create).
 2. In the Cloudflare dashboard, open the `vedaant-dev` project, then Settings >
-   Variables and Secrets. Set `LASTFM_API_KEY` as an encrypted secret for
-   Production and for Preview. Cloudflare never shows the value again.
+   Variables and Secrets. Set `LASTFM_API_KEY` as an encrypted secret there,
+   which is Production, then switch the Settings page to Preview at the top of
+   the page and set it again. Cloudflare never shows the value again.
 3. Start a new Production and a new Preview deployment, since a secret reaches
    only deployments made after it is set: a push to `main` starts one, and a
-   push to any other branch starts the other.
-4. Check `/api/now-playing` on each: a value, not `null`, with `X-Cache: miss`.
-   A hit can be an answer from before the change, so ask again after 30
-   seconds. The preview opens only in a browser logged in through Access.
+   push to any other branch starts the other. Each rebuilds the pages with the
+   new key too.
+4. Check each deployment. Its build log has no `lastfm:` warning, and
+   `/api/now-playing` answers a value, not `null`, with `X-Cache: miss`. A hit
+   can be an answer from before the change, so ask again after 30 seconds. The
+   preview opens only in a browser logged in through Access. If the answer
+   stays `null`, check the compatibility date (below) and the Function's log.
 5. For local runs, update the gitignored `.env`. Never commit, log or
    paste the key.
 
-To replace the build's identifier, change only the `apiKey` value, keeping the
-`gitleaks:allow: public and read-only` marker on its line. Then run `bun test`,
-`bun run check` and `bun run build`. A build with no `lastfm:` warning read
-Last.fm with the new value; a fallback warning means the build used the
-snapshot, not that the new value works. To rehearse, set the constant to
-`invalid-readme-example` in a disposable checkout, build, and confirm the
-snapshot fallback. Never publish that copy.
+To rehearse the fallback, blank the key for one build:
+`LASTFM_API_KEY= bun run build` overrides `.env`, logs one `lastfm:` warning
+naming `no LASTFM_API_KEY`, and builds the pages from the committed snapshot.
 
 ### Refresh the offline snapshot
 
 Back up the current JSON first. Stop playback and wait for Last.fm to show an
-idle track. From the checkout root, this makes one request, maps it through the
-site's own code and writes only an idle value; it prints neither the URL nor the
-response, and leaves the file alone on an invalid, live or empty answer.
+idle track. From the checkout root, with the key in `.env` (Bun reads it), this
+makes one request, maps it through the site's own code and writes only an idle
+value; it prints neither the URL nor the response, and leaves the file alone on
+an invalid, live or empty answer or a missing key.
 
 ```sh
 bun --eval '
 import { writeFile } from "node:fs/promises";
-import { apiKey, recentTracks, toNowPlaying } from "./src/data/now-playing.ts";
-let value;
+import { recentTracks, toNowPlaying } from "./src/data/now-playing.ts";
+const key = process.env.LASTFM_API_KEY;
+let value = null;
 try {
-  const response = await fetch(recentTracks(apiKey), { signal: AbortSignal.timeout(5000) });
-  value = response.ok ? toNowPlaying(await response.json()) : null;
+  if (key) {
+    const response = await fetch(recentTracks(key), { signal: AbortSignal.timeout(5000) });
+    value = response.ok ? toNowPlaying(await response.json()) : null;
+  }
 } catch {
   value = null;
 }
@@ -321,8 +326,10 @@ refreshes the snapshot on a schedule.
 ## Deployment and secrets
 
 The `vedaant-dev` Cloudflare Pages project is connected to this repository and
-builds every push itself, with no GitHub Actions deploy. Its build settings,
-kept in the Cloudflare dashboard, are:
+builds every push itself, with no GitHub Actions deploy. The project's Settings
+page shows one environment at a time, Production first; switch the Settings
+page to Preview at the top of the page before you read or change Preview's
+values. Its build settings, kept in the Cloudflare dashboard, are:
 
 - Build command: `bun install --frozen-lockfile && bun run build`
 - Build output directory: `dist`
@@ -347,15 +354,18 @@ Cloudflare builds [functions/api/now-playing.ts](functions/api/now-playing.ts)
 from the same commit as the pages, with no adapter and no deploy of its own.
 Only `/api/now-playing` runs it; every other request is a file and stays free.
 The gate checks that the generated routes name that path alone. Three dashboard
-settings on the `vedaant-dev` project belong to it, and the owner sets them:
+settings on the `vedaant-dev` project belong to it, and the owner sets them.
+Switch the Settings page to Preview first for Preview's values:
 
-- Settings > Functions > Compatibility date: `2024-10-31`. Local runs pass the
-  same date to Wrangler.
+- Settings > Functions > Compatibility date: `2024-10-31`. The date is per
+  environment, so set it in Production and in Preview. Local runs pass the same
+  date to Wrangler.
 - Settings > Runtime: fail open. Requests to the Function share the Workers Free
   allowance of 100,000 a day; past it, fail open keeps serving the static site
   and the hub keeps its last value, marked offline, while fail closed would
   answer with an error page instead.
-- Settings > Variables and Secrets: `LASTFM_API_KEY`, as above.
+- Settings > Variables and Secrets: `LASTFM_API_KEY` in Production and in
+  Preview, as above.
 
 Its log is a live stream, not an archive: open a deployment's Functions tab in
 the dashboard, or run
@@ -369,8 +379,8 @@ check `/api/now-playing` there by hand.
 
 ### Secrets
 
-The Function reads `LASTFM_API_KEY` from its context; the build reads any secret
-only through `astro:env/server`, because `import.meta.env` inlines values into
+The Function reads `LASTFM_API_KEY` from its context and the build through
+`astro:env/server`, never through `import.meta.env`, which inlines values into
 the build. Only the preview cleanup gets these Actions secrets:
 
 - `CLOUDFLARE_API_TOKEN`: permits deleting Pages deployments.
@@ -403,13 +413,15 @@ bun run gate
 ```
 
 [scripts/gate.sh](scripts/gate.sh) runs diagnostics and tests, then builds with
-the network blocked by `sandbox-exec`. gitleaks scans the git history and
-`dist/` for secrets, and a grep rejects environment reads outside `astro:env` in
-`src/` and outside `context.env` in `functions/`. The gate then builds the Pages
-Functions with Wrangler, scans the bundle with gitleaks and requires the
-generated routes to be `/api/now-playing` alone, with no `_routes.json` of the
-site's own, so a request for a file never runs a Function. A grep checks
-`dist/_astro/*.js` for the Last.fm, MusicBrainz and Cover Art Archive API hosts.
+the network blocked by `sandbox-exec` and `LASTFM_API_KEY` blank, overriding a
+local `.env`, so the build takes the no-key path, as CI does. gitleaks scans the
+git history and `dist/` for secrets, and a grep rejects environment reads
+outside `astro:env` in `src/` and outside `context.env` in `functions/`. The
+gate then builds the Pages Functions with Wrangler, scans the bundle with
+gitleaks and requires the generated routes to be `/api/now-playing` alone, with
+no `_routes.json` of the site's own, so a request for a file never runs a
+Function. A grep checks `dist/_astro/*.js` for the Last.fm, MusicBrainz and
+Cover Art Archive API hosts.
 [scripts/pages.ts](scripts/pages.ts) checks that the music widgets show the
 snapshot and that every page has a unique title and description. It also
 enforces 5,120 B of gzipped executable JavaScript per page (JSON-LD does not
@@ -444,8 +456,8 @@ Chores:
   `npx @astrojs/upgrade` on its own branch, since it edits package files, review
   majors, keep the Bun lockfile in sync and rerun the checks. Stay within 12
   direct packages and 20 components.
-- Before the token expires, at least yearly: rotate it as above. Last.fm keys
-  have no expiry; rotate `LASTFM_API_KEY` if it may have leaked.
+- Before the token expires, at least yearly: rotate it as above. The Last.fm
+  key has no expiry; rotate `LASTFM_API_KEY` if it may have leaked.
 - When work changes: update the résumé and its date. Keep `now.md` current.
 
 Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with

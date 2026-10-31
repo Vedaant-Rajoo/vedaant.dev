@@ -23,13 +23,15 @@ grep -q '^Result (' "$tmp/log" || fail 'astro check printed no Result line, so i
 step '2/10 bun test'
 run bun test
 
-step '3/10 bun run build with every remote host unreachable'
+step '3/10 bun run build with every remote host unreachable and no Last.fm key'
 command -v sandbox-exec > /dev/null || fail 'the offline build needs sandbox-exec (macOS)'
-# astro build opens a socket on this machine, so only localhost stays reachable.
-run sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
+# astro build opens a socket on this machine, so only localhost stays reachable. The blank key
+# overrides a local .env, so the gate builds the unset path, as CI does, and never reads the key.
+run env LASTFM_API_KEY= sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
   (allow network-outbound (remote ip "localhost:*"))' bun run build
-[ "$(grep -c 'lastfm:' "$tmp/log")" -eq 1 ] ||
-  fail 'the build did not fall back to the committed Last.fm snapshot exactly once'
+[ "$(grep -c 'lastfm: no value from Last.fm (no LASTFM_API_KEY)' "$tmp/log")" -eq 1 ] &&
+  [ "$(grep -c 'lastfm:' "$tmp/log")" -eq 1 ] ||
+  fail 'the build did not fall back to the committed Last.fm snapshot exactly once, for no key'
 
 step '4/10 no secret in the history or dist/, no environment read outside astro:env or context.env'
 command -v gitleaks > /dev/null || fail 'gitleaks is missing: brew install gitleaks'

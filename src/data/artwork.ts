@@ -51,10 +51,7 @@ async function lookup(value: NowPlaying): Promise<string | null> {
       `https://musicbrainz.org/ws/2/release/?${new URLSearchParams({ query, fmt: 'json', limit: '10' })}`,
       {
         signal,
-        headers:
-          typeof window === 'undefined'
-            ? { 'User-Agent': 'vedaant.dev/1.0 (https://vedaantrajoo.com)' }
-            : undefined,
+        headers: { 'User-Agent': 'vedaant.dev/1.0 (https://vedaantrajoo.com)' },
       },
     );
     if (!response.ok) {

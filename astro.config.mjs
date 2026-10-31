@@ -1,6 +1,6 @@
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig, envField, fontProviders } from 'astro/config';
 
 export default defineConfig({
   // The production origin: canonical and Open Graph URLs name it on every build, previews
@@ -87,6 +87,14 @@ export default defineConfig({
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
   // Vite's host check closed to DNS rebinding.
   server: { allowedHosts: ['.trycloudflare.com'] },
+  // The Last.fm key comes only from the host's environment: the encrypted Pages secret in a
+  // Cloudflare build, a gitignored .env locally. Astro reads a secret when the build runs and never
+  // inlines it; unset, lastfm.ts uses the committed snapshot.
+  env: {
+    schema: {
+      LASTFM_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     // The first versions with light-dark(). Below this floor Vite's Lightning CSS minifier
