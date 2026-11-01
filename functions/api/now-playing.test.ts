@@ -285,6 +285,20 @@ test('a missing or empty key answers null without asking Last.fm', async () => {
   ]);
 });
 
+test('oversized Last.fm bodies answer null with no-store, with or without Content-Length', async () => {
+  for (const declared of [false, true]) {
+    const body = JSON.stringify({ recenttracks: { track: [track] }, padding: 'x'.repeat(65_536) });
+    lastfm(
+      () =>
+        new Response(body, {
+          headers: declared ? { 'content-length': String(body.length) } : {},
+        }),
+    );
+    await assertAnswer(await get(), null, 'no-store');
+    assert.equal(warnings.at(-1), 'now-playing: no value from Last.fm (RangeError)');
+  }
+});
+
 // The 2.5 s signal is replaced by one the test aborts, so the case takes no wall-clock time.
 test('one 2.5 s timeout covers the request and its body', async () => {
   const timeout = AbortSignal.timeout;

@@ -10,7 +10,6 @@ interface Props {
 
 const { value = coding, state = value.state } = Astro.props;
 const text = codingText(value);
-const When = value.at ? 'time' : 'span';
 const fills = ['fill-fg', 'fill-fg-2', 'fill-fg-3'];
 // Six slots keep the bar and open legend steady as the mix refreshes.
 const slots = Array.from({ length: 6 }, (_, i) => ({
@@ -32,7 +31,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
     <span class="flex items-center gap-2">
       <span class="meta shrink-0 text-xs text-fg-3">coding</span>
       <span class="meta ml-auto h-5 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
-        ><When data-coding="time" datetime={value.at}>{text.time}</When></span
+        ><time data-coding="time" datetime={value.at}>{text.time}</time></span
       >
     </span>
     <span class="flex min-w-0 flex-col">

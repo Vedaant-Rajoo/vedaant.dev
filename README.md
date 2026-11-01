@@ -2,7 +2,7 @@
 
 Vedaant Rajoo's Ledger site, built with Astro, plain Markdown and Tailwind CSS v4
 over local design tokens. Pages are static, and Pages Functions serve the live
-music value, today's coding and `/shelf`'s three live rows. The site lives at
+music value, the daily coding snapshot and `/shelf`'s three live rows. The site lives at
 https://vedaantrajoo.com; `vedaant.dev` is only the project's name.
 
 ## Run locally

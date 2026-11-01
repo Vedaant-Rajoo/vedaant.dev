@@ -106,6 +106,23 @@ test('a missing key is no value, and WakaTime is not asked', async () => {
   ]);
 });
 
+test('oversized WakaTime bodies fail coding alone, with or without Content-Length', async () => {
+  for (const source of ['bar', 'user', 'stats'] as const) {
+    for (const declared of [false, true]) {
+      const normal = await { bar, user, stats }[source]().json();
+      const body = JSON.stringify({ ...normal, padding: 'x'.repeat(1_048_576) });
+      wakatime({
+        [source]: () =>
+          new Response(body, {
+            headers: declared ? { 'content-length': String(body.length) } : {},
+          }),
+      });
+      assert.equal(await load(key), null, `${source}, declared=${declared}`);
+      assert.equal(warnings.at(-1), 'coding: no value from WakaTime (RangeError)');
+    }
+  }
+});
+
 test('an upstream error, a bad body or a thrown fetch is no value', async () => {
   const cases: [Parameters<typeof wakatime>[0], string][] = [
     [{ bar: () => new Response('no', { status: 503 }) }, 'HTTP 503'],

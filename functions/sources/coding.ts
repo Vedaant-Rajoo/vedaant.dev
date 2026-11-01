@@ -6,6 +6,7 @@ import {
   statusBar,
   toCoding,
 } from '../../src/data/coding';
+import { read } from '../answer';
 
 // /api/activity's coding: today's coding time, top language, last heartbeat and 30-day mix from
 // WakaTime, or null when WakaTime gives none. `key` is WAKATIME_API_KEY, which holds an OAuth access
@@ -27,7 +28,11 @@ export async function load(key: string | undefined): Promise<Coding | null> {
       return fail(`HTTP ${failed.status}`);
     }
     return (
-      toCoding(await bar.json(), await user.json(), await stats.json()) ?? fail('unexpected body')
+      toCoding(
+        JSON.parse(await read(bar, 1_048_576)),
+        JSON.parse(await read(user, 1_048_576)),
+        JSON.parse(await read(stats, 1_048_576)),
+      ) ?? fail('unexpected body')
     );
   } catch (error) {
     // The name only: an error's message can quote a request, and with it the key.

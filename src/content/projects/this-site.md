@@ -23,11 +23,11 @@ Everything: the choices, the content, the code and the checks. The site is built
 
 <dl>
 <dt>chose</dt>
-<dd>a static site whose pages read Last.fm from the browser, with the API key in the page</dd>
+<dd>initially, a static site whose pages read Last.fm from the browser, with the API key in the page</dd>
 <dt>over</dt>
 <dd>five other ways to get the value: scheduled rebuilds, a cron Worker writing JSON to R2 behind the site's own origin, Lanyard's WebSocket, Lanyard's KV store as a relay, and one Pages Function</dd>
 <dt>because</dt>
-<dd><code>user.getRecentTracks</code> needs no authentication, answers with an open CORS header, and Last.fm's terms have no clause that treats the key as confidential, so the key is a public, read-only identifier. That leaves no runtime, no adapter, no secret and nothing to cache, and a folder of files scales on its own. Lanyard lost on a fact: it cannot see Apple Music on an iPhone. The costs are written down too. The key and my user name are public, each visitor's browser contacts Last.fm, and a suspended key shows the build-time value until I replace it.</dd>
+<dd><code>user.getRecentTracks</code> needs no authentication, answers with an open CORS header, and Last.fm's terms have no clause that treats the key as confidential, so the key is a public, read-only identifier. That left no runtime, no adapter, no secret and nothing to cache, and a folder of files scaled on its own. Lanyard lost on a fact: it cannot see Apple Music on an iPhone. The costs are written down too. The key and my user name were public, each visitor's browser contacted Last.fm, and a suspended key showed the build-time value until I replaced it. The live layer now uses the two cached Pages Functions described below, with credentials held on the server.</dd>
 </dl>
 
 <dl>
@@ -86,26 +86,30 @@ build (Cloudflare Pages, on push)                    visitor
   src/content, src/data ---+                           prerendered page
   Last.fm, 5 s budget -----+-- astro build --> dist/ --> Cloudflare Pages --> head script restores the theme
   snapshots/lastfm.json ---+   (fallback)                                    clock ticks once a minute
-                                                                             presence hub polls Last.fm
+                                                                             presence hub polls /api/*
 ```
 
-The live layer is thin. At build, `lastfm.ts` fetches the latest track once with a five-second budget and falls back to a committed snapshot, which a test proves is a valid idle value, so a page always has a value, with JavaScript off too. With JavaScript, one `<presence-hub>` element per page polls Last.fm from the browser about once a minute while the page is visible, and updates the rows that show the track. Besides Last.fm, the browser fetches only album artwork, from MusicBrainz and the Cover Art Archive.
+The live layer is thin. At build, `lastfm.ts` fetches the latest track once with a five-second budget and falls back to a committed snapshot, which a test proves is a valid idle value, so a page always has a value, with JavaScript off too. With JavaScript, one `<presence-hub>` per page reads the site's own `/api/now-playing` and, on `/now` or `/shelf`, `/api/activity`. Two Pages Functions fetch and filter provider data with credentials from their environment. Music answers cache for 60 seconds; complete activity answers cache for a day and partial answers for 10 minutes. The hub polls at expiry while the page is visible and keeps each widget's last value when its source fails. MusicBrainz artwork lookups also run on the server. The browser loads only the Cover Art Archive thumbnail itself, including its Internet Archive redirects.
 
 ## A piece of it
 
-This is the build-time fetch. One `AbortSignal.timeout` covers the request and its body. Every failure path (a bad status, a body the mapping rejects, a timeout, a network error) ends in the committed snapshot with a one-line warning that names the reason and never quotes the body. The module's top-level `await` runs once per build, so every page shares one request.
+This is the build-time fetch. One `AbortSignal.timeout` covers the request and its body. Every failure path (a bad status, a body the mapping rejects, a timeout, a network error) ends in the committed snapshot with a one-line warning that names the reason and never quotes the body. The key comes from `astro:env/server`; an unset key also uses the snapshot. The module's top-level `await` runs once per build, so every page shares one request.
 
 ```ts
 async function load(): Promise<NowPlaying> {
-  let reason: string;
+  let reason = 'no LASTFM_API_KEY';
   try {
-    // One 5 s budget for the whole request, its body included.
-    const response = await fetch(recentTracks, { signal: AbortSignal.timeout(5_000) });
-    const value = response.ok ? toNowPlaying(await response.json()) : null;
-    if (value) {
-      return value;
+    if (LASTFM_API_KEY) {
+      // One 5 s budget for the whole request, its body included.
+      const response = await fetch(recentTracks(LASTFM_API_KEY), {
+        signal: AbortSignal.timeout(5_000),
+      });
+      const value = response.ok ? toNowPlaying(await response.json()) : null;
+      if (value) {
+        return { ...value, artwork: await getArtwork(value) };
+      }
+      reason = response.ok ? 'unexpected body' : `HTTP ${response.status}`;
     }
-    reason = response.ok ? 'unexpected body' : `HTTP ${response.status}`;
   } catch (error) {
     // The name only: a JSON error's message quotes the body, line breaks included.
     reason = error instanceof Error ? error.name : 'unknown error';
@@ -117,7 +121,7 @@ async function load(): Promise<NowPlaying> {
 
 ## Trade-offs
 
-Going static with a public key means the parts of the spec that assumed an endpoint no longer apply to it: no filtered response shape, no edge cache in front of Last.fm, and no server to keep the user name behind. The value a visitor sees is as fresh as the last poll, and a suspended key degrades to the build-time value, never to an error. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
+Static pages remain complete without JavaScript or provider access, while live updates use two cached Functions. Only those endpoints invoke a Function; static requests stay free. Caching reduces provider requests at the cost of freshness: music can be a minute old, and coding and shelf activity are daily snapshots. A failed source keeps its widget's displayed value. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
 
 ## Outcome
 

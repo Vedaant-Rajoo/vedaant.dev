@@ -1,6 +1,6 @@
 import { artworkKey, getArtwork } from '../../src/data/artwork';
 import { type NowPlaying, recentTracks, toNowPlaying } from '../../src/data/now-playing';
-import { answer, type Context } from '../answer';
+import { answer, type Context, read } from '../answer';
 
 // Workers add `default` to the global CacheStorage.
 declare const caches: CacheStorage & { default: Cache };
@@ -39,7 +39,7 @@ async function load(key: string | undefined): Promise<NowPlaying | null> {
   try {
     // 2.5 s for the request and its body: with the 1.5 s artwork wait, under the hub's 5 s.
     const response = await fetch(recentTracks(key), { signal: AbortSignal.timeout(2_500) });
-    const value = response.ok ? toNowPlaying(await response.json()) : null;
+    const value = response.ok ? toNowPlaying(JSON.parse(await read(response, 65_536))) : null;
     return value ?? fail(response.ok ? 'unexpected body' : `HTTP ${response.status}`);
   } catch (error) {
     // The name only: a fetch error's message can quote the URL, and with it the key.

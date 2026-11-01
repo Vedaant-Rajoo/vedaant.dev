@@ -277,6 +277,24 @@ test('/now: the coding cell reads the coding value alone and keeps its text with
   assert.equal(delay(), 120_000);
 });
 
+test('an empty coding holder gains and clears its heartbeat datetime', async () => {
+  const cell = new Widget({ widget: 'coding', state: 'empty' }, ['today', 'language', 'time']);
+  cell.holders.time.textContent = '';
+  widgets = [cell];
+  hub.connectedCallback();
+  hub.add('/api/activity', ['coding'], codingFromLive, codingText);
+  answers.push(answer(body()));
+  await elapse();
+  assert.equal(cell.holders.time.getAttribute('datetime'), body().coding.at);
+  assert.equal(cell.holders.time.textContent, 'heartbeat 2026-11-01T11:00Z');
+  answers.push(
+    answer({ coding: { state: 'empty', language: null, today: null, at: null, shares: [] } }),
+  );
+  await elapse();
+  assert.equal(cell.holders.time.getAttribute('datetime'), null);
+  assert.equal(cell.holders.time.textContent, '');
+});
+
 test('a daily coding snapshot keeps an absolute heartbeat after a hidden page resumes', async () => {
   const cell = new Widget({ widget: 'coding', state: 'idle' }, ['today', 'language', 'time']);
   widgets = [cell];
