@@ -10,7 +10,7 @@ export default defineConfig({
   // build's Astro.url already ends in a slash (build.format 'directory'), and 'ignore' keeps dev
   // serving the slashless links the nav and rows use, which 'always' answers with a 404.
   trailingSlash: 'ignore',
-  // F1: every page carries the stylesheet in its own <style>, so first paint waits
+  // Every page carries the stylesheet in its own <style>, so first paint waits
   // for no second request. It costs about 5 KB of gzip HTML per page and the shared CSS file.
   build: { inlineStylesheets: 'always' },
   // sitemap-index.xml lists every page the build makes, in that slash form. A draft has no

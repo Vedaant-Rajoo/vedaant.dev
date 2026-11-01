@@ -43,15 +43,15 @@ const hasChips = Astro.slots.has('chips') || live;
 ---
 
 {/* One list row: a tile, the title and its sub line, which ends in the chips slot (each chip
-    after a space), then the paired
-    dates, if any, the default slot, the note and the links. These move under the text when the
-    text would get less than 6rem beside them, or 12rem beside a note, links or a live row's fixed
-    cell, room for the widest chip. Spans only, so the row can be a <summary>. A null end is a
-    current role: the live dot, "now", not muted; an ended role is muted; a row without dates is
-    neither. A struck row, an archived project, is muted and its title struck through. Every row overhangs the
-    column by 8px, so a link's or a toggle's hover fill clears the text. Dates above a note
-    or links take a line of their own. A word too long for its line breaks rather than widen
-    the page, as in Now's and Writing's lists. */}
+    after a space), then the paired dates, if any, the default slot, the note and the links.
+    These move under the text when the text would get less than 6rem beside them, or 12rem
+    beside a note, links or a live row's fixed cell, room for the widest chip. Spans only, so
+    the row can be a <summary>. A null end is a current role: the live dot, "now", not muted; an
+    ended role is muted; a row without dates is neither. A struck row, an archived project, is
+    muted and its title struck through. Every row overhangs the column by 8px, so a link's or a
+    toggle's hover fill clears the text. Dates above a note or links take a line of their own. A
+    word too long for its line breaks rather than widen the page, as in Now's and Writing's
+    lists. */}
 <Tag
   href={split ? undefined : href}
   class:list={[

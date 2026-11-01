@@ -30,7 +30,6 @@ const work = defineCollection({
       end: month.nullable(),
       summary: z.string().min(1).max(140),
       url: https.optional(),
-      collapse: z.boolean().optional(),
     })
     .refine(({ start, end }) => end === null || end >= start, {
       path: ['end'],

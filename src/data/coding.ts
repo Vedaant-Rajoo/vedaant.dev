@@ -6,7 +6,7 @@ export interface Coding {
   language: string | null;
   // Today's coding time, "2h 10m".
   today: string | null;
-  // The last heartbeat, coarsened to the minute.
+  // The last heartbeat, coarsened to the minute for privacy.
   at: string | null;
   shares: Share[];
 }
@@ -58,7 +58,6 @@ export function toCoding(bar: unknown, user: unknown, stats: unknown): Coding | 
     state: 'idle',
     language: language(top),
     today: duration(seconds),
-    // Coarsened to the minute, for privacy.
     at: new Date(Math.floor(time / 60_000) * 60_000).toISOString(),
     shares,
   };
@@ -116,9 +115,9 @@ export function codingFromLive(body: unknown): Coding | null {
     : null;
 }
 
-// The /now cell's text: the day's time and top language, and the last heartbeat's UTC minute. The value can
-// be up to a day old, kept by the build or by /api/activity, so its day is the last heartbeat's,
-// "that day", not "today". Empty, or offline with nothing known, reads "—".
+// The /now cell's text: the day's time and top language, and the last heartbeat's UTC minute. The
+// value can be up to a day old, kept by the build or by /api/activity, so its day is the last
+// heartbeat's, "that day", not "today". Empty, or offline with nothing known, reads "—".
 export function codingText({ language: name, today, at }: Coding) {
   if (!today) {
     return { today: '—', language: '', time: '' };
@@ -136,8 +135,9 @@ export interface Share {
   percent: number;
 }
 
-// Maps ready last_30_days stats into shares that sum to 100; incomplete stats retry on the next poll.
-// Only the top five known languages are named; the rest join 'other' to keep the card compact.
+// Maps ready last_30_days stats into shares that sum to 100; incomplete stats retry on the next
+// poll. Only the top five known languages are named; the rest join 'other' to keep the card
+// compact.
 export function toShares(body: unknown): Share[] | null {
   const stats = (
     body as { data?: { languages?: unknown; range?: unknown; is_up_to_date?: unknown } } | null

@@ -5,15 +5,12 @@ import { answer, type Context, read } from '../answer';
 // Workers add `default` to the global CacheStorage.
 declare const caches: CacheStorage & { default: Cache };
 
-// LASTFM_API_KEY: set, encrypted, in both Pages environments; `wrangler pages dev` reads a
-// gitignored .env. ARTWORK: an optional KV namespace binding; `wrangler pages dev --kv ARTWORK`
-// simulates it.
+// ARTWORK is optional; `wrangler pages dev --kv ARTWORK` simulates the KV binding locally.
 interface Env {
   LASTFM_API_KEY?: string;
   ARTWORK?: Kv;
 }
 
-// The part of a KV namespace the Function uses.
 interface Kv {
   get(key: string): Promise<string | null>;
   put(key: string, value: string): Promise<void>;

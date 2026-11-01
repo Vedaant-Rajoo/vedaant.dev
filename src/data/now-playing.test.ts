@@ -141,6 +141,9 @@ test('fromLive rejects anything else, so the hub treats it as a failure', () => 
   const art = (artwork: unknown) => ({ ...snapshot, artwork });
   for (const body of [
     null,
+    undefined,
+    false,
+    1,
     'x',
     [],
     {},

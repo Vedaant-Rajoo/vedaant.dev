@@ -10,14 +10,9 @@ import type { Shelf } from '../data/shelf-live';
 
 // The one <presence-hub> per page (Base.astro) keeps the live widgets current. Each feed reads one
 // of the site's own endpoints: the music widgets /api/now-playing, and, added by its page's own
-// script, the /now coding cell or /shelf's three rows /api/activity, so a page asks each endpoint
-// once per poll. A feed with widgets on the page polls at once, then, while the page is shown,
-// when its answer goes stale: the answer's Expires, which the Function sets from its Date and
-// max-age, so the Function alone sets the cadence, a minute for the music and up to a day for
-// activity. One request at a time, later after failures, each feed on its own (FR-LV-4). The same
-// max-age keeps an answer in the browser's cache, so a poll or another page before it goes stale
-// reaches no Function. The hub drives only widgets built from the build-time value; a state
-// fixture carries data-fixture.
+// script, the /now coding cell or /shelf's three rows /api/activity, once per poll.
+// One request at a time, later after failures, each feed on its own (FR-LV-4).
+// Only widgets built from the build-time value are driven; state fixtures carry data-fixture.
 type Value = NowPlaying | Coding | Shelf;
 // Seconds before the next poll after one, two and three or more failures in a row.
 const waits = [120, 240, 600];
@@ -56,14 +51,12 @@ class Feed {
   poll = async () => {
     this.busy = true;
     let value: Value | null = null;
-    // Unknown, as after a failure, until an answer names it.
     let stale: number | undefined;
     try {
       // One 5 s budget for the request and its body; the Functions answer within about 4 s. The
       // browser's cache answers while the last answer is fresh.
       const response = await fetch(this.path, { signal: AbortSignal.timeout(5_000) });
       value = response.ok ? this.read(await response.json()) : null;
-      // When the answer goes stale, as the Function says.
       stale = Date.parse(response.headers.get('expires') as string);
     } catch {}
     this.failures = value ? 0 : this.failures + 1;

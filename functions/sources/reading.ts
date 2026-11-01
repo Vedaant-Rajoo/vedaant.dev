@@ -1,10 +1,9 @@
 import { hardcover, type Reading, readingQuery, toReading } from '../../src/data/shelf-live';
 import { read } from '../answer';
 
-// /api/activity's reading row: the book the owner is reading on Hardcover, in shelf.json's `reading`
-// shape, or null as the row when none is; null for no answer. `token` is HARDCOVER_TOKEN, with
-// read:me, read:library and read:catalog scopes. This module exports no onRequest handler, so it is
-// no route.
+// /api/activity's reading row: the book the owner is reading on Hardcover, in shelf.json's
+// `reading` shape, or null as the row when none is current; null for no answer.
+// `token` is HARDCOVER_TOKEN, with read:me, read:library and read:catalog scopes.
 export async function load(token: string | undefined): Promise<{ reading: Reading | null } | null> {
   if (!token) {
     return fail('no HARDCOVER_TOKEN');

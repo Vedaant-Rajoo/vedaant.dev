@@ -21,7 +21,6 @@ export const reading = z.strictObject({
     .optional(),
   page: z.int().min(1).optional(),
 });
-// Was now.md's watched (D11), with the same fields.
 export const lastWatched = z.strictObject({
   title: text,
   year,

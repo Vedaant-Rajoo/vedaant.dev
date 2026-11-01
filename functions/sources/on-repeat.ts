@@ -3,8 +3,7 @@ import { read } from '../answer';
 
 // /api/activity's listening row: the owner's most played album of the last 7 days on Last.fm, in
 // shelf.json's `listening` shape, or null as the row for a week with no plays; null for no answer.
-// `key` is LASTFM_API_KEY, the key /api/now-playing reads. This module exports no onRequest handler,
-// so it is no route.
+// `key` is LASTFM_API_KEY, the key /api/now-playing reads.
 export async function load(
   key: string | undefined,
 ): Promise<{ listening: OnRepeat | null } | null> {

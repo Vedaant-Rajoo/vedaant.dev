@@ -48,13 +48,13 @@ const cell = 'meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespac
 const time = 'grow self-stretch text-right leading-5';
 ---
 
-{/* The home music row, in Row's anatomy, one line per cell. The hub moves it between
-    states by setting data-state, href and the text of the track, the rest and the time, so all
-    three are here in every state, and the row is an <a> throughout: without a URL it has no href
-    and is not a link. No box moves when they change: the text truncates instead of
-    wrapping, nothing else on its line follows the changing text, and the time fills a fixed cell,
-    which large text moves under the text in every state alike. aria-live="off" keeps the changes
-    silent, as the design asks; <bdi> keeps a right-to-left track from reordering the rest. */}
+{/* The home music row, in Row's anatomy, one line per cell. The hub moves it between states by
+    setting data-state, href and the text of the track, the rest and the time, so all three are
+    here in every state, and the row is an <a> throughout: without a URL it has no href and is
+    not a link. No box moves when they change: the text truncates instead of wrapping, nothing
+    else on its line follows the changing text, and the time fills a fixed cell, which large
+    text moves under the text in every state alike. aria-live="off" keeps the changes silent, as
+    the design asks; <bdi> keeps a right-to-left track from reordering the rest. */}
 {
   variant === 'row' && (
     <a
@@ -73,14 +73,15 @@ const time = 'grow self-stretch text-right leading-5';
     </a>
   )
 }
-{/* The /now cell: the label with the state on its right, the 56px tile, the track over
-    artist · album, and Last.fm's credit in the bottom right corner, a link of its own outside the
-    cell's link; mt-auto keeps it at the bottom beside a taller coding cell. Every line has
-    a fixed height and truncates, the state fills the row's fixed cell, and only the width moves
-    the text under the tile, so no state or text changes the cell's height. The label is
-    a .meta of plain text: global.css paints an element inside a .meta live, never its text.
-    shortcut: h-lh needs the lh unit (Chrome 109, Safari 16.4, Firefox 120); before those an empty
-    artist line collapses and the title moves. A rem height per line works there, if they matter. */}
+{/* The /now cell: the label with the state on its right, the 56px tile, the track over artist ·
+    album, and Last.fm's credit in the bottom right corner, a link of its own outside the cell's
+    link; mt-auto keeps it at the bottom beside a taller coding cell. Every line has a fixed
+    height and truncates, the state fills the row's fixed cell, and only the width moves the
+    text under the tile, so no state or text changes the cell's height. The label is a .meta of
+    plain text: global.css paints an element inside a .meta live, never its text.
+    shortcut: h-lh needs the lh unit (Chrome 109, Safari 16.4, Firefox 120); before those,
+    an empty artist line collapses and the title moves. A rem height per line works there,
+    if they matter. */}
 {
   variant === 'cell' && (
     <div class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-1.5">

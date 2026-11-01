@@ -17,16 +17,10 @@ export const headers = {
   'X-Robots-Tag': 'noindex',
 };
 
-// Answers from this data centre's cache, keyed by the origin and the endpoint's path alone, so no
-// query string, trailing slash or visitor header matters; or makes a body and keeps a non-null one
-// for `seconds`, or the seconds `seconds(body)` gives. Browsers keep it as long (max-age), so a
-// poll or a page within that time reaches no Function. The Date a body was made with, and the
-// Expires it goes stale at, which the hub polls by, stay on its entry, and a hit carries its Age,
-// so a browser keeps a near-expiry hit only for what is left of it; an entry with no Date or past
-// its lifetime, should a cache still hold one, is a miss. A
-// failing Cache API, as it may be behind Access on previews, or one slower than 0.5 s, counts as a
-// miss too: the answer never depends on the cache, and a slow read leaves `make` its upstream
-// budget within the hub's 5 s.
+// The cache key excludes query strings, trailing slashes and visitor headers.
+// Hits retain Date and Expires; Age leaves browsers only the remaining lifetime.
+// Missing Date or expired entries are misses, even if the cache still holds them.
+// Access on previews can break cache reads; failed or >0.5 s reads miss to preserve the 5 s budget.
 export async function answer<Env>(
   context: Context<Env>,
   cache: Cache,

@@ -3,7 +3,7 @@ import { read } from '../answer';
 
 // /api/activity's lastWatched row: the latest film in the owner's public Letterboxd diary, in
 // shelf.json's `lastWatched` shape, or null as the row when the diary has none; null for no answer.
-// The feed needs no key. This module exports no onRequest handler, so it is no route.
+// The feed needs no key.
 export async function load(): Promise<{ lastWatched: LastWatched | null } | null> {
   try {
     // 3 s for the request and its body, under the hub's 5 s; the feed is about 50 entries.

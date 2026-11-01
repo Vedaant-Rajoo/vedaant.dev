@@ -189,7 +189,7 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   `null` while ongoing) and a `summary` of 1–140 characters. `url` is optional
   and uses `https://`. An end cannot precede its start. Home shows every ongoing
   role and the two newest ended ones, and folds two or more older roles behind
-  "earlier". The schema accepts a `collapse` field, but it controls nothing.
+  "earlier".
 - When work changes, replace `public/resume.pdf` and set `resume.updated` in
   `site.json` to the PDF's date. `/resume` redirects to `/resume.pdf`. The build
   checks that the file exists, not that it is current.

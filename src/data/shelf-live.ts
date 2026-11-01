@@ -1,9 +1,8 @@
 import { day, initials, monthYear } from './format';
 import type { OnRepeat } from './now-playing';
 
-// /shelf's three live rows, in shelf.json's shapes: the Function's mappers, the checks the Function
-// and the browser apply to a row, and the row's text, the same at build and in the browser. /shelf's
-// script imports only the checks and the text, so the mappers, hosts and query stay out of it.
+// /shelf's mappers, checks and text, in shelf.json's shapes, shared at build and in the browser.
+// The page imports only checks and text, keeping mappers, hosts and queries out of client JS.
 export interface Reading {
   title: string;
   creator: string;
@@ -25,9 +24,9 @@ export interface Shelf {
   listening?: OnRepeat | null;
 }
 
-// shelf.ts's rules for each field, without zod, which the hub cannot afford: a pattern its value
-// matches, as a number for the year, rating, page and plays, and as a string for the rest. Years run
-// from 1000 to 9999, ratings from 0.5 to 5 in half stars, and pages and plays from 1, short of 2^53.
+// Mirrors shelf.ts without zod to keep client JS within budget: numeric year, rating, page and
+// plays; strings for the rest. Years run from 1000 to 9999, ratings from 0.5 to 5 in half stars,
+// and pages and plays from 1, short of 2^53.
 const count = /^[1-9]\d{0,14}$/;
 const patterns: Record<string, RegExp> = {
   title: /\S/,
@@ -118,8 +117,8 @@ export function shelfText(
 // A row a mapper built, if it fits its rules; null otherwise.
 const checked = <T>(name: keyof typeof rows, row: T) => (fits(row, rows[name]) ? row : null);
 
-// Hardcover's GraphQL API, for /api/activity's reading row. The Function sends HARDCOVER_TOKEN; user 191390 is the
-// owner's public id, so no `me` query is needed. Status 2 is "currently reading". The latest updated
+// Hardcover's reading row: user 191390 is the owner's public id, so no `me` query is needed.
+// The Function sends HARDCOVER_TOKEN. Status 2 is "currently reading". The latest updated
 // book and its latest read win; the outer limit only trims the answer.
 export const hardcover = 'https://api.hardcover.app/v1/graphql';
 export const readingQuery = `{
@@ -140,9 +139,9 @@ interface Contribution {
 }
 
 // Maps a parsed Hardcover answer: the current book; undefined when none is current; null when the
-// body is not one, has GraphQL errors, or its book has no title or credited name. The creator is the
-// book's authors, a contribution without a role or "Author"; when it lists none of those, everyone
-// credited, in Hardcover's order.
+// body is not one, has GraphQL errors, or its book has no title or credited name. The creator is
+// the book's authors, a contribution without a role or "Author"; when it lists none of those,
+// everyone credited, in Hardcover's order.
 export function toReading(body: unknown): Reading | undefined | null {
   const { data, errors } = (body ?? {}) as { data?: { user_books?: unknown }; errors?: unknown };
   const books = data?.user_books;
@@ -267,7 +266,7 @@ function append(feed: Feed, text: string | null) {
 
 // Opens an element; false for a second root, a root that is not <rss>, or markup in a leaf.
 function enter(feed: Feed, name: string) {
-  // shortcut: accepts at most 32 XML levels, raise only if a real Letterboxd feed needs deeper markup
+  // shortcut: at most 32 XML levels, raise if a real Letterboxd feed needs deeper markup
   if (
     feed.ended ||
     feed.leaf ||
@@ -321,12 +320,12 @@ function step(feed: Feed, { name, closing, empty, text = '' }: Token) {
   return (closing || enter(feed, name)) && (!(closing || empty) || leave(feed, name));
 }
 
-// Maps the diary feed's text: the entry with the latest watched date, the earlier one in the feed on
-// a tie, never the latest posted; undefined when the feed has no diary entry; null when the text is
-// not a whole RSS document or the chosen entry has no usable title or year. Items without a film title
-// or a watched date, as lists are, are skipped. A rating from 0.5 to 5 in half stars is kept; none,
-// 0 or anything else leaves it out.
-// shortcut: reads four letterboxd:* leaf elements as text or one CDATA section, use an XML parser if Letterboxd nests markup in them
+// Maps the diary feed's text: the entry with the latest watched date, the earlier one in the feed
+// on a tie, never the latest posted; undefined when the feed has no diary entry; null when the text
+// is not a whole RSS document or the chosen entry has no usable title or year. Items without a film
+// title or a watched date, as lists are, are skipped. A rating from 0.5 to 5 in half stars is kept;
+// none, 0 or anything else leaves it out.
+// shortcut: four letterboxd:* text leaves or one CDATA section, use an XML parser for nested markup
 export function toLastWatched(xml: string): LastWatched | undefined | null {
   const feed: Feed = { path: [], channel: false, ended: false };
   // Each turn reads the text up to the next "<", then the markup there, so `at` always moves on.

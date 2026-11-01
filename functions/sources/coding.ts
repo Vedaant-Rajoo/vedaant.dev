@@ -9,8 +9,8 @@ import {
 import { read } from '../answer';
 
 // /api/activity's coding: today's coding time, top language, last heartbeat and 30-day mix from
-// WakaTime, or null when WakaTime gives none. `key` is WAKATIME_API_KEY, which holds an OAuth access
-// token; keep the deployed secret name. This module exports no onRequest handler, so it is no route.
+// WakaTime, or null when WakaTime gives none. `key` is WAKATIME_API_KEY, which holds an OAuth
+// access token; keep the deployed secret name.
 export async function load(key: string | undefined): Promise<Coding | null> {
   if (!key) {
     return fail('no WAKATIME_API_KEY');

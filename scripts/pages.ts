@@ -13,7 +13,7 @@ const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
 const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
 const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
-// /shelf's rows as a build without the key shows them, each once, "—" for a row shelf.json leaves out.
+// A keyless build shows each shelf row once; missing shelf.json rows read "—".
 const rows = {
   reading: readingText(reading ?? null).title,
   'last-watched': watchedText(lastWatched ?? null).title,
@@ -118,8 +118,9 @@ for (const page of pages.sort()) {
   const size = gz(Buffer.from(html));
   const report = [
     `${page}: JS ${js} B, ${BUDGET - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
+    `HTML ${size} B`,
+    `CSS ${css} B`,
   ];
-  report.push(`HTML ${size} B`, `CSS ${css} B`);
   if (data) {
     report.push(`JSON data ${data} B, not JS`);
   }

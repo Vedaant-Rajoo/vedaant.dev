@@ -12,7 +12,6 @@ export interface NowPlaying {
 // the LASTFM_API_KEY from their host's environment; the hub reads /api/now-playing and has no key.
 const user = 'newedia';
 
-// The request for one key.
 export const recentTracks = (key: string) =>
   `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
     method: 'user.getrecenttracks',
@@ -108,12 +107,11 @@ export const minute = (value: unknown) => {
 
 // Checks a parsed /api/now-playing body: the committed snapshot's seven fields and nothing else,
 // each in the form the Function writes; null for anything else, so the hub treats it as a failure.
-// The link must pass page() unchanged and the artwork must be a Cover Art Archive thumbnail, because
-// they end up in an href and an <img src>.
+// The link must pass page() unchanged and the artwork must be a Cover Art Archive thumbnail,
+// because they end up in an href and an <img src>.
 export function fromLive(body: unknown): NowPlaying | null {
   const { state, track, artist, album, at, url, artwork } = (body ?? {}) as Record<string, unknown>;
   const valid =
-    typeof body === 'object' &&
     states.has(state) &&
     [track, artist, album].every(optional) &&
     (at === null || minute(at)) &&

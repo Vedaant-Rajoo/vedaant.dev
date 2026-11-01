@@ -36,18 +36,16 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
           </h2>
           {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
           <ol role="list" aria-labelledby={`year-${year}`} class="divide-y divide-line wrap-anywhere">
-            {group.map(({ id, data }) => {
-              return (
-                <li>
-                  <Row tile={initials(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
-                    <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
-                    <abbr title={fullDay(data.published)} class="no-underline whitespace-nowrap">
-                      <time datetime={data.published}>{dayMonth(data.published)}</time>
-                    </abbr>
-                  </Row>
-                </li>
-              );
-            })}
+            {group.map(({ id, data }) => (
+              <li>
+                <Row tile={initials(data.title)} title={data.title} sub={data.summary} href={`/writing/${id}`}>
+                  <Fragment slot="chips">{data.kind === 'note' && <>{' '}<Chip label="note" /></>}</Fragment>
+                  <abbr title={fullDay(data.published)} class="no-underline whitespace-nowrap">
+                    <time datetime={data.published}>{dayMonth(data.published)}</time>
+                  </abbr>
+                </Row>
+              </li>
+            ))}
           </ol>
         </section>
       ))
