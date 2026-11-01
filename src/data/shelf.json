@@ -70,25 +70,11 @@
       "link": "https://en.wikipedia.org/wiki/The_Dark_Knight"
     },
     {
-      "title": "Interstellar",
-      "creator": "Christopher Nolan",
-      "year": 2014,
-      "sentence": "I love how earnestly it goes for the big feelings, and the score makes me want bigger speakers.",
-      "link": "https://www.paramountmovies.com/movies/interstellar"
-    },
-    {
       "title": "Pulp Fiction",
       "creator": "Quentin Tarantino",
       "year": 1994,
       "sentence": "The dialogue makes me want to quote it in situations where I absolutely shouldn't.",
       "link": "https://www.miramax.com/movie/pulp-fiction/"
-    },
-    {
-      "title": "3 Idiots",
-      "creator": "Rajkumar Hirani",
-      "year": 2009,
-      "sentence": "I love a comedy that takes the pressure to succeed this seriously.",
-      "link": "https://en.wikipedia.org/wiki/3_Idiots"
     },
     {
       "title": "Up",
@@ -112,12 +98,6 @@
       "sentence": "The film I rewatch when I need to remember that hard work and kindness can be the same thing.",
       "link": "https://en.wikipedia.org/wiki/Spirited_Away",
       "rating": 5
-    },
-    {
-      "title": "Shoah",
-      "creator": "Claude Lanzmann",
-      "year": 1985,
-      "sentence": "Nine and a half hours with no archive footage, and the one film I would never put a rating on."
     }
   ],
   "books": [
