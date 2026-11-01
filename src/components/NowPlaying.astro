@@ -75,7 +75,8 @@ const time = 'grow self-stretch text-right leading-5';
 }
 {/* The /now cell: the label with the state on its right, the 56px tile, the track over artist ·
     album, and Last.fm's credit in the bottom right corner, a link of its own outside the cell's
-    link; mt-auto keeps it at the bottom beside a taller coding cell. Every line has a fixed
+    link; justify-between keeps it at the bottom beside a taller coding cell, and its 44px target
+    overlaps the padding instead of adding height. Every line has a fixed
     height and truncates, the state fills the row's fixed cell, and only the width moves the
     text under the tile, so no state or text changes the cell's height. The label is a .meta of
     plain text: global.css paints an element inside a .meta live, never its text.
@@ -84,7 +85,7 @@ const time = 'grow self-stretch text-right leading-5';
     if they matter. */}
 {
   variant === 'cell' && (
-    <div class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-1.5">
+    <div class="flex flex-col justify-between gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4">
       <a {...root} class="-mx-2 flex flex-col gap-2.5 rounded-sm px-2 py-2 transition-colors duration-(--d-2)">
         <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span class="meta text-xs text-fg-3">now playing</span>
@@ -102,7 +103,7 @@ const time = 'grow self-stretch text-right leading-5';
           </span>
         </span>
       </a>
-      <a href="https://www.last.fm/" class="meta target link mt-auto self-end text-xs text-fg-3">
+      <a href="https://www.last.fm/" class="meta target link -my-3.5 self-end text-xs text-fg-3">
         <span>via last.fm <Arrow>↗</Arrow></span>
       </a>
     </div>

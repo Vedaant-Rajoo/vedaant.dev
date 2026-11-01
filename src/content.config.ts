@@ -90,13 +90,14 @@ const writing = defineCollection({
 });
 
 // One file, src/content/now/now.md: its body is /now's prose under "## label" headings; its
-// frontmatter also feeds the home rows. Another file in the folder is not read.
+// frontmatter also feeds the home rows and holds the intro. Another file in the folder is not read.
 const now = defineCollection({
   loader: glob({ pattern: 'now.md', base: 'src/content/now' }),
   schema: z.strictObject({
     updated: day,
     from: z.string().trim().min(1),
     building: z.string().trim().min(1),
+    summary: z.string().trim().min(1),
   }),
 });
 

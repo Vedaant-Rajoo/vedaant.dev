@@ -25,7 +25,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
   data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
   aria-live="off"
   aria-busy={state === 'loading' ? 'true' : undefined}
-  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-1.5"
+  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
 >
   <div class="flex flex-col gap-2.5 py-2">
     <span class="flex items-center gap-2">
@@ -34,15 +34,14 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
         ><time data-coding="time" datetime={value.at}>{text.time}</time></span
       >
     </span>
-    <span class="flex min-w-0 flex-col">
-      <span data-coding="today" class="h-lh truncate font-medium leading-(--lh-snug)">{text.today}</span>
-      <span data-coding="language" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
-        >{text.language}</span
-      >
-    </span>
+    <span class="h-lh min-w-0 truncate leading-(--lh-snug)"
+      ><span data-coding="today" class="font-medium">{text.today}</span><span
+        data-coding="language"
+        class="text-sm text-fg-2">{text.language}</span
+      ></span
+    >
   </div>
   <language-mix class="flex grow flex-col gap-2">
-    <p class="meta text-xs text-fg-3">language mix · last 30 days</p>
     <svg aria-hidden="true" class="h-1.5 w-full">
       {slots.map(({ share, fill, x }) => (
         <g data-mix-segment data-other={share?.name === 'other' ? '' : undefined} visibility={share ? 'visible' : 'hidden'}>
@@ -53,9 +52,9 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
       ))}
     </svg>
     <div class="relative mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
-      <details class="group">
+      <details class="group -my-3.5">
         <summary class="meta target link cursor-pointer list-none gap-1 whitespace-nowrap text-xs text-fg-2">
-          <span>language details</span>
+          <span>language mix · last 30 days</span>
           <span aria-hidden="true" class="group-open:hidden">+</span>
           <span aria-hidden="true" class="hidden group-open:inline">−</span>
         </summary>
@@ -76,7 +75,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
           </ul>
         </div>
       </details>
-      <a href="https://wakatime.com/" class="meta target link ml-auto shrink-0 text-xs text-fg-3">
+      <a href="https://wakatime.com/" class="meta target link -my-3.5 ml-auto shrink-0 text-xs text-fg-3">
         <span>via wakatime <Arrow>↗</Arrow></span>
       </a>
     </div>
@@ -84,6 +83,11 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
 </div>
 
 <style>
+  /* The top language follows the day's time on its line; the dot goes when there is none. */
+  [data-coding='language']:not(:empty)::before {
+    content: ' · ';
+  }
+
   summary::-webkit-details-marker {
     display: none;
   }

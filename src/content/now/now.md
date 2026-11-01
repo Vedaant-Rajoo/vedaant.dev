@@ -2,6 +2,7 @@
 updated: "2026-10-22"
 from: "Bhilai"
 building: "this site and fettle, a macOS DAC sample-rate switcher"
+summary: "What I am focused on at the moment. Overwritten, not appended; the old versions live in Git."
 ---
 
 ## building
