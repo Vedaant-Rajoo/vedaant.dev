@@ -211,6 +211,8 @@ test('empty is a value, not a failure, and looks nothing up', async () => {
 test('asks Last.fm for one track with the key, and passes on nothing of the request', async () => {
   lastfm(() => recent([track]));
   await get();
+  assert.equal(deadlines.length, 1);
+  assert.equal(deadlines[0].cleared, true);
   assert.equal(requests.length, 1);
   const [{ url, init }] = requests;
   assert.equal(url.origin + url.pathname, 'https://ws.audioscrobbler.com/2.0/');
@@ -404,6 +406,32 @@ test('a failing Cache API still answers the value, never a 5xx', async () => {
   assert.equal(body.artwork, `https://coverartarchive.org/release/${id}/front-250`);
   assert.deepEqual(warnings, []);
 });
+
+for (const stalled of ['match', 'body']) {
+  test(`a stalled artwork cache ${stalled} stays within the 1.5 s artwork deadline`, async () => {
+    const value = { ...idle, album: `Stalled cache ${stalled}` };
+    lastfm(() => recent([{ ...track, album: { '#text': value.album } }]));
+    const blocked = {
+      ...cache,
+      match: async (url: string) => {
+        if (url !== artworkUrl(value)) {
+          return undefined;
+        }
+        return stalled === 'match'
+          ? new Promise<Response>(() => {})
+          : new Response(new ReadableStream());
+      },
+    } as Cache;
+    const answered = get(undefined, undefined, blocked);
+    const held = await deadline();
+    assert.ok(held, 'artwork deadline must start before reading the cache');
+    held.fire();
+    await assertAnswer(await answered, { ...value, artwork: null }, shared);
+    assert.equal(deadlines.length, 1);
+    assert.equal(held.cleared, true);
+    await Promise.all(waits);
+  });
+}
 
 test('storing the artwork never holds the answer', async () => {
   const id = '0f3b9c2e-5d4a-4e6b-8c7d-1a2b3c4d5e6f';

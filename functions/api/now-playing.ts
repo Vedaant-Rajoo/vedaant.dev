@@ -56,18 +56,22 @@ async function withArtwork(value: NowPlaying, context: Context<Env>, cache: Cach
     return { ...value, artwork: null };
   }
   const key = `${origin}/api/now-playing/artwork?k=${encodeURIComponent(artworkKey(value))}`;
-  const stored = await cache
-    .match(key)
-    .then((entry) => entry?.text())
-    .catch(() => undefined);
-  if (stored) {
-    return { ...value, artwork: stored };
-  }
-  // One 1.5 s wait covers the KV read and the lookup, so neither can hold the answer.
+  // One 1.5 s wait covers the cache body, KV read and lookup, so none can hold the answer.
   let timer: ReturnType<typeof setTimeout> | undefined;
   const late = new Promise<null>((resolve) => {
     timer = setTimeout(resolve, 1_500, null);
   });
+  const stored = await Promise.race([
+    cache
+      .match(key)
+      .then((entry) => entry?.text())
+      .catch(() => undefined),
+    late,
+  ]);
+  if (stored) {
+    clearTimeout(timer);
+    return { ...value, artwork: stored };
+  }
   // A failing or slow KV, or a key over KV's 512 bytes, counts as a miss; async functions turn even
   // a synchronous throw into a rejection, which each caller catches.
   const kv = context.env.ARTWORK;
