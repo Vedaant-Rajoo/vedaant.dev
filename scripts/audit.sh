@@ -22,6 +22,9 @@ done
 urls=$(cd dist && find . -name '*.html' | sort | sed -e 's#^\.##; s#index\.html$##; s#\.html$##' \
   -e "s#^#http://127.0.0.1:$port#")
 
+# The job's first run meets a cold Chrome and server (its / sample alone failed, TBT up to 1.7 s); discard it.
+npx -y lighthouse@13.5.0 "http://127.0.0.1:$port/" --form-factor=mobile --output=json --quiet \
+  --only-categories=performance --chrome-flags='--headless=new --no-sandbox' --output-path="$out/warmup.json"
 for url in $urls; do
   # axe still reads /404; its noindex is deliberate and would fail Lighthouse SEO.
   [ "${url%/404}" = "$url" ] || continue
