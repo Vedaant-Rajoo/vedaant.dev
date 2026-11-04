@@ -2,6 +2,7 @@
 import { getCollection, getEntry } from 'astro:content';
 import Chip from '../../components/Chip.astro';
 import Row from '../../components/Row.astro';
+import SectionLabel from '../../components/SectionLabel.astro';
 import { dayMonth, fullDay, initials } from '../../data/format';
 import { words } from '../../data/navigation';
 import { intro, pieces } from '../../data/writing';
@@ -31,9 +32,7 @@ const [{ sub }] = words.filter(({ href }) => href === '/writing');
     {
       [...groups].map(([year, group]) => (
         <section class="flex flex-col gap-6">
-          <h2 id={`year-${year}`} class="meta border-t border-dashed border-line pt-6 text-xs text-fg-3">
-            <time>{year}</time>
-          </h2>
+          <SectionLabel id={`year-${year}`}><time>{year}</time></SectionLabel>
           {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
           <ol role="list" aria-labelledby={`year-${year}`} class="divide-y divide-line wrap-anywhere">
             {group.map(({ id, data }) => (
