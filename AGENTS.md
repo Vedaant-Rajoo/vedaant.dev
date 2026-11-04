@@ -55,15 +55,16 @@ only names tokens and components; where it differs, the pages win.
 - Tailwind is v4 via `@tailwindcss/vite`, never the doc's v3 config. At most 12
   dependencies and 20 components; share a component only on its second use.
 - Style only through the tokens in `src/styles/tokens.css`, named as in the
-  doc's §4.2 (plus the code colours `--c-code-keyword` and `--c-code-string`),
-  with no arbitrary values: literal durations escape the reduced-motion reset.
+  doc's §4.2 (plus the code colours `--c-code-keyword` and `--c-code-string`,
+  and the neutral ramp `--c-ramp-1` to `--c-ramp-5` for data marks), with no
+  arbitrary values: literal durations escape the reduced-motion reset.
   Mockup markup and inline styles show intent, not code.
 - Contrast in both themes, hex fallbacks included, on `--c-bg`: body ≥15:1,
-  secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text (link underlines
-  included) ≥3:1; on the row hover fill (`--c-surface`) body text may drop to
-  14:1, and code-block text is secondary (≥8:1). Measure after token edits
-  (`bun scripts/contrast.ts`); the doc's light `--c-live` and light hex
-  `--c-fg-2` fail.
+  secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text (link underlines and
+  every ramp step included) ≥3:1; on the row hover fill (`--c-surface`) body
+  text may drop to 14:1, and code-block text is secondary (≥8:1). Measure
+  after token edits (`bun scripts/contrast.ts`); the doc's light `--c-live`
+  and light hex `--c-fg-2` fail.
 - `--c-live` (green) marks only live state. No icon set; use text glyphs.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.

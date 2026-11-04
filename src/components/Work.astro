@@ -1,7 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
 import { initials } from '../data/format';
-import Arrow from './Arrow.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
 
@@ -54,8 +53,7 @@ const shown = rows.slice(0, rows.length - earlier.length);
             >
               {' '}
               <span class="whitespace-nowrap">
-                · <span class="group-open:hidden">more <Arrow>→</Arrow></span>
-                <span class="hidden group-open:inline">fewer <Arrow>←</Arrow></span>
+                · <span class="group-open:hidden">more</span><span class="hidden group-open:inline">fewer</span><span data-marker></span>
               </span>
             </Row>
             {/* biome-ignore lint/a11y/noRedundantRoles: as above. */}

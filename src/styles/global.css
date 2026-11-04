@@ -18,6 +18,11 @@
   --color-live: var(--c-live);
   --color-mark: var(--c-mark);
   --color-focus: var(--c-focus);
+  --color-ramp-1: var(--c-ramp-1);
+  --color-ramp-2: var(--c-ramp-2);
+  --color-ramp-3: var(--c-ramp-3);
+  --color-ramp-4: var(--c-ramp-4);
+  --color-ramp-5: var(--c-ramp-5);
 
   --font-sans: var(--ff-sans);
   --font-mono: var(--ff-mono);
@@ -143,6 +148,18 @@
 }
 
 @layer components {
+  /* The disclosure marker after a summary's label, the same on every <details>: + closed and −
+     open, drawn as Arrow.astro draws an arrow, so an underline stops at the label. Screen readers
+     hear the summary's own state instead. */
+  [data-marker]::after {
+    content: "+" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
+  }
+  details[open] > summary [data-marker]::after {
+    content: "−" / "";
+  }
   .prose {
     max-width: var(--w-measure);
     overflow-wrap: anywhere;

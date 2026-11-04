@@ -11,8 +11,11 @@ const ON_SURFACE: Record<string, number> = {
   'code-keyword': 8,
   'code-string': 8,
 };
-// Non-text marks on --c-bg, ≥3:1, by use: the link underline.
-const NON_TEXT: [use: string, token: string, target: number][] = [['underline', 'fg-3', 3]];
+// Non-text marks on --c-bg, ≥3:1, by use: the link underline and each step of the neutral ramp.
+const NON_TEXT: [use: string, token: string, target: number][] = [
+  ['underline', 'fg-3', 3],
+  ...[1, 2, 3, 4, 5].map((step): [string, string, number] => ['ramp', `ramp-${step}`, 3]),
+];
 const THEMES = ['light', 'dark'] as const;
 type Theme = (typeof THEMES)[number];
 type Swatch = { hex: string; clipped: boolean };
