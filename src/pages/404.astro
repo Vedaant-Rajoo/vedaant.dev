@@ -31,9 +31,7 @@ const [ask, link, fix] = notFound.report;
       {
         rows.map(({ word, href, tile, sub }) => (
           <li>
-            <Row tile={tile} title={word} sub={sub} href={href}>
-              <Arrow>→</Arrow>
-            </Row>
+            <Row tile={tile} title={word} sub={sub} href={href} />
           </li>
         ))
       }

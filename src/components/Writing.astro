@@ -9,9 +9,8 @@ const all = await pieces();
 ---
 
 {/* The two newest pieces, counted all; with none the section is left out. The date is "Mon ’YY"
-    in an <abbr> with the whole day, as Row writes its months. Every row passes the chips slot,
-    so posts and notes share Row's stacked layout; only a note fills it. wrap-anywhere breaks a
-    word too long for the row, such as a long identifier. */}
+    in an <abbr> with the whole day, as Row writes its months. A note gets its chip after the
+    summary. wrap-anywhere breaks a word too long for the row, such as a long identifier. */}
 {
   all.length > 0 && (
     <section class="flex flex-col gap-6">

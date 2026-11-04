@@ -28,7 +28,7 @@ const listening = listeningText(onRepeat ?? null);
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
-  {/* Rows put the sub line under the title, as writing's do; last watched's stars follow it. Stars
+  {/* Rows put the sub line under the title, as every row does; last watched's stars follow it. Stars
       are in the sans at the sub line's size, as on board 15, and hidden from screen readers, which
       hear the rating instead. Each row is a widget the hub fills from /api/activity. */}
   <section>
@@ -70,7 +70,6 @@ const listening = listeningText(onRepeat ?? null);
                   sub={`${item.creator} · ${item.sentence}`}
                   href={item.link}
                 >
-                  <Fragment slot="chips" />
                   {label !== 'films' && <time>{item.year}</time>}
                   {'rating' in item && typeof item.rating === 'number' && (
                     <>
