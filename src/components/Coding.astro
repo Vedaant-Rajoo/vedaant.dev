@@ -1,5 +1,5 @@
 ---
-import { type Coding, codingText } from '../data/coding';
+import { type Coding, codingText, tag, tags } from '../data/coding';
 import { coding } from '../data/wakatime';
 import Arrow from './Arrow.astro';
 
@@ -11,6 +11,7 @@ interface Props {
 const { value = coding, state = value.state } = Astro.props;
 const text = codingText(value);
 const fills = ['fill-fg', 'fill-fg-2', 'fill-fg-3'];
+const bars = ['bg-fg', 'bg-fg-2', 'bg-fg-3'];
 // Six slots keep the bar and open legend steady as the mix refreshes.
 const slots = Array.from({ length: 6 }, (_, i) => ({
   share: value.shares[i],
@@ -41,16 +42,26 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
       ></span
     >
   </div>
-  <language-mix class="flex grow flex-col gap-2">
-    <svg aria-hidden="true" class="h-1.5 w-full">
-      {slots.map(({ share, fill, x }) => (
-        <g data-mix-segment data-other={share?.name === 'other' ? '' : undefined} visibility={share ? 'visible' : 'hidden'}>
-          <rect x={`${x}%`} width={`${share?.percent ?? 0}%`} height="100%" class={fill} />
-          <line class="other stroke-fg-3" x1={`${x}%`} x2={`${x + (share?.percent ?? 0)}%`} y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
-          <line class="stroke-bg" x1={`${x}%`} x2={`${x}%`} y1="0" y2="100%" stroke-width="2" />
-        </g>
+  <language-mix data-tags={JSON.stringify(tags)} class="flex grow flex-col gap-2">
+    {/* The legend below is the bar's text for keyboards, touch and screen readers; the hover tooltips repeat it. */}
+    <div data-mix-bar aria-hidden="true" class="relative h-1.5">
+      {slots.map(({ share, x }, i) => (
+        <span
+          data-mix-segment
+          data-other={share?.name === 'other' ? '' : undefined}
+          class="group/segment absolute -top-2.25 h-6"
+          style={`--x: ${x}; --w: ${share?.percent ?? 0}`}
+        >
+          {/* The 2px gap before each later segment separates it, and leaves an empty one undrawn. */}
+          <span data-mix-fill class:list={['absolute right-0 top-2.25 h-1.5', bars[i % bars.length], i > 0 ? 'left-0.5' : 'left-0']} />
+          <span data-mix-tip class="invisible absolute bottom-6 flex w-max items-center gap-2 rounded-lg border border-line bg-bg px-2.5 py-2 group-hover/segment:visible">
+            <span data-mix-tag class="meta rounded-sm border border-line-2 px-1 text-xs text-fg-2">{share ? tag(tags, share.name) : ''}</span>
+            <span data-mix-name class="text-sm font-medium">{share?.name ?? (i === 0 ? '—' : '')}</span>
+            <span data-mix-percent class="meta ml-2 text-xs text-fg-2">{share ? `${share.percent}%` : ''}</span>
+          </span>
+        </span>
       ))}
-    </svg>
+    </div>
     <div class="relative mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
       <details class="group -my-3.5">
         <summary class="meta target link cursor-pointer list-none gap-1 whitespace-nowrap text-xs text-fg-2">
@@ -63,8 +74,8 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
           {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
           <ul role="list" class="meta grid gap-2 text-xs text-fg-3">
             {slots.map(({ share, fill }, i) => (
-              <li class:list={['flex h-4 min-w-0 items-center gap-2 leading-4', { invisible: !share && i > 0 }]}>
-                <svg aria-hidden="true" class="size-2 shrink-0" data-other={share?.name === 'other' ? '' : undefined} visibility={share ? 'visible' : 'hidden'}>
+              <li data-other={share?.name === 'other' ? '' : undefined} class="flex h-4 min-w-0 items-center gap-2 leading-4">
+                <svg aria-hidden="true" class="size-2 shrink-0">
                   <rect width="100%" height="100%" class={fill} />
                   <line class="other stroke-fg-3" x2="100%" y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
                 </svg>
@@ -92,14 +103,70 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
     display: none;
   }
 
-  [data-other] > rect,
-  :not([data-other]) > .other {
+  /* A legend row without a share keeps its height but shows nothing, or only "—" when the mix is
+     empty; one with a share shows its swatch, solid, or dashed for 'other'. */
+  li:has([data-mix-name]:empty),
+  li:has([data-mix-percent]:empty) svg {
+    visibility: hidden;
+  }
+  [data-other] rect,
+  li:not([data-other]) .other {
+    visibility: hidden;
+  }
+
+  /* The bar's 'other' share: the legend swatch's dashes, 2px on and 1px off. */
+  [data-other] > [data-mix-fill] {
+    background: repeating-linear-gradient(to right, var(--c-fg-3) 0 2px, transparent 2px 3px);
+  }
+
+  /* --x and --w: the segment's start and width in percent of the bar. */
+  [data-mix-segment] {
+    left: calc(var(--x) * 1%);
+    width: calc(var(--w) * 1%);
+  }
+
+  /* A tooltip's point at m% of its width sits at m% of the bar, m the segment's middle in percent of
+     the bar, so it never leaves the bar, which it overhangs by up to 12px at either end into the
+     card's padding. The tooltip is the segment's child, so 50% is the segment's middle. */
+  [data-mix-tip] {
+    left: calc(50% + ((var(--x) + var(--w) / 2) / 50 - 1) * var(--sp-unit) * 3);
+    translate: calc((var(--x) + var(--w) / 2) * -1%);
+  }
+
+  /* The caret belongs to the segment, so it stays under the segment's middle wherever the tooltip opens. */
+  [data-mix-segment]::after {
+    content: '';
+    position: absolute;
+    bottom: calc(var(--sp-unit) * 6);
+    left: 50%;
+    width: calc(var(--sp-unit) * 2);
+    height: calc(var(--sp-unit) * 2);
+    border: solid var(--c-line);
+    border-width: 0 1px 1px 0;
+    background: var(--c-bg);
+    translate: -50% 50%;
+    rotate: 45deg;
+    visibility: hidden;
+  }
+
+  @media (hover: hover) {
+    [data-mix-segment]:hover::after {
+      visibility: visible;
+    }
+    [data-mix-bar]:hover [data-mix-segment]:not(:hover) > [data-mix-fill] {
+      opacity: 0.35;
+    }
+  }
+
+  /* Escape hides an open tooltip until the pointer leaves the bar (WCAG 1.4.13). */
+  [data-quiet] [data-mix-tip],
+  [data-quiet] [data-mix-segment]::after {
     visibility: hidden;
   }
 </style>
 
 <script>
-  import { codingFromLive, codingText, type Share } from '../data/coding';
+  import { codingFromLive, codingText, type Share, tag } from '../data/coding';
   import type { Hub } from '../scripts/presence-hub';
 
   // The cell's feed, added to the hub once it is defined, so its checks load with the cell alone. It
@@ -114,40 +181,41 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
 
     connectedCallback() {
       const details = this.querySelector('details');
-      details?.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && details.open) {
-          details.open = false;
-          details.querySelector('summary')?.focus();
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          // Escape hides an open tooltip until the pointer leaves the mix (WCAG 1.4.13), and closes
+          // the legend from inside it.
+          if (this.querySelector('[data-mix-segment]:hover')) {
+            this.toggleAttribute('data-quiet', true);
+          }
+          if (details?.open && details.contains(event.target as Node)) {
+            details.open = false;
+            details.querySelector('summary')?.focus();
+          }
         }
       });
+      this.onpointerleave = () => this.toggleAttribute('data-quiet', false);
     }
 
     attributeChangedCallback() {
       // The hub validates and strips the response before setting this attribute.
       const shares: Share[] = JSON.parse(this.getAttribute('data-shares') ?? '[]');
+      const glyphs = JSON.parse(this.getAttribute('data-tags') ?? '{}');
+      const items = this.querySelectorAll('li');
       let x = 0;
+      // Each bar segment with its tooltip, and the legend row of the same share.
       this.querySelectorAll('[data-mix-segment]').forEach((slot, i) => {
         const share = shares[i];
         const width = share?.percent ?? 0;
-        slot.setAttribute('visibility', share ? 'visible' : 'hidden');
-        slot.toggleAttribute('data-other', share?.name === 'other');
-        const rect = slot.querySelector('rect')!;
-        rect.setAttribute('x', `${x}%`);
-        rect.setAttribute('width', `${width}%`);
-        for (const line of slot.querySelectorAll('line')) {
-          line.setAttribute('x1', `${x}%`);
-          line.setAttribute('x2', `${line.classList.contains('other') ? x + width : x}%`);
+        const item = items[i];
+        slot.setAttribute('style', `--x: ${x}; --w: ${width}`);
+        slot.querySelector('[data-mix-tag]')!.textContent = share ? tag(glyphs, share.name) : '';
+        for (const element of [slot, item]) {
+          element.toggleAttribute('data-other', share?.name === 'other');
+          element.querySelector('[data-mix-name]')!.textContent = share?.name ?? (i ? '' : '—');
+          element.querySelector('[data-mix-percent]')!.textContent = width ? `${width}%` : '';
         }
         x += width;
-      });
-      this.querySelectorAll('li').forEach((slot, i) => {
-        const share = shares[i];
-        slot.classList.toggle('invisible', !share && i > 0);
-        slot.querySelector('[data-mix-name]')!.textContent = share?.name ?? (i === 0 ? '—' : '');
-        slot.querySelector('[data-mix-percent]')!.textContent = share ? `${share.percent}%` : '';
-        const swatch = slot.querySelector('svg')!;
-        swatch.setAttribute('visibility', share ? 'visible' : 'hidden');
-        swatch.toggleAttribute('data-other', share?.name === 'other');
       });
     }
   });

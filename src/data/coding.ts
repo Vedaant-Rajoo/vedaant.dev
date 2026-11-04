@@ -72,6 +72,37 @@ const known = new Set(
   PowerShell Python R Ruby Rust SCSS SQL Scala Shell Svelte Swift TOML TSX TypeScript Vue XML YAML
   Zig`.split(/\s+/),
 );
+// The tooltip glyphs on the mix bar that are not the name's lowercase extension, ".go" for Go. The
+// page hands them to its script in an attribute, so they stay out of the /now JS budget.
+export const tags: Record<string, string> = {
+  'C#': '.cs',
+  'C++': '.cpp',
+  Clojure: '.clj',
+  Docker: 'Dockerfile',
+  Elixir: '.ex',
+  Erlang: '.erl',
+  'F#': '.fs',
+  Haskell: '.hs',
+  JavaScript: '.js',
+  Julia: '.jl',
+  Kotlin: '.kt',
+  Makefile: 'Makefile',
+  Markdown: '.md',
+  OCaml: '.ml',
+  'Objective-C': '.m',
+  Perl: '.pl',
+  PowerShell: '.ps1',
+  Python: '.py',
+  Ruby: '.rb',
+  Rust: '.rs',
+  Shell: '.sh',
+  TypeScript: '.ts',
+  other: '…',
+};
+// A share's glyph from tags, or from the page's copy of them. Shares name only known languages and
+// 'other', so no name is an Object key.
+export const tag = (glyphs: Record<string, string>, name: string) =>
+  glyphs[name] ?? `.${name.toLowerCase()}`;
 const language = (value: unknown) => (typeof value === 'string' && known.has(value) ? value : null);
 const states = new Set<unknown>(['idle', 'empty']);
 
