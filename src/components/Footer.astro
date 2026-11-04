@@ -7,26 +7,28 @@ const updated = `${built.year}-${built.month}-${built.day}`;
 ---
 
 <footer class="flex flex-col gap-2 border-t border-line pt-6 pb-12">
+  {/* The résumé's date is an inline-block, as an arrow is, so the underline stays under the word
+      and does not change height under the smaller mono date. */}
   <p class="-mx-1.5 flex flex-wrap gap-2 text-sm">
     <a href={`mailto:${site.email}`} class="box" data-copy>
-      <span>email <Arrow>→</Arrow></span>
+      <span>email<Arrow>→</Arrow></span>
     </a>
     <a href="/resume.pdf" class="box">
-      <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <Arrow>↗</Arrow></span>
+      <span>résumé<span class="inline-block ps-1">· <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time></span><Arrow>↗</Arrow></span>
     </a>
     {
       Object.entries(site.socials).map(([name, href]) => (
         <a href={href} rel="me" class="box">
-          <span>{name} <Arrow>↗</Arrow></span>
+          <span>{name}<Arrow>↗</Arrow></span>
         </a>
       ))
     }
     <a href="/feed.xml" class="box"><span>rss</span></a>
-    <a href="/uses" class="box"><span>how I work <Arrow>→</Arrow></span></a>
+    <a href="/uses" class="box"><span>how I work<Arrow>→</Arrow></span></a>
   </p>
   {/* Links in this line keep its height (WCAG 2.5.8's inline exception). */}
   <p class="meta text-xs text-fg-3">
-    built with Astro · <a href={site.source} class="link">source <Arrow>↗</Arrow></a> · updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>
+    built with Astro · <a href={site.source} class="link">source<Arrow>↗</Arrow></a> · updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>
   </p>
   {/* src/scripts/copy.ts, which Base.astro loads, copies an email link's address on click. */}
   <span id="copy-status" class="sr-only" aria-live="polite"></span>

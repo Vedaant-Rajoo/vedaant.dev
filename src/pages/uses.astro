@@ -43,7 +43,7 @@ const { Content } = await render(uses);
                 <dt class:list={['min-w-0 shrink-0 basis-55 font-medium wrap-anywhere', retired && 'text-fg-2']}>
                   {url ? (
                     <a href={url} class="target link">
-                      <span>{label} <Arrow>↗</Arrow></span>
+                      <span>{label}<Arrow>↗</Arrow></span>
                     </a>
                   ) : (
                     label
@@ -72,11 +72,5 @@ const { Content } = await render(uses);
   }
   section {
     margin-block-start: var(--sp-section);
-  }
-  /* As on a post. shortcut: internal links are root-relative; absolute web links are outbound. If
-     absolute internal URLs are needed, classify against the configured site origin instead. */
-  .prose :global(a:is([href^="https://"], [href^="http://"], [href^="//"]))::after {
-    content: ' ↗' / '';
-    font-family: var(--ff-sans);
   }
 </style>

@@ -31,11 +31,11 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
     <h1 class="text-2xl font-semibold">now</h1>
     {/* Links in this line keep its height (WCAG 2.5.8's inline exception), as in the footer's. */}
     <p class="meta text-xs text-fg-3">
-      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="link">history <Arrow>↗</Arrow></a> · <a href="/uses" class="link">how I work <Arrow>→</Arrow></a>
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="link">history<Arrow>↗</Arrow></a> · <a href="/uses" class="link">how I work<Arrow>→</Arrow></a>
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
-  <dl>
+  <dl class="labels">
     {
       sections.map(({ label, html }) => (
         <>
@@ -91,17 +91,5 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
   }
   dd :global(p + p) {
     margin-block-start: var(--sp-row);
-  }
-  /* Longhands, because Tailwind scans this file: the shorthand property's name is also a
-     utility's, which would then compile into every page's CSS. */
-  dd :global(a) {
-    text-decoration-line: underline;
-    text-decoration-color: var(--c-line-2);
-    transition-property: text-decoration-color;
-    transition-duration: var(--d-1);
-    transition-timing-function: var(--ez-out);
-  }
-  dd :global(a:hover) {
-    text-decoration-color: var(--c-fg);
   }
 </style>

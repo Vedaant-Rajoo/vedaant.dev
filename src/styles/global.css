@@ -121,14 +121,17 @@
   }
 }
 
+/* The underline is --c-fg-3, ≥3:1 on --c-bg: for a link in the text's own colour it is the cue
+   that is not colour alone (scripts/contrast.ts measures it). */
 @utility link {
-  @apply underline decoration-line-2 transition-colors hover:decoration-fg;
+  @apply underline decoration-fg-3 transition-colors hover:decoration-fg;
 }
 @utility target {
   @apply inline-flex min-h-11 min-w-11 items-center;
 }
+/* Its text starts at its padding, so the boxes of a wrapping row line up on the left. */
 @utility box {
-  @apply flex min-h-11 min-w-11 items-center justify-center px-1.5 link;
+  @apply flex min-h-11 min-w-11 items-center px-1.5 link;
 }
 
 @layer components {
@@ -194,14 +197,25 @@
     flex: 1 1 max(--spacing(44), 100% - --spacing(22) - var(--sp-row));
     min-width: 0;
   }
-  /* Links as elsewhere. A link in a line of prose keeps the line's height, not 44px. */
-  .prose a {
+  /* Links in prose and in /now's sections, as the link utility draws them. A link in a line of
+     prose keeps the line's height, not 44px. */
+  :is(.prose, .labels) a {
     text-decoration-line: underline;
-    text-decoration-color: var(--c-line-2);
+    text-decoration-color: var(--c-fg-3);
     transition: text-decoration-color var(--d-1) var(--ez-out);
   }
-  .prose a:hover {
+  :is(.prose, .labels) a:hover {
     text-decoration-color: var(--c-fg);
+  }
+  /* An external one ends in ↗ (FR-SH-5), drawn as Arrow.astro draws it, so the underline stops at
+     the word; screen readers skip it. shortcut: internal links are root-relative; absolute web
+     links are outbound. If absolute internal URLs are needed, classify against the configured
+     site origin instead. */
+  :is(.prose, .labels) a:is([href^="https://"], [href^="http://"], [href^="//"])::after {
+    content: "↗" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
   }
   /* A quote is set in italic at text-lg and nothing else: sans italic, synthesized, so
      it requests no font. */
