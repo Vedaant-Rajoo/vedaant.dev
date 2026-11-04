@@ -3,6 +3,8 @@ import Arrow from '../components/Arrow.astro';
 import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import { day } from '../data/format';
+// Reads the contribution calendar once per build, so the build logs its fallback; nothing uses it yet.
+import '../data/github';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
 import Base from '../layouts/Base.astro';

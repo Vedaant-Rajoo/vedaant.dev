@@ -2,7 +2,8 @@
 
 Vedaant Rajoo's Ledger site, built with Astro, plain Markdown and Tailwind CSS v4
 over local design tokens. Pages are static, and Pages Functions serve the live
-music value, the daily coding snapshot and `/shelf`'s three live rows. The site lives at
+music value, the daily coding snapshot, the daily contributions calendar and
+`/shelf`'s three live rows. The site lives at
 https://vedaantrajoo.com; `vedaant.dev` is only the project's name.
 
 ## Run locally
@@ -52,8 +53,9 @@ bunx wrangler@4.150.0 pages dev dist --compatibility-date 2024-10-31 --ip 127.0.
 Without a key the build uses the committed snapshots, and the Functions answer
 `null`, so the music widgets show offline and the coding cell keeps its `—`. For a
 live answer, put `LASTFM_API_KEY=<your key>`, and `WAKATIME_API_KEY=<your OAuth token>`
-for the coding cell and `HARDCOVER_TOKEN=<your token>` for the reading row, in a
-gitignored `.env` in the checkout, with no
+for the coding cell, `CONTRIBUTIONS_TOKEN=<your GitHub token>` for the
+contributions calendar and `HARDCOVER_TOKEN=<your token>` for the reading row,
+in a gitignored `.env` in the checkout, with no
 `.dev.vars` beside it, which Wrangler would read instead. `bun run build` and
 Wrangler both read it, and Wrangler prints it only as `(hidden)`. Run Wrangler
 from the checkout root: it binds a `.env` only from the directory it runs in,
@@ -384,6 +386,45 @@ start a new deployment in each, as for the Last.fm key.
 The token must allow reading language stats (`read_stats.languages` or
 `read_stats`), as well as today's summary and the current user's heartbeat.
 
+## Contributions
+
+`/api/activity` also answers `contributions`, the GitHub contribution
+calendar of the profile in [site.json](src/data/site.json):
+`{"end": "2026-11-04", "days": [0, 3, …]}`, one count per UTC day, oldest
+first, ending on `end`, the UTC day the answer was made. The window is 53
+week columns: it starts on the Sunday 52 weeks before the Sunday of `end`'s
+week, so `days` holds 365 to 371 counts (365 plus `end`'s weekday, Sunday
+0). The counts are what the public profile shows: public work, plus private
+work as bare counts only when the profile's private contributions setting
+is on. No repository, issue or commit is asked for or answered. The
+[contributions source](functions/sources/contributions.ts) asks GitHub's
+GraphQL API for two ranges at once, since GitHub refuses a range longer
+than a year, and waits 3 seconds at most for at most 64 KB. A missing
+token, an error status, a GraphQL error, or a calendar with a day missing,
+repeated or malformed leaves `contributions` out, so the answer is kept 10
+minutes.
+
+[src/data/github.ts](src/data/github.ts) reads the same calendar once per
+build when `CONTRIBUTIONS_TOKEN` is set, and otherwise, or on failure, logs
+one `contributions:` warning and uses the committed
+[snapshot](src/data/snapshots/contributions.json). To refresh the snapshot,
+save the `contributions` value of https://vedaantrajoo.com/api/activity
+into that file, then run
+`bunx biome format --write src/data/snapshots/contributions.json` and
+`bun test`.
+
+`CONTRIBUTIONS_TOKEN` is a fine-grained personal access token that reads
+public data only. Create it in GitHub's Settings > Developer settings >
+Personal access tokens > Fine-grained tokens > Generate new token: your
+account as resource owner, an expiration of 366 days or less, Repository
+access "Public repositories", and no permissions. Store it only in the
+host's environment: the encrypted secret `CONTRIBUTIONS_TOKEN` in
+Production and in Preview (switch the Settings page to Preview), and `.env`
+locally. Never name it `GITHUB_TOKEN`, which `gh` and CI shells export. To
+rotate it, at least yearly and before it expires: create a new token, set
+it in both environments, start a new deployment in each, check
+`/api/activity`, then delete the old token on GitHub.
+
 ## Shelf rows
 
 `/shelf` always shows three rows above its lists, reading, last watched and on
@@ -396,13 +437,14 @@ with the music widgets' backoff after failures. Each row updates on its own; a
 row the answer leaves out keeps its text, with no error text for visitors.
 Other pages load none of this code.
 
-[`/api/activity`](functions/api/activity.ts) answers the coding cell's value and
-the three rows in one body, `{"coding": {...}, "reading": {...},
-"lastWatched": {...}, "listening": {...}}`, each row in shelf.json's shape, or
-`null` when nothing is current. Its four sources, in
+[`/api/activity`](functions/api/activity.ts) answers the coding cell's value,
+the contributions calendar and the three rows in one body, `{"coding": {...},
+"contributions": {...}, "reading": {...}, "lastWatched": {...},
+"listening": {...}}`, each row in shelf.json's shape, or `null` when nothing is
+current. Its five sources, in
 [functions/sources/](functions/sources/), run at once. A source that fails (a
 missing key, a timeout, an error status or an unusable body) is left out of the
-body, so only its widget keeps its old text. An answer with all four is kept a
+body, so only its widget keeps its old text. An answer with all five is kept a
 day by the data centre and by the browser (`max-age=86400, s-maxage=86400`);
 one with a source missing, 10 minutes (`600`), so a source that failed is asked
 again soon; with every source failing it answers `200` with `null` and
@@ -478,11 +520,12 @@ Preview's values:
   Free allowance of 100,000 a day, and `/now` polls both; past the allowance,
   fail open keeps serving the static site and the hub keeps its last values,
   marked offline, while fail closed would answer with an error page instead.
-- Settings > Variables and Secrets: `LASTFM_API_KEY`, `WAKATIME_API_KEY` and
-  `HARDCOVER_TOKEN` in Production and in Preview, as above. Without
-  `WAKATIME_API_KEY`, `/api/activity` leaves `coding` out and the cell keeps its
-  build-time value; without `HARDCOVER_TOKEN`, it does the same for the reading
-  row. Either keeps the answer 10 minutes, not a day.
+- Settings > Variables and Secrets: `LASTFM_API_KEY`, `WAKATIME_API_KEY`,
+  `CONTRIBUTIONS_TOKEN` and `HARDCOVER_TOKEN` in Production and in Preview, as
+  above. Without `WAKATIME_API_KEY`, `/api/activity` leaves `coding` out and the
+  cell keeps its build-time value; without `CONTRIBUTIONS_TOKEN` or
+  `HARDCOVER_TOKEN`, it does the same for the contributions calendar or the
+  reading row. Any of them keeps the answer 10 minutes, not a day.
 - Settings > Bindings > Add > KV namespace: variable name `ARTWORK`, bound to
   one KV namespace you create first (for example `vedaant-dev-artwork`), in
   Production and in Preview, so a preview's lookups also serve production.
@@ -501,8 +544,9 @@ the dashboard, or run
 `bunx wrangler@4.150.0 pages deployment tail --project-name vedaant-dev` while
 logged in. A failure logs one line such as
 `now-playing: no value from Last.fm (HTTP 503)` or
-`coding: no value from WakaTime (no WAKATIME_API_KEY)`, never a key; the shelf
-Functions log `reading:`, `last-watched:` and `on-repeat:` lines alike.
+`coding: no value from WakaTime (no WAKATIME_API_KEY)`, never a key;
+`/api/activity`'s other sources log `contributions:`, `reading:`,
+`last-watched:` and `on-repeat:` lines alike.
 
 On previews behind Access, Cloudflare's Cache API stores nothing, so every
 request there reaches the source. A preview answers only a logged-in browser, so
@@ -510,10 +554,10 @@ check each `/api/` path there by hand.
 
 ### Secrets
 
-The Functions read `LASTFM_API_KEY`, `WAKATIME_API_KEY` and `HARDCOVER_TOKEN`
-from their context, and the build reads the first two through
-`astro:env/server`, never through `import.meta.env`, which inlines values into
-the build. Only the preview cleanup gets these Actions secrets:
+The Functions read `LASTFM_API_KEY`, `WAKATIME_API_KEY`, `CONTRIBUTIONS_TOKEN`
+and `HARDCOVER_TOKEN` from their context, and the build reads the first three
+through `astro:env/server`, never through `import.meta.env`, which inlines
+values into the build. Only the preview cleanup gets these Actions secrets:
 
 - `CLOUDFLARE_API_TOKEN`: permits deleting Pages deployments.
 - `CLOUDFLARE_ACCOUNT_ID`: the account the token belongs to; not a credential.
@@ -545,16 +589,18 @@ bun run gate
 ```
 
 [scripts/gate.sh](scripts/gate.sh) runs diagnostics and tests, then builds with
-the network blocked by `sandbox-exec` and both keys blank, overriding a local
-`.env`, so the build takes the no-key path, as CI does, with one `lastfm:`, one
-`wakatime:` and one `shelf:` warning. gitleaks scans the git history and
+the network blocked by `sandbox-exec` and the three build keys blank,
+overriding a local `.env`, so the build takes the no-key path, as CI does, with
+one `lastfm:`, one `wakatime:`, one `contributions:` and one `shelf:`
+warning. gitleaks scans the git history and
 `dist/` for secrets, and a grep rejects environment reads outside `astro:env` in
 `src/` and outside `context.env` in `functions/`. The gate then builds the Pages
 Functions with Wrangler, scans the bundle with gitleaks and requires the
 generated routes to be the two `/api/` paths alone, with no `_routes.json` of
 the site's own, so a request for a file never runs a Function. A grep checks
 `dist/_astro/*.js` for the Last.fm, MusicBrainz, Cover Art Archive, WakaTime,
-Letterboxd and Hardcover API hosts. [scripts/pages.ts](scripts/pages.ts) checks
+Letterboxd, Hardcover and GitHub API hosts.
+[scripts/pages.ts](scripts/pages.ts) checks
 that the music widgets, the coding cell and `/shelf`'s three rows show their
 committed values
 and that every page has a unique title and description. It also enforces 5,120
@@ -597,7 +643,8 @@ Chores:
   direct packages and 20 components.
 - Before the token expires, at least yearly: rotate it as above. The Last.fm
   and WakaTime keys have no expiry; rotate either if it may have leaked. Replace
-  `HARDCOVER_TOKEN` before Hardcover expires it.
+  `HARDCOVER_TOKEN` before Hardcover expires it. Rotate `CONTRIBUTIONS_TOKEN`
+  before it expires, at least yearly, as in [Contributions](#contributions).
 - When work changes: update the résumé and its date. Keep `now.md` current.
 
 Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with

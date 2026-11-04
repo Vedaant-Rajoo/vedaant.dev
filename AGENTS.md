@@ -100,18 +100,25 @@ only names tokens and components; where it differs, the pages win.
   namespace, when bound) and keeping MusicBrainz requests at least 1.1 seconds
   apart within each isolate; a failed or slow lookup, or a slow KV read, only
   leaves `artwork` `null`.
-- The activity Function answers `{ coding, reading, lastWatched, listening }`
-  from four sources in `functions/sources/`, run at once: WakaTime's
+- The activity Function answers
+  `{ coding, contributions, reading, lastWatched, listening }` from five
+  sources in `functions/sources/`, run at once: WakaTime's
   `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
-  with `WAKATIME_API_KEY`; Hardcover with `HARDCOVER_TOKEN`; the public
+  with `WAKATIME_API_KEY`; GitHub's GraphQL contribution calendar with
+  `CONTRIBUTIONS_TOKEN`; Hardcover with `HARDCOVER_TOKEN`; the public
   Letterboxd diary feed; Last.fm's `user.getTopAlbums`. It keeps an answer with
-  all four a day (86,400 s). A failed source is left out, so only its widget
+  all five a day (86,400 s). A failed source is left out, so only its widget
   keeps its text, and the answer is kept 600 s; a shelf row is `null` when
   nothing is current, which is a value.
 - `coding` is a daily snapshot: the day's time ("that day", never "today"), top
   language and last heartbeat's minute, plus the rolling 30-day top five
   languages and `other`, with space reserved to avoid layout shifts. It never
   exposes a project, branch, file or editor name.
+- `contributions` is `{ end, days }`: the public profile's contribution count
+  for each UTC day, oldest first, from the Sunday 52 weeks before the Sunday
+  of `end`'s week to `end`, the day the answer was made (365 to 371 counts).
+  Levels and the total are derived from the counts. It never names a
+  repository, and a window with no activity is a value.
 - A page asks `/api/activity` once per poll, from one feed its own script adds
   to the hub: the coding cell's on `/now`, the three rows' on `/shelf`. Each
   loads only its own checks and texts.

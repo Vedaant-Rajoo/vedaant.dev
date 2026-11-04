@@ -1,5 +1,6 @@
 import { answer, type Context } from '../answer';
 import { load as coding } from '../sources/coding';
+import { load as contributions } from '../sources/contributions';
 import { load as lastWatched } from '../sources/last-watched';
 import { load as onRepeat } from '../sources/on-repeat';
 import { load as reading } from '../sources/reading';
@@ -11,6 +12,7 @@ declare const caches: CacheStorage & { default: Cache };
 // The Letterboxd diary needs no key.
 interface Env {
   WAKATIME_API_KEY?: string;
+  CONTRIBUTIONS_TOKEN?: string;
   HARDCOVER_TOKEN?: string;
   LASTFM_API_KEY?: string;
 }
@@ -22,27 +24,33 @@ const partial = 600;
 
 export const onRequestGet = (context: Context<Env>) => handle(context, caches.default);
 
-// GET /api/activity: the /now coding cell's value and /shelf's three live rows in one answer,
-// `{ coding, reading, lastWatched, listening }`, each in the shape its source module gives: coding
-// as the build-time snapshot, and each row in shelf.json's shape, or null when nothing is current.
-// A source that fails is left out, so its widget keeps its text while the others update; with every
-// source failing the answer is null. The six upstream requests run at once, within their sources'
-// 2.5 and 3 s. Only the request's origin is read, so nothing of the visitor reaches a source.
+// GET /api/activity: the /now coding cell's value, the contribution calendar and /shelf's three
+// live rows in one answer, `{ coding, contributions, reading, lastWatched, listening }`, each in the
+// shape its source module gives: coding and contributions as their build-time snapshots, and each
+// row in shelf.json's shape, or null when nothing is current. A source that fails is left out, so
+// its widget keeps its text while the others update; with every source failing the answer is null.
+// The seven upstream requests run at once, within their sources' 2.5 and 3 s. Only the request's
+// origin is read, so nothing of the visitor reaches a source.
 export const handle = (context: Context<Env>, cache: Cache) =>
   answer(
     context,
     cache,
     '/api/activity',
-    (body) => (Object.keys(body).length === 4 ? day : partial),
+    (body) => (Object.keys(body).length === 5 ? day : partial),
     async () => {
       const { env } = context;
-      const [code, ...rows] = await Promise.all([
+      const [code, heat, ...rows] = await Promise.all([
         coding(env.WAKATIME_API_KEY),
+        contributions(env.CONTRIBUTIONS_TOKEN),
         reading(env.HARDCOVER_TOKEN),
         lastWatched(),
         onRepeat(env.LASTFM_API_KEY),
       ]);
-      const body = Object.assign(code ? { coding: code } : {}, ...rows);
+      const body = Object.assign(
+        code ? { coding: code } : {},
+        heat ? { contributions: heat } : {},
+        ...rows,
+      );
       return Object.keys(body).length > 0 ? body : null;
     },
   );
