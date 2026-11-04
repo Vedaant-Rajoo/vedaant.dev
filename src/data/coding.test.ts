@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type Coding, codingFromLive, codingText, duration, toCoding, toShares } from './coding';
+import {
+  type Coding,
+  codingFromLive,
+  codingText,
+  duration,
+  tag,
+  tags,
+  toCoding,
+  toShares,
+} from './coding';
 import snapshot from './snapshots/wakatime.json';
 
 // status_bar/today and users/current, as WakaTime answers them, trimmed to what toCoding reads plus
@@ -307,4 +316,13 @@ test('toShares ranks all languages before grouping those below fifth with unknow
       { name: 'other', percent: 7 },
     ],
   );
+});
+
+test('tag: a text glyph for every named language, an ellipsis for other', () => {
+  assert.equal(tag(tags, 'TypeScript'), '.ts');
+  assert.equal(tag(tags, 'C#'), '.cs');
+  assert.equal(tag(tags, 'Go'), '.go');
+  assert.equal(tag(tags, 'GraphQL'), '.graphql');
+  assert.equal(tag(tags, 'Makefile'), 'Makefile');
+  assert.equal(tag(tags, 'other'), '…');
 });
