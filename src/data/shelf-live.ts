@@ -1,4 +1,4 @@
-import { day, initials, monthYear } from './format';
+import { dayMonth, fullDay, initials, monthYear } from './format';
 import type { OnRepeat } from './now-playing';
 
 // /shelf's mappers, checks and text, in shelf.json's shapes, shared at build and in the browser.
@@ -76,8 +76,8 @@ export const stars = (value: number) => '★'.repeat(value) + (value % 1 ? '½' 
 // right-to-left title does not pull the year to its left.
 export const withYear = (title: string, year: number) => `\u2068${title}\u2069 (${year})`;
 
-// Each row's texts by their data-row hooks, and last watched's date for its <time>. Nothing current
-// reads "—".
+// Each row's texts by their data-row hooks, and last watched's date for its <time>, with the whole
+// day for its <abbr>, as a /writing row's date. Nothing current reads "—".
 export const readingText = (row: Reading | null) => ({
   tile: row ? initials(row.title) : '',
   title: `reading · ${row?.title ?? '—'}`,
@@ -90,8 +90,9 @@ export const watchedText = (row: LastWatched | null) => ({
   sub: '',
   stars: row?.rating ? stars(row.rating) : '',
   rated: row?.rating ? `rated ${row.rating} of 5` : '',
-  meta: row ? day(row.date) : '',
+  meta: row ? dayMonth(row.date) : '',
   date: row?.date ?? null,
+  full: row ? fullDay(row.date) : '',
 });
 export const listeningText = (row: OnRepeat | null) => ({
   tile: '♪',
@@ -108,10 +109,15 @@ export const credits = {
 };
 
 // The texts of the row a widget shows, by its data-widget; none when the answer leaves it out.
+// Annotated, so the union keeps last watched's own fields.
 export function shelfText(
   { reading, lastWatched, listening }: Shelf,
   { dataset: { widget: kind } }: { dataset: DOMStringMap },
-) {
+):
+  | ReturnType<typeof readingText>
+  | ReturnType<typeof watchedText>
+  | ReturnType<typeof listeningText>
+  | undefined {
   if (kind === 'reading') {
     return reading === undefined ? undefined : readingText(reading);
   }

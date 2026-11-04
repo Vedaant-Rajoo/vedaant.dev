@@ -187,7 +187,7 @@ test('codingFromLive keeps only the shape the Function writes', () => {
   );
 });
 
-test('codingText: the absolute heartbeat minute stays true for a daily snapshot', () => {
+test('codingText: the heartbeat date and minute, in the clock zone, stay true for a daily snapshot', () => {
   const value: Coding = {
     state: 'idle',
     language: 'TypeScript',
@@ -195,19 +195,29 @@ test('codingText: the absolute heartbeat minute stays true for a daily snapshot'
     at: '2026-11-01T11:55:00.000Z',
     shares: [],
   };
-  assert.deepEqual(codingText(value), {
+  // In the owner's zone, as the clock shows it, the UTC day before rolling over into the next.
+  const cell = { dataset: { zone: 'Asia/Kolkata' } };
+  assert.deepEqual(codingText(value, cell), {
     today: '1h 20m that day',
     language: 'top language TypeScript',
-    time: 'heartbeat 2026-11-01T11:55Z',
+    time: 'last heartbeat 1 Nov, 17:25',
   });
   assert.equal(
-    codingText({ ...value, at: '2026-10-31T23:59:00.000Z' }).time,
-    'heartbeat 2026-10-31T23:59Z',
+    codingText({ ...value, at: '2026-10-31T23:59:00.000Z' }, cell).time,
+    'last heartbeat 1 Nov, 05:29',
   );
-  assert.equal(codingText({ ...value, language: null }).language, '');
-  assert.equal(codingText({ ...value, at: null }).time, '');
+  assert.equal(
+    codingText({ ...value, at: '2026-09-04T18:30:00.000Z' }, cell).time,
+    'last heartbeat 5 Sep, 00:00',
+  );
+  assert.equal(
+    codingText({ ...value, at: '2026-09-04T18:30:00.000Z' }, { dataset: { zone: 'UTC' } }).time,
+    'last heartbeat 4 Sep, 18:30',
+  );
+  assert.equal(codingText({ ...value, language: null }, cell).language, '');
+  assert.equal(codingText({ ...value, at: null }, cell).time, '');
   assert.deepEqual(
-    codingText({ state: 'empty', language: null, today: null, at: null, shares: [] }),
+    codingText({ state: 'empty', language: null, today: null, at: null, shares: [] }, cell),
     {
       today: '—',
       language: '',

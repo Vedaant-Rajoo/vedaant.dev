@@ -147,18 +147,40 @@ export function codingFromLive(body: unknown): Coding | null {
     : null;
 }
 
-// The /now cell's text: the day's time and top language, and the last heartbeat's UTC minute. The
-// value can be up to a day old, kept by the build or by /api/activity, so its day is the last
-// heartbeat's, "that day", not "today". Empty, or offline with nothing known, reads "—".
-export function codingText({ language: name, today, at }: Coding) {
+// The /now cell's text: the day's time and top language, and the last heartbeat's minute in the
+// owner's zone, as the clock shows it: the cell's data-zone, site.timeZone. The value can be up to
+// a day old, kept by the build or by /api/activity, so its day is the last heartbeat's, "that
+// day", not "today", and the heartbeat names its date. Empty, or offline with nothing known, reads
+// "—".
+export function codingText(
+  { language: name, today, at }: Coding,
+  { dataset: { zone } }: { dataset: DOMStringMap },
+) {
   if (!today) {
     return { today: '—', language: '', time: '' };
   }
   return {
     today: `${today} that day`,
     language: name ? `top language ${name}` : '',
-    time: at ? `heartbeat ${at.slice(0, 16)}Z` : '',
+    time: at ? `last heartbeat ${heartbeat(at, zone)}` : '',
   };
+}
+
+// "4 Nov, 22:45": 'en' parts, because Node's en-GB writes "Sept", in the clock's 24-hour form.
+function heartbeat(at: string, zone?: string) {
+  const part = Object.fromEntries(
+    new Intl.DateTimeFormat('en', {
+      timeZone: zone,
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(Date.parse(at))
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${part.day} ${part.month}, ${part.hour}:${part.minute}`;
 }
 
 // One share of the 30-day language mix, in whole percent; 'other' gathers the rest.

@@ -349,8 +349,8 @@ refreshes the snapshot on a schedule.
 
 The `/now` coding cell shows a day's coding time from WakaTime ("2h 10m that
 day", since the value can be up to a day old), the day's top language, the last
-heartbeat's date and minute in UTC, and the language mix of the last
-30 days. Coding has no live state: a heartbeat is tracked activity, never
+heartbeat's date and minute in the owner's zone (`site.timeZone`), as the
+clock shows them, and the language mix of the last 30 days. Coding has no live state: a heartbeat is tracked activity, never
 presence, so nothing in the cell is green or moves. A day without coding reads
 `—`. Only language names are shown, never a project, branch, file or editor;
 a name outside the list in [src/data/coding.ts](src/data/coding.ts) counts as

@@ -66,14 +66,27 @@ const lists = [
 </Base>
 
 <script>
-  import { shelfFromLive, shelfText } from '../data/shelf-live';
+  import { type Shelf, shelfFromLive, shelfText } from '../data/shelf-live';
   import type { Hub } from '../scripts/presence-hub';
 
   // The rows' one feed, added to the hub once it is defined, so its code loads on /shelf alone. The
   // hub reads /api/activity at once, then when the answer goes stale, at most a day after a success.
+  // The hub writes the texts; last watched's whole day goes in its <abbr>, as at build.
   customElements.whenDefined('presence-hub').then(() => {
     const hub = document.querySelector('presence-hub') as Hub;
-    hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+    hub.add(
+      '/api/activity',
+      ['reading', 'last-watched', 'on-repeat'],
+      shelfFromLive,
+      (value: Shelf, widget: HTMLElement) => {
+        const texts = shelfText(value, widget);
+        const abbr = widget.querySelector('abbr');
+        if (abbr && texts && 'full' in texts) {
+          abbr.title = texts.full;
+        }
+        return texts;
+      },
+    );
   });
 </script>
 

@@ -368,8 +368,9 @@ test('row texts: the build and the hub write the same, "—" when nothing is cur
       sub: '',
       stars: '★★★½',
       rated: 'rated 3.5 of 5',
-      meta: '28 Oct 2026',
+      meta: '28 Oct',
       date: '2026-10-28',
+      full: '28 October 2026',
     },
   );
   assert.deepEqual(listeningText({ title: 'X', creator: 'Y', plays: 1 }).meta, '1 play');
@@ -388,6 +389,7 @@ test('row texts: the build and the hub write the same, "—" when nothing is cur
     rated: '',
     meta: '',
     date: null,
+    full: '',
   });
   assert.deepEqual(shelfText({ listening: null }, as('on-repeat')), {
     tile: '♪',

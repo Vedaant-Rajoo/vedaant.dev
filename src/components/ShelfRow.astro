@@ -57,6 +57,14 @@ const text = texts(Astro.props);
         )
       }
     </Fragment>
-    {'date' in text ? <time data-row="meta" datetime={text.date}>{text.meta}</time> : <span data-row="meta">{text.meta}</span>}
+    {
+      'date' in text ? (
+        <abbr title={text.full || undefined} class="no-underline">
+          <time data-row="meta" datetime={text.date}>{text.meta}</time>
+        </abbr>
+      ) : (
+        <span data-row="meta">{text.meta}</span>
+      )
+    }
   </Row>
 </li>
