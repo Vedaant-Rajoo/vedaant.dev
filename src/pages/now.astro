@@ -29,8 +29,9 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
 <Base title="now" description={summary} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
+    {/* Links in this line keep its height (WCAG 2.5.8's inline exception), as in the footer's. */}
     <p class="meta text-xs text-fg-3">
-      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="target link"><span>history <Arrow>↗</Arrow></span></a> · <a href="/uses" class="target link"><span>how I work <Arrow>→</Arrow></span></a>
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="link">history <Arrow>↗</Arrow></a> · <a href="/uses" class="link">how I work <Arrow>→</Arrow></a>
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
