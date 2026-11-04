@@ -1,6 +1,7 @@
 ---
 import { getEntry, render } from 'astro:content';
 import Arrow from '../components/Arrow.astro';
+import Prose from '../components/Prose.astro';
 import SectionLabel from '../components/SectionLabel.astro';
 import { day } from '../data/format';
 import { groups } from '../data/uses';
@@ -62,15 +63,6 @@ const { Content } = await render(uses);
   }
   <section class="flex flex-col gap-6">
     <SectionLabel label="this site · colophon" />
-    <div class="prose"><Content /></div>
+    <Prose><Content /></Prose>
   </section>
 </Base>
-
-<style>
-  header {
-    margin-block: var(--sp-section);
-  }
-  section {
-    margin-block-start: var(--sp-section);
-  }
-</style>

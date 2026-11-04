@@ -55,39 +55,12 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
 </Base>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
-  section {
-    margin-block-start: var(--sp-section);
-  }
   .bento {
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 80), 100%), 1fr));
   }
-  /* The labels: a mono column 96px wide beside the prose, in 65ch inside a 40rem column. A dd's
-     basis is the rest of its line, and at least 11rem, so each pair starts a line, and with large
-     text the dd moves under its label, as in the decisions grid. A long word or URL breaks rather
-     than widen the page. */
+  /* The sections in the label column (global.css), in 65ch inside a 40rem column. */
   dl {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: calc(var(--sp-unit) * 2.5) calc(var(--sp-unit) * 4);
     max-width: min(var(--w-col), var(--w-measure));
-    overflow-wrap: anywhere;
-  }
-  dt {
-    flex: 0 0 calc(var(--sp-unit) * 24);
-    font-family: var(--ff-mono);
-    font-feature-settings: var(--mono-features);
-    font-size: var(--fs-xs);
-    line-height: var(--lh-snug);
-    letter-spacing: var(--ls-mono);
-    color: var(--c-fg-3);
-  }
-  dd {
-    flex: 1 1 max(calc(var(--sp-unit) * 44), 100% - calc(var(--sp-unit) * 28));
-    min-width: 0;
   }
   dd :global(p + p) {
     margin-block-start: var(--sp-row);

@@ -78,21 +78,12 @@ const lists = [
 </script>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
-  section {
-    margin-block-start: var(--sp-section);
-  }
   /* Albums beside films when two 18rem columns fit, as on board 15; books take the whole width. */
   .lists {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 72), 100%), 1fr));
     gap: calc(var(--sp-unit) * 10) calc(var(--sp-unit) * 12);
     margin-block-start: var(--sp-section);
-  }
-  .lists > section {
-    margin-block-start: 0;
   }
   .books {
     grid-column: 1 / -1;
