@@ -1,0 +1,154 @@
+---
+import { type Coding, codingText } from '../data/coding';
+import { coding } from '../data/wakatime';
+import Arrow from './Arrow.astro';
+
+interface Props {
+  value?: Coding;
+  state?: Coding['state'] | 'offline' | 'loading';
+}
+
+const { value = coding, state = value.state } = Astro.props;
+const text = codingText(value);
+const fills = ['fill-fg', 'fill-fg-2', 'fill-fg-3'];
+// Six slots keep the bar and open legend steady as the mix refreshes.
+const slots = Array.from({ length: 6 }, (_, i) => ({
+  share: value.shares[i],
+  fill: fills[i % fills.length],
+  x: value.shares.slice(0, i).reduce((sum, { percent }) => sum + percent, 0),
+}));
+---
+
+<div
+  data-widget="coding"
+  data-state={state}
+  data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
+  aria-live="off"
+  aria-busy={state === 'loading' ? 'true' : undefined}
+  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
+>
+  <div class="flex flex-col gap-2.5 py-2">
+    <span class="flex items-center gap-2">
+      <span class="meta shrink-0 text-xs text-fg-3">coding</span>
+      <span class="meta ml-auto h-5 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
+        ><time data-coding="time" datetime={value.at}>{text.time}</time></span
+      >
+    </span>
+    <span class="h-lh min-w-0 truncate leading-(--lh-snug)"
+      ><span data-coding="today" class="font-medium">{text.today}</span><span
+        data-coding="language"
+        class="text-sm text-fg-2">{text.language}</span
+      ></span
+    >
+  </div>
+  <language-mix class="flex grow flex-col gap-2">
+    <svg aria-hidden="true" class="h-1.5 w-full">
+      {slots.map(({ share, fill, x }) => (
+        <g data-mix-segment data-other={share?.name === 'other' ? '' : undefined} visibility={share ? 'visible' : 'hidden'}>
+          <rect x={`${x}%`} width={`${share?.percent ?? 0}%`} height="100%" class={fill} />
+          <line class="other stroke-fg-3" x1={`${x}%`} x2={`${x + (share?.percent ?? 0)}%`} y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
+          <line class="stroke-bg" x1={`${x}%`} x2={`${x}%`} y1="0" y2="100%" stroke-width="2" />
+        </g>
+      ))}
+    </svg>
+    <div class="relative mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
+      <details class="group -my-3.5">
+        <summary class="meta target link cursor-pointer list-none gap-1 whitespace-nowrap text-xs text-fg-2">
+          <span>language mix · last 30 days</span>
+          <span aria-hidden="true" class="group-open:hidden">+</span>
+          <span aria-hidden="true" class="hidden group-open:inline">−</span>
+        </summary>
+        <div class="absolute bottom-full left-0 z-10 mb-2 w-60 max-w-full rounded-lg border border-line bg-bg p-4">
+          <p class="meta mb-3 text-xs text-fg-3">language mix · last 30 days</p>
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ul role="list" class="meta grid gap-2 text-xs text-fg-3">
+            {slots.map(({ share, fill }, i) => (
+              <li class:list={['flex h-4 min-w-0 items-center gap-2 leading-4', { invisible: !share && i > 0 }]}>
+                <svg aria-hidden="true" class="size-2 shrink-0" data-other={share?.name === 'other' ? '' : undefined} visibility={share ? 'visible' : 'hidden'}>
+                  <rect width="100%" height="100%" class={fill} />
+                  <line class="other stroke-fg-3" x2="100%" y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
+                </svg>
+                <span data-mix-name class="truncate">{share?.name ?? (i === 0 ? '—' : '')}</span>
+                <span data-mix-percent class="ml-auto w-8 shrink-0 text-right">{share ? `${share.percent}%` : ''}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </details>
+      <a href="https://wakatime.com/" class="meta target link -my-3.5 ml-auto shrink-0 text-xs text-fg-3">
+        <span>via wakatime <Arrow>↗</Arrow></span>
+      </a>
+    </div>
+  </language-mix>
+</div>
+
+<style>
+  /* The top language follows the day's time on its line; the dot goes when there is none. */
+  [data-coding='language']:not(:empty)::before {
+    content: ' · ';
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  [data-other] > rect,
+  :not([data-other]) > .other {
+    visibility: hidden;
+  }
+</style>
+
+<script>
+  import { codingFromLive, codingText, type Share } from '../data/coding';
+  import type { Hub } from '../scripts/presence-hub';
+
+  // The cell's feed, added to the hub once it is defined, so its checks load with the cell alone. It
+  // reads the coding value of /api/activity, which /shelf's rows share, at most once a day.
+  customElements.whenDefined('presence-hub').then(() => {
+    const hub = document.querySelector('presence-hub') as Hub;
+    hub.add('/api/activity', ['coding'], codingFromLive, codingText);
+  });
+
+  customElements.define('language-mix', class extends HTMLElement {
+    static observedAttributes = ['data-shares'];
+
+    connectedCallback() {
+      const details = this.querySelector('details');
+      details?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && details.open) {
+          details.open = false;
+          details.querySelector('summary')?.focus();
+        }
+      });
+    }
+
+    attributeChangedCallback() {
+      // The hub validates and strips the response before setting this attribute.
+      const shares: Share[] = JSON.parse(this.getAttribute('data-shares') ?? '[]');
+      let x = 0;
+      this.querySelectorAll('[data-mix-segment]').forEach((slot, i) => {
+        const share = shares[i];
+        const width = share?.percent ?? 0;
+        slot.setAttribute('visibility', share ? 'visible' : 'hidden');
+        slot.toggleAttribute('data-other', share?.name === 'other');
+        const rect = slot.querySelector('rect')!;
+        rect.setAttribute('x', `${x}%`);
+        rect.setAttribute('width', `${width}%`);
+        for (const line of slot.querySelectorAll('line')) {
+          line.setAttribute('x1', `${x}%`);
+          line.setAttribute('x2', `${line.classList.contains('other') ? x + width : x}%`);
+        }
+        x += width;
+      });
+      this.querySelectorAll('li').forEach((slot, i) => {
+        const share = shares[i];
+        slot.classList.toggle('invisible', !share && i > 0);
+        slot.querySelector('[data-mix-name]')!.textContent = share?.name ?? (i === 0 ? '—' : '');
+        slot.querySelector('[data-mix-percent]')!.textContent = share ? `${share.percent}%` : '';
+        const swatch = slot.querySelector('svg')!;
+        swatch.setAttribute('visibility', share ? 'visible' : 'hidden');
+        swatch.toggleAttribute('data-other', share?.name === 'other');
+      });
+    }
+  });
+</script>

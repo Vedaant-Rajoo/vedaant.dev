@@ -1,14 +1,14 @@
 ---
 import Arrow from '../components/Arrow.astro';
+import Coding from '../components/Coding.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import { day } from '../data/format';
-import { words as nav } from '../data/navigation';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
 import Base from '../layouts/Base.astro';
 
 const now = await nowEntry();
-const { updated, from } = now.data;
+const { updated, from, summary } = now.data;
 // The body is "## label" sections; each label is a <dt> and the paragraphs under it its <dd>.
 // now.test.ts checks the file's shape. Comments are dropped first; a section with no text is left out.
 const [, ...parts] = (now.rendered?.html ?? '')
@@ -22,15 +22,15 @@ const sections = Array.from({ length: parts.length / 2 }, (_, i) => ({
 // "Older than 60 days", in whole days at build. updated is midnight UTC, so the note
 // shows from the 61st day after it, and never for a day in the future.
 const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
-const [{ sub }] = nav.filter(({ href }) => href === '/now');
 ---
 
-<Base title="now" description={sub} class="max-w-wide">
+<Base title="now" description={summary} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
     <p class="meta text-xs text-fg-3">
-      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="target link"><span>history <Arrow>↗</Arrow></span></a>
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="target link"><span>history <Arrow>↗</Arrow></span></a> · <a href="/uses" class="target link"><span>how I work <Arrow>→</Arrow></span></a>
     </p>
+    <p class="text-fg-2">{summary}</p>
   </header>
   <dl>
     {
@@ -43,9 +43,10 @@ const [{ sub }] = nav.filter(({ href }) => href === '/now');
     }
   </dl>
   <section class="flex flex-col gap-4">
-    <p class="meta text-xs text-fg-3">live · refreshes while you look · degrades to the last known value</p>
+    <p class="meta text-xs text-fg-3">music live, coding as tracked · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
       <NowPlaying variant="cell" />
+      <Coding />
     </div>
   </section>
 </Base>

@@ -1,9 +1,9 @@
-# Response headers for everything Pages serves. The script-src hash is the theme
-# restore's in Base.astro as built; scripts/csp-hash.ts fails when the two differ. Beyond 'self',
-# the hub reads Last.fm, and the artwork lookup MusicBrainz and Cover Art Archive, whose images
-# redirect through archive.org to its mirrors.
+# Response headers for everything Pages serves as a file; a Function sets its own. The script-src
+# hash is the theme restore's in Base.astro as built; scripts/csp-hash.ts fails when the two differ.
+# The browser connects only to this origin (the hub reads /api/now-playing); the one load from
+# elsewhere is the artwork image from Cover Art Archive, which redirects through archive.org.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-pCICz+QTZuvQT107FBI7kWdkVF0T9KTjZ27h1PpUR5A='; style-src 'self' 'unsafe-inline'; img-src 'self' https://coverartarchive.org https://archive.org https://*.archive.org; font-src 'self'; connect-src 'self' https://ws.audioscrobbler.com https://musicbrainz.org https://coverartarchive.org https://archive.org https://*.archive.org; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-pCICz+QTZuvQT107FBI7kWdkVF0T9KTjZ27h1PpUR5A='; style-src 'self' 'unsafe-inline'; img-src 'self' https://coverartarchive.org https://archive.org https://*.archive.org; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=31536000

@@ -1,6 +1,6 @@
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig, envField, fontProviders } from 'astro/config';
 
 export default defineConfig({
   // The production origin: canonical and Open Graph URLs name it on every build, previews
@@ -10,7 +10,7 @@ export default defineConfig({
   // build's Astro.url already ends in a slash (build.format 'directory'), and 'ignore' keeps dev
   // serving the slashless links the nav and rows use, which 'always' answers with a 404.
   trailingSlash: 'ignore',
-  // F1: every page carries the stylesheet in its own <style>, so first paint waits
+  // Every page carries the stylesheet in its own <style>, so first paint waits
   // for no second request. It costs about 5 KB of gzip HTML per page and the shared CSS file.
   build: { inlineStylesheets: 'always' },
   // sitemap-index.xml lists every page the build makes, in that slash form. A draft has no
@@ -21,8 +21,8 @@ export default defineConfig({
   // per family, so the build needs no network. The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
   // The fallback stacks are repeated in tokens.css; Astro puts a metric-matched face
-  // before them. The sans is optional: used if it is ready within its short block
-  // period and never swapped in later, so it cannot re-wrap text; the mono keeps swap.
+  // before them. Sans and mono are optional: used if ready within their short block
+  // period and never swapped in later, so they cannot re-wrap text.
   fonts: [
     {
       provider: fontProviders.local(),
@@ -44,6 +44,7 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'Geist Mono',
       cssVariable: '--ff-geist-mono',
+      display: 'optional',
       fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       options: {
         variants: [
@@ -87,6 +88,15 @@ export default defineConfig({
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
   // Vite's host check closed to DNS rebinding.
   server: { allowedHosts: ['.trycloudflare.com'] },
+  // The Last.fm and WakaTime keys come only from the host's environment: encrypted Pages secrets
+  // in a Cloudflare build, a gitignored .env locally. Astro reads a secret when the build runs and
+  // never inlines it; unset, lastfm.ts and wakatime.ts use the committed snapshots.
+  env: {
+    schema: {
+      LASTFM_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      WAKATIME_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+    },
+  },
   vite: {
     plugins: [tailwindcss()],
     // The first versions with light-dark(). Below this floor Vite's Lightning CSS minifier

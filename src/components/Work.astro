@@ -5,7 +5,6 @@ import Arrow from './Arrow.astro';
 import Row from './Row.astro';
 import SectionLabel from './SectionLabel.astro';
 
-
 // Astro returns entries sorted by id. Newest first: by start, then by end, a role without an end first.
 const rows = (await getCollection('work'))
   .map(({ data }) => ({

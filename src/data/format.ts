@@ -2,20 +2,26 @@
 // en-GB writes "Sept".
 const utc = (options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat('en', { ...options, timeZone: 'UTC' });
-const short = utc({ month: 'short' });
-const shortYear = utc({ month: 'short', year: '2-digit' });
-const long = utc({ month: 'long', year: 'numeric' });
-const longDay = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' });
+// 'en' short month names, as Intl writes them, spelled out so /shelf's script needs no formatter;
+// the formatters are marked pure, so a script that uses neither leaves them out.
+const short = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split(' ');
+const long = /* @__PURE__ */ utc({ month: 'long', year: 'numeric' });
+const longDay = /* @__PURE__ */ new Intl.DateTimeFormat('en-GB', {
+  dateStyle: 'long',
+  timeZone: 'UTC',
+});
 
 // "Sep ’26": the elision marked, so "Sep 26" does not read as a day of the month.
-export const monthYear = (value: string) =>
-  shortYear.format(new Date(value)).replace(/ (?=\d\d$)/, ' ’');
+export const monthYear = (value: string) => {
+  const date = new Date(value);
+  return `${short[date.getUTCMonth()]} ’${String(date.getUTCFullYear()).slice(-2)}`;
+};
 // "September 2026"
 export const month = (value: string) => long.format(new Date(value));
 // "10 Oct"
 export const dayMonth = (value: string) => {
   const date = new Date(value);
-  return `${date.getUTCDate()} ${short.format(date)}`;
+  return `${date.getUTCDate()} ${short[date.getUTCMonth()]}`;
 };
 // "10 Oct 2026"
 export const day = (value: string) => `${dayMonth(value)} ${new Date(value).getUTCFullYear()}`;

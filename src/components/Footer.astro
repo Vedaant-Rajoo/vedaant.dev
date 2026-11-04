@@ -22,11 +22,11 @@ const updated = `${built.year}-${built.month}-${built.day}`;
       ))
     }
     <a href="/feed.xml" class="box"><span>rss</span></a>
+    <a href="/uses" class="box"><span>how I work <Arrow>→</Arrow></span></a>
   </p>
-  {/* Links in this line keep its height (WCAG 2.5.8's inline exception). The Last.fm credit, which
-      its terms ask for, covers the hero's presence line. */}
+  {/* Links in this line keep its height (WCAG 2.5.8's inline exception). */}
   <p class="meta text-xs text-fg-3">
-    built with Astro · <a href={site.source} class="link">source <Arrow>↗</Arrow></a> · <a href="https://www.last.fm/" class="link">via last.fm <Arrow>↗</Arrow></a> · updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>
+    built with Astro · <a href={site.source} class="link">source <Arrow>↗</Arrow></a> · updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>
   </p>
   <span id="copy-status" class="sr-only" aria-live="polite"></span>
 </footer>

@@ -1,0 +1,125 @@
+---
+import Row from '../components/Row.astro';
+import SectionLabel from '../components/SectionLabel.astro';
+import { day, initials } from '../data/format';
+import { onRepeat } from '../data/on-repeat';
+import { shelf } from '../data/shelf';
+import { listeningText, readingText, stars, watchedText, withYear } from '../data/shelf-live';
+import Base from '../layouts/Base.astro';
+
+const { updated, summary } = shelf;
+const lists = [
+  { label: 'albums', items: shelf.albums },
+  { label: 'films', items: shelf.films },
+  { label: 'books', items: shelf.books },
+].filter(({ items }) => items.length > 0);
+// The three rows the hub keeps current, from their build-time values: always all three, a row with
+// nothing current as "—", so an answer never adds or removes one.
+const reading = readingText(shelf.reading ?? null);
+const watched = watchedText(shelf.lastWatched ?? null);
+const listening = listeningText(onRepeat ?? null);
+---
+
+<Base title="shelf" description={summary} class="max-w-wide">
+  <header class="flex max-w-col flex-col gap-3">
+    <h1 class="text-2xl font-semibold">shelf</h1>
+    <p class="meta text-xs text-fg-3">
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time> · favourites are curated by hand
+    </p>
+    <p class="text-fg-2">{summary}</p>
+  </header>
+  {/* Rows put the sub line under the title, as writing's do; last watched's stars follow it. Stars
+      are in the sans at the sub line's size, as on board 15, and hidden from screen readers, which
+      hear the rating instead. Each row is a widget the hub fills from /api/activity. */}
+  <section>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ul role="list" class="divide-y divide-line">
+      <li data-widget="reading">
+        <Row live tile={reading.tile} title={reading.title} sub={reading.sub}>
+          <span data-row="meta">{reading.meta}</span>
+        </Row>
+      </li>
+      <li data-widget="last-watched">
+        <Row live tile={watched.tile} title={watched.title} sub={watched.sub}>
+          <Fragment slot="chips">
+            <span aria-hidden="true" data-row="stars">{watched.stars}</span>
+            <span class="sr-only" data-row="rated">{watched.rated}</span>
+          </Fragment>
+          <time data-row="meta" datetime={watched.date}>{watched.meta}</time>
+        </Row>
+      </li>
+      <li data-widget="on-repeat">
+        <Row live tile={listening.tile} title={listening.title} sub={listening.sub}>
+          <span data-row="meta">{listening.meta}</span>
+        </Row>
+      </li>
+    </ul>
+  </section>
+  <div class="lists">
+    {
+      lists.map(({ label, items }) => (
+        <section class:list={['flex flex-col gap-6', label === 'books' && 'books']}>
+          <SectionLabel label={label} count={items.length} />
+          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+          <ol role="list" class="divide-y divide-line">
+            {items.map((item) => (
+              <li>
+                <Row
+                  tile={label === 'albums' ? '♪' : initials(item.title)}
+                  title={label === 'films' ? withYear(item.title, item.year) : item.title}
+                  sub={`${item.creator} · ${item.sentence}`}
+                  href={item.link}
+                >
+                  <Fragment slot="chips" />
+                  {label !== 'films' && <time>{item.year}</time>}
+                  {'rating' in item && typeof item.rating === 'number' && (
+                    <>
+                      <span aria-hidden="true" class="font-sans text-sm">
+                        {stars(item.rating)}
+                      </span>
+                      <span class="sr-only">rated {item.rating} of 5</span>
+                    </>
+                  )}
+                </Row>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</Base>
+
+<script>
+  import { shelfFromLive, shelfText } from '../data/shelf-live';
+  import type { Hub } from '../scripts/presence-hub';
+
+  // The rows' one feed, added to the hub once it is defined, so its code loads on /shelf alone. The
+  // hub reads /api/activity at once, then when the answer goes stale, at most a day after a success.
+  customElements.whenDefined('presence-hub').then(() => {
+    const hub = document.querySelector('presence-hub') as Hub;
+    hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  });
+</script>
+
+<style>
+  header {
+    margin-block: var(--sp-section);
+  }
+  section {
+    margin-block-start: var(--sp-section);
+  }
+  /* Albums beside films when two 18rem columns fit, as on board 15; books take the whole width. */
+  .lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 72), 100%), 1fr));
+    gap: calc(var(--sp-unit) * 10) calc(var(--sp-unit) * 12);
+    margin-block-start: var(--sp-section);
+  }
+  .lists > section {
+    margin-block-start: 0;
+  }
+  .books {
+    grid-column: 1 / -1;
+  }
+</style>

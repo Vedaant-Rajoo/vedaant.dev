@@ -1,0 +1,55 @@
+[
+  {
+    "group": "hardware",
+    "name": "MacBook Pro 14\" M5 Pro",
+    "note": "48 GB; replaced the M1 Pro after it spent its life in swap"
+  },
+  { "group": "hardware", "name": "MacBook Pro 14\" M1 Pro", "note": "16 GB", "retired": 2026 },
+  {
+    "group": "hardware",
+    "name": "Samsung T9 2 TB SSD",
+    "note": "APFS volumes: files, and a Time Machine volume with a 1 TB quota"
+  },
+  { "group": "hardware", "name": "Umbrel Home", "note": "home server running umbrelOS" },
+  {
+    "group": "hardware",
+    "name": "FiiO BTR17",
+    "note": "DAC; this is why the sample-rate switcher exists"
+  },
+  { "group": "hardware", "name": "Moondrop Blessing 3", "note": "IEMs" },
+  {
+    "group": "hardware",
+    "name": "Breville Bambino Plus",
+    "note": "sold · the coffee corner is between setups",
+    "retired": 2025
+  },
+  {
+    "group": "editor and shell",
+    "name": "Neovim 0.12",
+    "note": "bundled tree-sitter parsers; config at dotfyles",
+    "url": "https://github.com/vedaant-rajoo/dotfyles"
+  },
+  {
+    "group": "editor and shell",
+    "name": "fish",
+    "note": "default shell; scripts get translated from bash rather than run through it"
+  },
+  { "group": "editor and shell", "name": "Ghostty", "note": "terminal" },
+  { "group": "editor and shell", "name": "Rosé Pine", "note": "everywhere a theme can be set" },
+  {
+    "group": "desktop",
+    "name": "macOS",
+    "note": "daily; Music.app for listening, scrobbled to Last.fm"
+  },
+  {
+    "group": "desktop",
+    "name": "Omarchy",
+    "note": "second machine; offline dictation with faster-whisper + ydotool"
+  },
+  { "group": "desktop", "name": "Zen Browser", "note": "Firefox-based browser" },
+  {
+    "group": "desktop",
+    "name": "search (driceroland)",
+    "note": "a small, fast WebKit browser for macOS"
+  }
+]

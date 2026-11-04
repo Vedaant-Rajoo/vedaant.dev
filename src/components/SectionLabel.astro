@@ -3,7 +3,7 @@ import Arrow from './Arrow.astro';
 
 interface Props {
   label: string;
-  count: number;
+  count?: number;
   href?: string;
   word?: string;
 }
@@ -12,7 +12,7 @@ const { label, count, href, word = 'all' } = Astro.props;
 ---
 
 <div class="flex items-baseline justify-between gap-3 border-t border-dashed border-line pt-6">
-  <h2 class="meta text-xs text-fg-3">{label} {count}</h2>
+  <h2 class="meta text-xs text-fg-3">{label}{count !== undefined && ` ${count}`}</h2>
   {
     href && (
       <a

@@ -30,7 +30,6 @@ const work = defineCollection({
       end: month.nullable(),
       summary: z.string().min(1).max(140),
       url: https.optional(),
-      collapse: z.boolean().optional(),
     })
     .refine(({ start, end }) => end === null || end >= start, {
       path: ['end'],
@@ -91,20 +90,25 @@ const writing = defineCollection({
 });
 
 // One file, src/content/now/now.md: its body is /now's prose under "## label" headings; its
-// frontmatter also feeds the home rows. Another file in the folder is not read.
+// frontmatter also feeds the home rows and holds the intro. Another file in the folder is not read.
 const now = defineCollection({
   loader: glob({ pattern: 'now.md', base: 'src/content/now' }),
   schema: z.strictObject({
     updated: day,
     from: z.string().trim().min(1),
     building: z.string().trim().min(1),
-    watched: z.strictObject({
-      title: z.string().trim().min(1),
-      year: z.int().min(1000).max(9999),
-      rating: z.number().min(0.5).max(5).multipleOf(0.5).optional(),
-      date: day,
-    }),
+    summary: z.string().trim().min(1),
   }),
 });
 
-export const collections = { work, projects, writing, now };
+// One file, src/content/uses/uses.md: its frontmatter dates /uses and holds its intro, and its body
+// is the colophon. Another file in the folder is not read.
+const uses = defineCollection({
+  loader: glob({ pattern: 'uses.md', base: 'src/content/uses' }),
+  schema: z.strictObject({
+    updated: day,
+    summary: z.string().trim().min(1),
+  }),
+});
+
+export const collections = { work, projects, writing, now, uses };

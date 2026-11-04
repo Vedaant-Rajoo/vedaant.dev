@@ -1,5 +1,6 @@
-# The default rules, plus the public read-only Last.fm key from src/data/now-playing.ts, which the
-# build copies into dist/ without its gitleaks:allow comment.
+# The default rules, plus the retired public Last.fm key. It left the source, and no build writes
+# it into dist/, but it stays in the git history, which `gitleaks git` scans. The key in use lives
+# only in the host's environment, so nothing else is allowed.
 [extend]
 useDefault = true
 

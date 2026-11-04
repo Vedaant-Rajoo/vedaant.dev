@@ -67,7 +67,7 @@ only names tokens and components; where it differs, the pages win.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.
 - Separate with 1px `--c-line` and whitespace, not cards or shadows. Set width
-  per page (40rem; 56rem on `/projects` and `/now`), not on `body`.
+  per page (40rem; 56rem on `/projects`, `/now` and `/shelf`), not on `body`.
 - The clock is the theme button: it cycles light → dark → system, never by time
   of day. A `<script is:inline>` in `<head>` restores `data-theme` from
   localStorage before paint; system means no attribute.
@@ -75,16 +75,51 @@ only names tokens and components; where it differs, the pages win.
 - Pages are prerendered and complete with JS off: live widgets show their
   build-time value, never a spinner or error text.
 - The browser fetches only the site's own `/api/*`, from one `<presence-hub>`
-  per page; never a third-party API or WebSocket except Last.fm and artwork:
-  the hub reads `user.getRecentTracks` directly, and its API key in
-  `src/data/now-playing.ts` is a public, read-only identifier, not a secret.
-  Artwork uses MusicBrainz release search and Cover Art Archive thumbnails
-  (including their Internet Archive redirects), with no key or server runtime.
-  Cache lookups per page and keep MusicBrainz requests at least 1.1 seconds apart.
-  Cover Art Archive's 250px thumbnails are exempt from NFR-P7's 20 KB target;
-  do not reject them for their byte size or a missing Content-Length header.
-- Read secrets only through `astro:env/server`; `import.meta.env` inlines them
-  at build. The build must pass with every API down, from committed snapshots.
+  per page; never a third-party API or WebSocket. The one third-party load is
+  the artwork image itself, a Cover Art Archive 250px thumbnail (including its
+  Internet Archive redirects). Those thumbnails are exempt from NFR-P7's 20 KB
+  target; do not reject them for their byte size or a missing Content-Length
+  header.
+- Two `/api/*` endpoints exist, each a Pages Function in `functions/api/`,
+  built by Cloudflare with the pages, from the same commit: `/api/now-playing`
+  and `/api/activity`. Only they run a Function, so static requests stay free;
+  modules beside them (`functions/answer.ts`, `functions/sources/`) export no
+  `onRequest*`, so they are no routes. `_headers` never applies to a Function,
+  so each sets its own headers. Each serves GET only, ignores the query string
+  and answers with its committed snapshot's shape and nothing more. When nothing
+  usable comes back, it answers 200 `null` with `no-store`, never a 5xx.
+- A success carries `public, max-age=N, s-maxage=N` and `Expires`, so the Cache
+  API and the browser keep it alike and a poll or another page within N seconds
+  runs no Function. A hit keeps the `Date` and `Expires` its answer was made
+  with and adds `Age`. The hub polls at `Expires`, at least a minute apart, so
+  N alone sets each endpoint's cadence.
+- The now-playing Function reads Last.fm's `user.getRecentTracks` with
+  `LASTFM_API_KEY` from `context.env` and keeps a successful answer 60 s. It
+  looks up artwork through MusicBrainz release search and Cover Art Archive
+  thumbnails, caching each lookup (a found URL also in the `ARTWORK` KV
+  namespace, when bound) and keeping MusicBrainz requests at least 1.1 seconds
+  apart within each isolate; a failed or slow lookup, or a slow KV read, only
+  leaves `artwork` `null`.
+- The activity Function answers `{ coding, reading, lastWatched, listening }`
+  from four sources in `functions/sources/`, run at once: WakaTime's
+  `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
+  with `WAKATIME_API_KEY`; Hardcover with `HARDCOVER_TOKEN`; the public
+  Letterboxd diary feed; Last.fm's `user.getTopAlbums`. It keeps an answer with
+  all four a day (86,400 s). A failed source is left out, so only its widget
+  keeps its text, and the answer is kept 600 s; a shelf row is `null` when
+  nothing is current, which is a value.
+- `coding` is a daily snapshot: the day's time ("that day", never "today"), top
+  language and last heartbeat's minute, plus the rolling 30-day top five
+  languages and `other`, with space reserved to avoid layout shifts. It never
+  exposes a project, branch, file or editor name.
+- A page asks `/api/activity` once per poll, from one feed its own script adds
+  to the hub: the coding cell's on `/now`, the three rows' on `/shelf`. Each
+  loads only its own checks and texts.
+- Read secrets only from the host's environment: through `astro:env/server` at
+  build, because `import.meta.env` inlines them, and from `context.env` in a
+  Function, never from `import.meta.env`, `process.env` or a global. Never
+  commit, log or print a secret. The build must pass with every API down and
+  every secret unset, from committed snapshots.
 - Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
   transitions. Try CSS first, then a plain `<script>` or a custom element.
 - LCP ≤1.8s on Lighthouse's mobile test; CLS 0, live-state changes included.
@@ -98,7 +133,8 @@ only names tokens and components; where it differs, the pages win.
 - Targets ≥44px, except a link inside a line of prose, which keeps the line's
   height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
   the nav wraps instead of collapsing into a hamburger.
-- The nav words are `projects · writing · now`, not the spec's four: no word
-  may link to a 404 at launch, so `shelf` joins with `/shelf` in 1.1.
+- The nav words are the spec's four, `projects · writing · now · shelf`, and
+  a word never links to a 404. Below 640px the words' boxes have no gap, so
+  the fourth word does not grow the header.
 - After UI changes, run `bun run check` and `bun run build`, then view light,
   dark and system themes, reduced motion and JS off.

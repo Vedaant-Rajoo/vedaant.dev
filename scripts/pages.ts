@@ -1,15 +1,24 @@
-// Reads every page in dist/: now-playing widgets show the committed snapshot, client JS (inline
-// scripts and the /_astro/ modules a page loads or imports, gzip each) stays within budget, and
-// titles and descriptions are present and unique. HTML and CSS sizes are reported, never failed.
-// Run after `bun run build`; exits 1 on a problem.
+// Reads every page in dist/: the live widgets and /shelf's three live rows show the committed
+// values, client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each)
+// stays within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
+// reported, never failed. Run after `bun run build`; exits 1 on a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
 
 const BUDGET = 5120;
 const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
+const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
+const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
+// A keyless build shows each shelf row once; missing shelf.json rows read "—".
+const rows = {
+  reading: readingText(reading ?? null).title,
+  'last-watched': watchedText(lastWatched ?? null).title,
+  'on-repeat': listeningText(listening ?? null).title,
+};
 // gzip(1), not zlib: every earlier measurement used it, and the two differ by a few bytes.
 const gz = (input: string | Buffer) =>
   spawnSync('gzip', ['-6', '-c', '-n'], { input }).stdout.length;
@@ -50,6 +59,44 @@ for (const page of pages.sort()) {
     problems.push(`${page}: now-playing widgets do not all show the snapshot`);
   }
 
+  // The coding cell, on /now only: idle, or empty as "—", with the snapshot's time and language,
+  // and WakaTime's credit.
+  const cells = all(html, /(<[^>]*\bdata-widget="coding"[^>]*>)/g);
+  const languages = all(html, /\bdata-coding="language"[^>]*>([^<]*)</g).map(decode);
+  const todays = all(html, /\bdata-coding="today"[^>]*>([^<]*)</g).map(decode);
+  const mix = all(html, /\bdata-mix-name[^>]*>([^<]*)</g)
+    .map(decode)
+    .filter(Boolean);
+  const language = coding.today && coding.language ? `top language ${coding.language}` : '';
+  const today = coding.today ? `${coding.today} that day` : '—';
+  const codes =
+    cells.length === (page === 'now/index.html' ? 1 : 0) &&
+    cells.every((c) => attr(c, 'data-state') === coding.state) &&
+    (!cells.length || html.includes('via wakatime')) &&
+    (!cells.length ||
+      mix.join('|') ===
+        (coding.shares.length
+          ? coding.shares.map(({ name }: { name: string }) => name)
+          : ['—']
+        ).join('|')) &&
+    languages.length === cells.length &&
+    languages.every((l) => l === language) &&
+    todays.length === cells.length &&
+    todays.every((t) => t === today);
+  if (!codes) {
+    problems.push(`${page}: the coding cell does not show the snapshot`);
+  }
+
+  for (const [name, title] of Object.entries(rows)) {
+    const shelfPage = page === 'shelf/index.html';
+    const count = html.split(`data-widget="${name}"`).length - 1;
+    if (count !== Number(shelfPage) || (shelfPage && !decode(html).includes(title))) {
+      problems.push(
+        `${page}: the ${name} row does not show shelf.json's value once, on /shelf alone`,
+      );
+    }
+  }
+
   const seen = new Map<string, number>();
   const parts: [string, number][] = [];
   let data = 0;
@@ -71,8 +118,9 @@ for (const page of pages.sort()) {
   const size = gz(Buffer.from(html));
   const report = [
     `${page}: JS ${js} B, ${BUDGET - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
+    `HTML ${size} B`,
+    `CSS ${css} B`,
   ];
-  report.push(`HTML ${size} B`, `CSS ${css} B`);
   if (data) {
     report.push(`JSON data ${data} B, not JS`);
   }
