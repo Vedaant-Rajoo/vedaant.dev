@@ -4,7 +4,14 @@ import SectionLabel from '../components/SectionLabel.astro';
 import { day, initials } from '../data/format';
 import { onRepeat } from '../data/on-repeat';
 import { shelf } from '../data/shelf';
-import { listeningText, readingText, stars, watchedText, withYear } from '../data/shelf-live';
+import {
+  credits,
+  listeningText,
+  readingText,
+  stars,
+  watchedText,
+  withYear,
+} from '../data/shelf-live';
 import Base from '../layouts/Base.astro';
 
 const { updated, summary } = shelf;
@@ -30,17 +37,18 @@ const listening = listeningText(onRepeat ?? null);
   </header>
   {/* Rows put the sub line under the title, as every row does; last watched's stars follow it. Stars
       are in the sans at the sub line's size, as on board 15, and hidden from screen readers, which
-      hear the rating instead. Each row is a widget the hub fills from /api/activity. */}
+      hear the rating instead. Each row is a widget the hub fills from /api/activity, and credits its
+      source in its meta cell, as /now's cells do. */}
   <section>
     {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
     <ul role="list" class="divide-y divide-line">
       <li data-widget="reading">
-        <Row live tile={reading.tile} title={reading.title} sub={reading.sub}>
+        <Row live tile={reading.tile} title={reading.title} sub={reading.sub} links={[credits.reading]}>
           <span data-row="meta">{reading.meta}</span>
         </Row>
       </li>
       <li data-widget="last-watched">
-        <Row live tile={watched.tile} title={watched.title} sub={watched.sub}>
+        <Row live tile={watched.tile} title={watched.title} sub={watched.sub} links={[credits['last-watched']]}>
           <Fragment slot="chips">
             <span aria-hidden="true" data-row="stars">{watched.stars}</span>
             <span class="sr-only" data-row="rated">{watched.rated}</span>
@@ -49,7 +57,7 @@ const listening = listeningText(onRepeat ?? null);
         </Row>
       </li>
       <li data-widget="on-repeat">
-        <Row live tile={listening.tile} title={listening.title} sub={listening.sub}>
+        <Row live tile={listening.tile} title={listening.title} sub={listening.sub} links={[credits['on-repeat']]}>
           <span data-row="meta">{listening.meta}</span>
         </Row>
       </li>

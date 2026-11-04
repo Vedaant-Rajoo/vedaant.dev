@@ -100,6 +100,13 @@ export const listeningText = (row: OnRepeat | null) => ({
   meta: row ? `${row.plays} ${row.plays === 1 ? 'play' : 'plays'}` : '',
 });
 
+// Each live row's source, by its data-widget, credited as /now's cells credit theirs.
+export const credits = {
+  reading: { label: 'via hardcover', href: 'https://hardcover.app/' },
+  'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/' },
+  'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/' },
+};
+
 // The texts of the row a widget shows, by its data-widget; none when the answer leaves it out.
 export function shelfText(
   { reading, lastWatched, listening }: Shelf,

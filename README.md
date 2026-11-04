@@ -430,7 +430,8 @@ it in both environments, start a new deployment in each, check
 `/shelf` always shows three rows above its lists, reading, last watched and on
 repeat, built from the values above; a row with nothing current reads `—`. Each
 title and sub line is one line that truncates, and the date or count sits in a
-fixed cell, so a new value never moves the lists below. With JavaScript,
+fixed cell, so a new value never moves the lists below. Under it the cell credits
+the row's source, as the `/now` cells do: Hardcover, Letterboxd or Last.fm. With JavaScript,
 `/shelf`'s own script adds one feed to the presence hub, which asks
 `/api/activity` at once, then when the answer goes stale, at most a day later,
 with the music widgets' backoff after failures. Each row updates on its own; a
