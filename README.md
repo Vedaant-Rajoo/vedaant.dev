@@ -603,8 +603,9 @@ Letterboxd, Hardcover and GitHub API hosts.
 [scripts/pages.ts](scripts/pages.ts) checks
 that the music widgets, the coding cell and `/shelf`'s three rows show their
 committed values
-and that every page has a unique title and description. It also enforces 5,120
-B of gzipped executable JavaScript per page (JSON-LD does not count) and reports
+and that every page has a unique title and description. It also enforces a budget
+of gzipped executable JavaScript per page, 5,632 B on `/now` and 5,120 B
+elsewhere (JSON-LD does not count), and reports
 HTML and CSS sizes against 30 KB and 12 KB gzip targets. The gate then checks
 the CSP theme-script hash, contrast, and that colours come from tokens. It
 rebuilds `dist/`. A failure prints the failing tool's output; redact credentials

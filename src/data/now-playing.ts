@@ -99,7 +99,7 @@ const states = new Set<unknown>(['live', 'idle', 'empty']);
 const cover =
   /^https:\/\/coverartarchive\.org\/release\/[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/front-250$/i;
 const optional = (value: unknown) => value === null || typeof value === 'string';
-// A whole minute, written as toNowPlaying writes it.
+// A whole minute, written as toNowPlaying writes it. coding.ts repeats this: change both together.
 export const minute = (value: unknown) => {
   const time = typeof value === 'string' ? Date.parse(value) : Number.NaN;
   return time % 60_000 === 0 && new Date(time).toISOString() === value;

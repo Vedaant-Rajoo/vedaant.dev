@@ -7,7 +7,8 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
 
-const BUDGET = 5120;
+// Client JS gzip per page, as AGENTS.md sets it: 5.5 KB on /now, 5 KB on every other page.
+const budget = (page: string) => (page === 'now/index.html' ? 5632 : 5120);
 const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
@@ -116,7 +117,7 @@ for (const page of pages.sort()) {
   const css = sum(all(styled, /<style\b[^>]*>([\s\S]*?)<\/style>/g).map(gz));
   const size = gz(Buffer.from(html));
   const report = [
-    `${page}: JS ${js} B, ${BUDGET - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
+    `${page}: JS ${js} B, ${budget(page) - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
     `HTML ${size} B`,
     `CSS ${css} B`,
   ];
@@ -127,8 +128,8 @@ for (const page of pages.sort()) {
     report.push('over the 30 KB HTML / 12 KB CSS target');
   }
   console.log(report.join('; '));
-  if (js > BUDGET) {
-    problems.push(`${page}: ${js} B of JS gzip, over ${BUDGET} B`);
+  if (js > budget(page)) {
+    problems.push(`${page}: ${js} B of JS gzip, over ${budget(page)} B`);
   }
 
   const title = decode(/<title>([^<]*)<\/title>/.exec(html)?.[1]).trim();

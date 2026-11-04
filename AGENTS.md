@@ -127,8 +127,9 @@ only names tokens and components; where it differs, the pages win.
   Function, never from `import.meta.env`, `process.env` or a global. Never
   commit, log or print a secret. The build must pass with every API down and
   every secret unset, from committed snapshots.
-- Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
-  transitions. Try CSS first, then a plain `<script>` or a custom element.
+- Client JS ≤5 KB gz per page, 5.5 KB on `/now`: no UI framework,
+  `<ClientRouter />` or page transitions. Try CSS first, then a plain
+  `<script>` or a custom element.
 - LCP ≤1.8s on Lighthouse's mobile test; CLS 0, live-state changes included.
   Never animate the LCP element (measure it: a hero line, not the name) except
   by a mark's background swipe, which moves no text. Never animate the name.

@@ -89,6 +89,13 @@ const jsonLd =
       <Footer />
     </div>
     <presence-hub hidden=""></presence-hub>
-    <script src="../scripts/presence-hub.ts"></script>
+    {/* The scripts every page loads, as one module: pages.ts counts gzip per module, and each
+        separate one costs its own header and dictionary. Each import runs in turn: an error in one
+        stops those after it. */}
+    <script>
+      import '../scripts/theme';
+      import '../scripts/copy';
+      import '../scripts/presence-hub';
+    </script>
   </body>
 </html>

@@ -75,7 +75,7 @@ grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/releas
 # grep exits 2 when it cannot read a file, or when no file matches the glob.
 [ "$?" -eq 1 ] || fail 'grep could not read dist/_astro/*.js'
 
-step '7/10 bun scripts/pages.ts: widgets, JS at most 5,120 B gzip, sizes, titles'
+step '7/10 bun scripts/pages.ts: widgets, JS budgets, sizes, titles'
 bun scripts/pages.ts || fail 'bun scripts/pages.ts'
 
 step '8/10 bun scripts/csp-hash.ts: the CSP allows the theme restore as built'
