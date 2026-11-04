@@ -1,17 +1,10 @@
 ---
 import Row from '../components/Row.astro';
 import SectionLabel from '../components/SectionLabel.astro';
+import ShelfRow from '../components/ShelfRow.astro';
 import { day, initials } from '../data/format';
-import { onRepeat } from '../data/on-repeat';
 import { shelf } from '../data/shelf';
-import {
-  credits,
-  listeningText,
-  readingText,
-  stars,
-  watchedText,
-  withYear,
-} from '../data/shelf-live';
+import { stars, withYear } from '../data/shelf-live';
 import Base from '../layouts/Base.astro';
 
 const { updated, summary } = shelf;
@@ -20,11 +13,6 @@ const lists = [
   { label: 'films', items: shelf.films },
   { label: 'books', items: shelf.books },
 ].filter(({ items }) => items.length > 0);
-// The three rows the hub keeps current, from their build-time values: always all three, a row with
-// nothing current as "—", so an answer never adds or removes one.
-const reading = readingText(shelf.reading ?? null);
-const watched = watchedText(shelf.lastWatched ?? null);
-const listening = listeningText(onRepeat ?? null);
 ---
 
 <Base title="shelf" description={summary} class="max-w-wide">
@@ -35,32 +23,12 @@ const listening = listeningText(onRepeat ?? null);
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
-  {/* Rows put the sub line under the title, as every row does; last watched's stars follow it. Stars
-      are in the sans at the sub line's size, as on board 15, and hidden from screen readers, which
-      hear the rating instead. Each row is a widget the hub fills from /api/activity, and credits its
-      source in its meta cell, as /now's cells do. */}
   <section>
     {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
     <ul role="list" class="divide-y divide-line">
-      <li data-widget="reading">
-        <Row live tile={reading.tile} title={reading.title} sub={reading.sub} links={[credits.reading]}>
-          <span data-row="meta">{reading.meta}</span>
-        </Row>
-      </li>
-      <li data-widget="last-watched">
-        <Row live tile={watched.tile} title={watched.title} sub={watched.sub} links={[credits['last-watched']]}>
-          <Fragment slot="chips">
-            <span aria-hidden="true" data-row="stars">{watched.stars}</span>
-            <span class="sr-only" data-row="rated">{watched.rated}</span>
-          </Fragment>
-          <time data-row="meta" datetime={watched.date}>{watched.meta}</time>
-        </Row>
-      </li>
-      <li data-widget="on-repeat">
-        <Row live tile={listening.tile} title={listening.title} sub={listening.sub} links={[credits['on-repeat']]}>
-          <span data-row="meta">{listening.meta}</span>
-        </Row>
-      </li>
+      <ShelfRow kind="reading" />
+      <ShelfRow kind="last-watched" />
+      <ShelfRow kind="on-repeat" />
     </ul>
   </section>
   <div class="lists">

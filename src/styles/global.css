@@ -336,13 +336,13 @@
   }
 }
 
-/* The now-playing row and cell; NowPlaying.astro sets data-state. The coding cell has no live
+/* The now-playing cell; NowPlaying.astro sets data-state. The coding cell has no live
    state, so none of this reaches it. Idle and offline show the meta time; empty and loading,
    which has no snapshot and so no value, show none. live sets "now" in --c-live at text-sm
    medium after a dot, which pulses at the signature tier as a ring that grows and fades, and
    stays still when reduced motion is asked for. Forced colours would paint the dot in the
-   Canvas colour, so there it takes CanvasText. The row is an <a> in every state, so only one
-   with a URL takes the hover fill. */
+   Canvas colour, so there it takes CanvasText. The cell's link is an <a> in every state, so only
+   one with a URL takes the hover fill. */
 @layer components {
   @media (hover: hover) {
     a[data-widget="now-playing"][href]:hover {

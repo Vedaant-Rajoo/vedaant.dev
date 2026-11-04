@@ -120,11 +120,11 @@ export function fromLive(body: unknown): NowPlaying | null {
   return valid ? ({ state, track, artist, album, at, url, artwork } as NowPlaying) : null;
 }
 
-// The album the music row and the /now cell show beside the artist: none when it is named as the
-// track, as a single's is, so the name is not read twice.
+// The album the /now cell shows beside the artist: none when it is named as the track, as a
+// single's is, so the name is not read twice.
 export const shownAlbum = ({ track, album }: NowPlaying) => (album === track ? null : album);
 
-// The age the music widgets show. Under a minute, or ahead of the clock, reads "1m ago".
+// The age the /now cell shows. Under a minute, or ahead of the clock, reads "1m ago".
 export function ago(time: string) {
   const minutes = Math.max(1, Math.floor((Date.now() - Date.parse(time)) / 60_000));
   if (minutes < 60) {
@@ -138,15 +138,14 @@ export function ago(time: string) {
   return days < 365 ? `${days}d ago` : `${Math.floor(days / 365)}y ago`;
 }
 
-// The text of the music row and the /now cell, at build and in the hub. Artist and album each sit
-// between U+2068 and U+2069, so a right-to-left name reorders neither the other nor the separators,
-// and a closing space sets the text apart from the time. The /now cell starts the artist on a line
-// of its own, so only the row passes a separator as the lead.
-export function nowPlayingText(state: string, value: NowPlaying, lead: string) {
+// The text of the /now cell, at build and in the hub: the track, then the artist and album on a
+// line of their own. Artist and album each sit between U+2068 and U+2069, so a right-to-left name
+// reorders neither the other nor the separator.
+export function nowPlayingText(state: string, value: NowPlaying) {
   const { track, artist, at } = value;
   const album = shownAlbum(value);
   const after = album ? ` · \u2068${album}\u2069` : '';
-  const rest = artist ? `${lead}\u2068${artist}\u2069${after} ` : '';
+  const rest = artist ? `\u2068${artist}\u2069${after}` : '';
   const time = state === 'live' ? 'now' : (at && ago(at)) || '';
   return { track: track ?? '—', rest, time };
 }

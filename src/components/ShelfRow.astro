@@ -1,0 +1,62 @@
+---
+import type { OnRepeat } from '../data/now-playing';
+import { onRepeat } from '../data/on-repeat';
+import { shelf } from '../data/shelf';
+import {
+  credits,
+  type LastWatched,
+  listeningText,
+  type Reading,
+  readingText,
+  watchedText,
+} from '../data/shelf-live';
+import Row from './Row.astro';
+
+// /shelf passes no value: the build's. A state fixture passes one, or null for nothing current.
+type Props =
+  | { kind: 'reading'; value?: Reading | null }
+  | { kind: 'last-watched'; value?: LastWatched | null }
+  | { kind: 'on-repeat'; value?: OnRepeat | null };
+
+const { kind, value } = Astro.props;
+const fixture = value !== undefined;
+// The fixture's value, else the build's; null for nothing current.
+const or = <T,>(given: T | null | undefined, built: T | undefined) =>
+  given === undefined ? (built ?? null) : given;
+// Annotated, so the union keeps last watched's own fields for the markup below.
+function texts(
+  props: Props,
+):
+  | ReturnType<typeof readingText>
+  | ReturnType<typeof watchedText>
+  | ReturnType<typeof listeningText> {
+  if (props.kind === 'reading') {
+    return readingText(or(props.value, shelf.reading));
+  }
+  if (props.kind === 'last-watched') {
+    return watchedText(or(props.value, shelf.lastWatched));
+  }
+  return listeningText(or(props.value, onRepeat));
+}
+const text = texts(Astro.props);
+---
+
+{/* One of /shelf's three live rows, a widget the hub fills from /api/activity: always there, a row
+    with nothing current as "—", so an answer never adds or removes one. The sub line goes under
+    the title, as in every row; last watched's stars follow it. Stars are in the sans at the sub
+    line's size, as on board 15, and hidden from screen readers, which hear the rating instead. */}
+<li data-widget={kind} data-fixture={fixture ? '' : undefined}>
+  <Row live tile={text.tile} title={text.title} sub={text.sub} links={[credits[kind]]}>
+    <Fragment slot="chips">
+      {
+        'stars' in text && (
+          <>
+            <span aria-hidden="true" data-row="stars">{text.stars}</span>
+            <span class="sr-only" data-row="rated">{text.rated}</span>
+          </>
+        )
+      }
+    </Fragment>
+    {'date' in text ? <time data-row="meta" datetime={text.date}>{text.meta}</time> : <span data-row="meta">{text.meta}</span>}
+  </Row>
+</li>

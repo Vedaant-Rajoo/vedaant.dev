@@ -48,7 +48,7 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
   <section class="flex flex-col gap-4">
     <p class="meta text-xs text-fg-3">music live, coding as tracked · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
-      <NowPlaying variant="cell" />
+      <NowPlaying />
       <Coding />
     </div>
   </section>
