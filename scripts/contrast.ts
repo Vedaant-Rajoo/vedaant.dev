@@ -16,6 +16,9 @@ const NON_TEXT: [use: string, token: string, target: number][] = [
   ['underline', 'fg-3', 3],
   ...[1, 2, 3, 4, 5].map((step): [string, string, number] => ['ramp', `ramp-${step}`, 3]),
 ];
+// The heatmap's levels 1 to 4 (ramp-2 to ramp-5) on its level 0 (--c-sunken), ≥3:1, so a day with
+// any contribution stands apart from a day with none as well as from the page.
+const ON_LEVEL_0 = [2, 3, 4, 5].map((step) => `ramp-${step}`);
 const THEMES = ['light', 'dark'] as const;
 type Theme = (typeof THEMES)[number];
 type Swatch = { hex: string; clipped: boolean };
@@ -112,6 +115,7 @@ const required = [
     ...NON_TEXT.map(([, token]) => token),
     'bg',
     'surface',
+    'sunken',
   ]),
 ];
 for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) {
@@ -171,6 +175,7 @@ for (const theme of THEMES) {
       ...Object.entries(TARGETS).map(([n, t]) => ['bg', n, t, ''] as const),
       ...Object.entries(ON_SURFACE).map(([n, t]) => ['surface', n, t, ''] as const),
       ...NON_TEXT.map(([use, n, t]) => ['bg', n, t, ` (${use})`] as const),
+      ...ON_LEVEL_0.map((n) => ['sunken', n, 3, ' (heatmap on level 0)'] as const),
     ]) {
       const fg = swatches[name];
       const bg = swatches[ground];

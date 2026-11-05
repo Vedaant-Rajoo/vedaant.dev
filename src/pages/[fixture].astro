@@ -2,13 +2,16 @@
 import type { GetStaticPaths } from 'astro';
 import type { ComponentProps } from 'astro/types';
 import Coding from '../components/Coding.astro';
+import Heatmap from '../components/Heatmap.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import Presence from '../components/Presence.astro';
 import ShelfRow from '../components/ShelfRow.astro';
 import type { Share, Coding as Today } from '../data/coding';
+import type { Contributions } from '../data/contributions';
 import type { NowPlaying as Value } from '../data/now-playing';
 import { onRepeat } from '../data/on-repeat';
 import { shelf } from '../data/shelf';
+import calendar from '../data/snapshots/contributions.json';
 import snapshot from '../data/snapshots/lastfm.json';
 import Base from '../layouts/Base.astro';
 
@@ -58,6 +61,15 @@ const rows: ComponentProps<typeof ShelfRow>[] = [
   { kind: 'reading', value: shelf.reading ?? null },
   { kind: 'last-watched', value: shelf.lastWatched ?? null },
   { kind: 'on-repeat', value: onRepeat ?? null },
+];
+// The heatmap has no state of its own: its three fixtures are values. Full is a made-up 371-day
+// window ending on a Saturday, every day active and each active level drawn; empty is the committed
+// window with no activity; stale is the committed window cut to its first 365 days, so it ends on
+// a Sunday, days before the build, with six blank slots after it.
+const heatmaps: { state: string; value: Contributions }[] = [
+  { state: 'full', value: { end: '2026-11-07', days: Array.from({ length: 371 }, (_, i) => 1 + ((i * 7) % 40)) } },
+  { state: 'empty', value: { end: calendar.end, days: calendar.days.map(() => 0) } },
+  { state: 'stale', value: { end: '2026-11-01', days: calendar.days.slice(0, 365) } },
 ];
 ---
 
@@ -112,6 +124,20 @@ const rows: ComponentProps<typeof ShelfRow>[] = [
                 </ul>
               </div>
             ))}
+          </li>
+        ))
+      }
+    </ol>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line">
+      {
+        heatmaps.map(({ state, value }) => (
+          <li data-column class="flex min-w-0 flex-col gap-1.5 py-2.5">
+            <p class="meta flex flex-col text-xs text-fg-3">
+              <span>{state} · Heatmap</span>
+              <span data-height class="whitespace-nowrap">unmeasured</span>
+            </p>
+            <Heatmap value={value} />
           </li>
         ))
       }

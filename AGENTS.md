@@ -61,10 +61,10 @@ only names tokens and components; where it differs, the pages win.
   Mockup markup and inline styles show intent, not code.
 - Contrast in both themes, hex fallbacks included, on `--c-bg`: body ≥15:1,
   secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text (link underlines and
-  every ramp step included) ≥3:1; on the row hover fill (`--c-surface`) body
-  text may drop to 14:1, and code-block text is secondary (≥8:1). Measure
-  after token edits (`bun scripts/contrast.ts`); the doc's light `--c-live`
-  and light hex `--c-fg-2` fail.
+  every ramp step included, empty heatmap days excepted) ≥3:1; on the row hover
+  fill (`--c-surface`) body text may drop to 14:1, and code-block text is
+  secondary (≥8:1). Measure after token edits (`bun scripts/contrast.ts`); the
+  doc's light `--c-live` and light hex `--c-fg-2` fail.
 - `--c-live` (green) marks only live state. No icon set; use text glyphs.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.

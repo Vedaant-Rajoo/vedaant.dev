@@ -127,3 +127,43 @@ export function toContributions(body: unknown, now: number): Contributions | nul
   }
   return days.includes(-1) ? null : { end, days };
 }
+
+// "4 Nov 2026", from toUTCString's fixed form ("Wed, 04 Nov 2026 …"), so the browser needs neither
+// a month table nor Intl.
+const dayText = (ms: number) => new Date(ms).toUTCString().slice(5, 16).replace(/^0/, '');
+const counted = (count: number) =>
+  `${count.toLocaleString('en')} contribution${count === 1 ? '' : 's'}`;
+// The window's first day, a Sunday, in UTC milliseconds.
+const firstDay = ({ end, days }: Contributions) => Date.parse(end) - (days.length - 1) * day;
+
+// A day's level, 0 to 4, as the profile's own calendar draws it: each a quarter of the window's
+// busiest day, taking the next level up, so any contribution is at least 1.
+export const level = (count: number, max: number) => (count ? Math.ceil((4 * count) / max) : 0);
+
+// The heatmap's 371 slots, 53 week columns of 7 days from the window's first Sunday, column by
+// column: each day's level and title, null after end.
+export function cells(value: Contributions) {
+  const start = firstDay(value);
+  const max = Math.max(...value.days);
+  return Array.from({ length: 371 }, (_, i) => {
+    const count = value.days[i];
+    return count === undefined
+      ? null
+      : {
+          level: level(count, max),
+          title: `${count ? counted(count) : 'no contributions'} on ${dayText(start + i * day)}`,
+        };
+  });
+}
+
+// The cell's texts: the window's total, or "no public activity", since its first day, and the day
+// the value was made, with its ISO date for the <time>.
+export function contributionsText(value: Contributions) {
+  const total = value.days.reduce((sum, count) => sum + count, 0);
+  return {
+    total: total ? counted(total) : 'no public activity',
+    since: `since ${dayText(firstDay(value))}`,
+    updated: `updated ${dayText(Date.parse(value.end))}`,
+    date: value.end,
+  };
+}

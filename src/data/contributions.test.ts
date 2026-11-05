@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { contributionsRequest, graphql, span } from './contributions';
+import {
+  cells,
+  contributionsRequest,
+  contributionsText,
+  graphql,
+  level,
+  span,
+} from './contributions';
 import snapshot from './snapshots/contributions.json';
 
 test('span: 53 week columns from a Sunday, ending on the UTC day', () => {
@@ -64,4 +71,46 @@ test('the committed snapshot is a whole window ending on its day', () => {
   for (const count of snapshot.days) {
     assert.ok(Number.isSafeInteger(count) && count >= 0, String(count));
   }
+});
+
+test('level: a quarter of the busiest day each, the next level up, as the profile draws it', () => {
+  assert.deepEqual(
+    [0, 1, 11, 12, 22, 23, 33, 34, 44].map((count) => level(count, 44)),
+    [0, 1, 1, 2, 2, 3, 3, 4, 4],
+  );
+  assert.equal(level(0, 0), 0);
+});
+
+test('cells: 371 slots from the first Sunday, titled, blank after end', () => {
+  // Wednesday 2026-11-04: 368 days, so three blank slots close the last column.
+  const days = Array<number>(368).fill(0);
+  days[1] = 1;
+  days[100] = 400;
+  days[367] = 1204;
+  const slots = cells({ end: '2026-11-04', days });
+  assert.equal(slots.length, 371);
+  assert.deepEqual(slots[0], { level: 0, title: 'no contributions on 2 Nov 2025' });
+  assert.deepEqual(slots[1], { level: 1, title: '1 contribution on 3 Nov 2025' });
+  // A quarter of the busiest day (1,204), not of the window's total, so 400 is level 2.
+  assert.deepEqual(slots[100], { level: 2, title: '400 contributions on 10 Feb 2026' });
+  assert.deepEqual(slots[367], { level: 4, title: '1,204 contributions on 4 Nov 2026' });
+  assert.deepEqual(slots.slice(368), [null, null, null]);
+});
+
+test('contributionsText: the total since the first Sunday, or no public activity', () => {
+  assert.deepEqual(contributionsText({ end: '2026-11-04', days: [...Array(367).fill(0), 2] }), {
+    total: '2 contributions',
+    since: 'since 2 Nov 2025',
+    updated: 'updated 4 Nov 2026',
+    date: '2026-11-04',
+  });
+  assert.equal(
+    contributionsText({ end: '2026-11-08', days: Array(365).fill(0) }).total,
+    'no public activity',
+  );
+  assert.equal(
+    contributionsText({ end: '2026-11-08', days: Array(365).fill(0) }).since,
+    'since 9 Nov 2025',
+  );
+  assert.equal(contributionsText(snapshot).total, '615 contributions');
 });

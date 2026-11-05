@@ -5,6 +5,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { contributionsText } from '../src/data/contributions';
 import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
 
 // Client JS gzip per page, as AGENTS.md sets it: 5.5 KB on /now, 5 KB on every other page.
@@ -14,6 +15,9 @@ const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
 const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
 const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
+const calendar = contributionsText(
+  JSON.parse(readFileSync('src/data/snapshots/contributions.json', 'utf8')),
+);
 // A keyless build shows each shelf row once; missing shelf.json rows read "—".
 const rows = {
   reading: readingText(reading ?? null).title,
@@ -85,6 +89,30 @@ for (const page of pages.sort()) {
     todays.every((t) => t === today);
   if (!codes) {
     problems.push(`${page}: the coding cell does not show the snapshot`);
+  }
+
+  // The heatmap, on /now only: once, with the snapshot's texts and day, and 371 titled squares.
+  const heatmaps = html.split('data-widget="contributions"').length - 1;
+  const texts = (row: string) =>
+    all(html, new RegExp(`\\bdata-row="${row}"[^>]*>([^<]*)<`, 'g'))
+      .map(decode)
+      .join('|');
+  const updated = all(html, /(<time\b[^>]*\bdata-row="updated"[^>]*>)/g);
+  const squares = all(html, /<rect\b[^>]*>(<title>)/g).length;
+  const nowPage = page === 'now/index.html';
+  const heats =
+    heatmaps === Number(nowPage) &&
+    (!nowPage ||
+      (texts('total') === calendar.total &&
+        texts('since') === calendar.since &&
+        texts('updated') === calendar.updated &&
+        updated.length === 1 &&
+        attr(updated[0], 'datetime') === calendar.date &&
+        squares === 371));
+  if (!heats) {
+    problems.push(
+      `${page}: the heatmap does not show the snapshot's texts and day and 371 squares once, on /now alone`,
+    );
   }
 
   for (const [name, title] of Object.entries(rows)) {
