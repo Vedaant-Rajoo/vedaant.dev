@@ -1,4 +1,4 @@
-import { dayMonth, fullDay, initials, monthYear } from './format';
+import { dayMonth, fullDay, initials, month, monthYear } from './format';
 import type { OnRepeat } from './now-playing';
 
 // /shelf's mappers, checks and text, in shelf.json's shapes, shared at build and in the browser.
@@ -107,6 +107,30 @@ export const credits = {
   'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/' },
   'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/' },
 };
+
+// /now's cells for the reading and last-watched rows: the rows' texts, laid out as a bento cell,
+// by the cell's data-row hooks. The label; the row's date on its right, as reading's `lead` and
+// then the <time> text `meta`, with the whole of it in `full` for the <abbr>; the tile; the name;
+// and the line under it, with last watched's stars. Nothing current reads "—". /shelf's script
+// imports neither, so its chunk leaves them out.
+export function readingCell(row: Reading | null) {
+  const { tile, meta: page } = readingText(row);
+  return {
+    label: 'reading',
+    tile,
+    name: row?.title ?? '—',
+    sub: [row?.creator, page].filter(Boolean).join(' · '),
+    date: row?.started ?? null,
+    lead: row?.started ? 'started ' : '',
+    meta: row?.started ? monthYear(row.started) : '',
+    full: row?.started ? `started ${month(row.started)}` : '',
+  };
+}
+export function watchedCell(row: LastWatched | null) {
+  // The row's "last watched · …" title is the cell's label and name instead.
+  const { title, ...texts } = watchedText(row);
+  return { ...texts, label: 'last watched', name: row ? withYear(row.title, row.year) : '—' };
+}
 
 // The texts of the row a widget shows, by its data-widget; none when the answer leaves it out.
 // Annotated, so the union keeps last watched's own fields.

@@ -5,6 +5,7 @@ import Coding from '../components/Coding.astro';
 import Heatmap from '../components/Heatmap.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import Presence from '../components/Presence.astro';
+import ShelfCell from '../components/ShelfCell.astro';
 import ShelfRow from '../components/ShelfRow.astro';
 import type { Share, Coding as Today } from '../data/coding';
 import type { Contributions } from '../data/contributions';
@@ -70,6 +71,25 @@ const heatmaps: { state: string; value: Contributions }[] = [
   { state: 'full', value: { end: '2026-11-07', days: Array.from({ length: 371 }, (_, i) => 1 + ((i * 7) % 40)) } },
   { state: 'empty', value: { end: calendar.end, days: calendar.days.map(() => 0) } },
   { state: 'stale', value: { end: '2026-11-01', days: calendar.days.slice(0, 365) } },
+];
+// /now's two shelf cells have no state either: the build's values; made-up long ones with no
+// optional field, which truncate; and null, which reads "—".
+const shelfCells: { state: string; cells: ComponentProps<typeof ShelfCell>[] }[] = [
+  {
+    state: 'build',
+    cells: [
+      { kind: 'last-watched', value: shelf.lastWatched ?? null },
+      { kind: 'reading', value: shelf.reading ?? null },
+    ],
+  },
+  {
+    state: 'long',
+    cells: [
+      { kind: 'last-watched', value: { title: 'A film whose title runs on well past the end of its line', year: 1968, date: '2026-01-01' } },
+      { kind: 'reading', value: { title: 'A book whose title runs on well past the end of its line', creator: 'First Author, Second Author, Third Author' } },
+    ],
+  },
+  { state: 'null', cells: [{ kind: 'last-watched', value: null }, { kind: 'reading', value: null }] },
 ];
 ---
 
@@ -138,6 +158,24 @@ const heatmaps: { state: string; value: Contributions }[] = [
               <span data-height class="whitespace-nowrap">unmeasured</span>
             </p>
             <Heatmap value={value} />
+          </li>
+        ))
+      }
+    </ol>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line wrap-anywhere">
+      {
+        shelfCells.map(({ state, cells }) => (
+          <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
+            {cells.map((cell) => (
+              <div data-column class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+                <p class="meta flex flex-col text-xs text-fg-3">
+                  <span>{state} · ShelfCell {cell.kind}</span>
+                  <span data-height class="whitespace-nowrap">unmeasured</span>
+                </p>
+                <ShelfCell {...cell} />
+              </div>
+            ))}
           </li>
         ))
       }

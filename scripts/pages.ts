@@ -1,12 +1,20 @@
-// Reads every page in dist/: the live widgets and /shelf's three live rows show the committed
-// values, client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each)
-// stays within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
-// reported, never failed. Run after `bun run build`; exits 1 on a problem.
+// Reads every page in dist/: the live widgets, /shelf's three live rows and /now's reading and
+// last-watched cells show the committed values, client JS (inline scripts and the /_astro/ modules
+// a page loads or imports, gzip each) stays within budget, and titles and descriptions are present
+// and unique. HTML and CSS sizes are reported, never failed. Run after `bun run build`; exits 1 on
+// a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { contributionsText } from '../src/data/contributions';
-import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
+import {
+  credits,
+  listeningText,
+  readingCell,
+  readingText,
+  watchedCell,
+  watchedText,
+} from '../src/data/shelf-live';
 
 // Client JS gzip per page, as AGENTS.md sets it: 5.5 KB on /now, 5 KB on every other page.
 const budget = (page: string) => (page === 'now/index.html' ? 5632 : 5120);
@@ -18,11 +26,16 @@ const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/sh
 const calendar = contributionsText(
   JSON.parse(readFileSync('src/data/snapshots/contributions.json', 'utf8')),
 );
-// A keyless build shows each shelf row once; missing shelf.json rows read "—".
+// A keyless build shows each shelf row once on /shelf; missing shelf.json rows read "—".
 const rows = {
   reading: readingText(reading ?? null).title,
   'last-watched': watchedText(lastWatched ?? null).title,
   'on-repeat': listeningText(listening ?? null).title,
+};
+// /now's reading and last-watched cells show the same values, as the cells name them.
+const shelfCells: Record<string, string> = {
+  reading: readingCell(reading ?? null).name,
+  'last-watched': watchedCell(lastWatched ?? null).name,
 };
 // gzip(1), not zlib: every earlier measurement used it, and the two differ by a few bytes.
 const gz = (input: string | Buffer) =>
@@ -32,6 +45,22 @@ const attr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).e
 const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
 const decode = (s = '') => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => entities[e]);
 const sum = (sizes: number[]) => sizes.reduce((a, b) => a + b, 0);
+// The element whose start tag begins at `at`, up to the tag that closes it: tags are counted, void
+// and self-closed ones skipped. Text holds no "<" (Astro escapes it), so only tags match.
+const voids = /^(area|br|col|embed|hr|img|input|link|meta|source|wbr)$/i;
+function element(html: string, at: number) {
+  let depth = 0;
+  for (const tag of html.slice(at).matchAll(/<(\/?)([a-z][\w-]*)\b[^>]*?(\/?)>/gi)) {
+    const [, closing, name, selfClosed] = tag;
+    if (closing || !(selfClosed || voids.test(name))) {
+      depth += closing ? -1 : 1;
+    }
+    if (depth === 0) {
+      return html.slice(at, at + (tag.index ?? 0) + tag[0].length);
+    }
+  }
+  return html.slice(at);
+}
 
 function load(page: string, module: string, seen: Map<string, number>) {
   if (!/^\/_astro\/[\w./-]+\.js$/.test(module) || !existsSync(`dist${module}`)) {
@@ -115,12 +144,28 @@ for (const page of pages.sort()) {
     );
   }
 
+  // Each shelf row once on /shelf, and reading and last watched once more on /now, as cells, and
+  // on no other page. Inside the widget's own element, its holder shows the value exactly (the
+  // row's title, or the cell's name) and its source is credited, with its link; a cell also
+  // links to /shelf.
   for (const [name, title] of Object.entries(rows)) {
-    const shelfPage = page === 'shelf/index.html';
-    const count = html.split(`data-widget="${name}"`).length - 1;
-    if (count !== Number(shelfPage) || (shelfPage && !decode(html).includes(title))) {
+    const cell = nowPage && name in shelfCells;
+    const shown = page === 'shelf/index.html' || cell;
+    const found = [...html.matchAll(new RegExp(`<[a-z][^>]*\\bdata-widget="${name}"`, 'g'))];
+    const own = found.length > 0 ? element(html, found[0].index ?? 0) : '';
+    const [hook, text] = cell ? ['name', shelfCells[name]] : ['title', title];
+    const holders = all(own, new RegExp(`\\bdata-row="${hook}"[^>]*>([^<]*)<`, 'g')).map(decode);
+    const credit = credits[name as keyof typeof credits];
+    const credited = own.includes(`href="${credit.href}"`) && own.includes(credit.label);
+    const ok =
+      holders.length === 1 &&
+      holders[0] === text &&
+      credited &&
+      (!cell || own.includes('href="/shelf"'));
+    if (found.length !== Number(shown) || (shown && !ok)) {
+      const where = name in shelfCells ? '/shelf and once on /now' : '/shelf';
       problems.push(
-        `${page}: the ${name} row does not show shelf.json's value once, on /shelf alone`,
+        `${page}: the ${name} row does not show shelf.json's value, credited, once on ${where}, and on no other page`,
       );
     }
   }

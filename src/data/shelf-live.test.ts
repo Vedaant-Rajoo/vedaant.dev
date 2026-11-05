@@ -4,13 +4,16 @@ import { toOnRepeat } from './now-playing';
 import { lastWatched, listening, reading, shelf } from './shelf';
 import {
   listeningText,
+  readingCell,
   readingQuery,
   readingText,
   shelfFromLive,
   shelfText,
   toLastWatched,
   toReading,
+  watchedCell,
   watchedText,
+  withYear,
 } from './shelf-live';
 
 // One diary entry as Letterboxd's feed writes it, trimmed to the parts the scan meets.
@@ -396,5 +399,73 @@ test('row texts: the build and the hub write the same, "—" when nothing is cur
     title: 'on repeat · —',
     sub: '',
     meta: '',
+  });
+});
+
+test("/now's cells: the rows' texts, the date on the label's right, \"—\" when nothing is current", () => {
+  const reading = { label: 'reading', tile: 'ag', name: 'A Game of Thrones' };
+  const started = {
+    date: '2026-10',
+    lead: 'started ',
+    meta: 'Oct ’26',
+    full: 'started October 2026',
+  };
+  const unknown = { date: null, lead: '', meta: '', full: '' };
+  const book = { title: 'A Game of Thrones', creator: 'G' };
+  assert.deepEqual(readingCell({ ...book, started: '2026-10', page: 120 }), {
+    ...reading,
+    sub: 'G · p. 120',
+    ...started,
+  });
+  assert.deepEqual(readingCell({ ...book, started: '2026-10' }), {
+    ...reading,
+    sub: 'G',
+    ...started,
+  });
+  assert.deepEqual(readingCell({ ...book, page: 7 }), { ...reading, sub: 'G · p. 7', ...unknown });
+  assert.deepEqual(readingCell(book), { ...reading, sub: 'G', ...unknown });
+  assert.deepEqual(readingCell(null), {
+    label: 'reading',
+    tile: '',
+    name: '—',
+    sub: '',
+    ...unknown,
+  });
+
+  assert.deepEqual(
+    watchedCell({ title: 'Clueless', year: 1995, rating: 3.5, date: '2026-10-28' }),
+    {
+      label: 'last watched',
+      tile: 'cl',
+      name: withYear('Clueless', 1995),
+      sub: '',
+      stars: '★★★½',
+      rated: 'rated 3.5 of 5',
+      meta: '28 Oct',
+      date: '2026-10-28',
+      full: '28 October 2026',
+    },
+  );
+  assert.deepEqual(watchedCell({ title: 'It', year: 2017, date: '2026-01-01' }), {
+    label: 'last watched',
+    tile: 'it',
+    name: withYear('It', 2017),
+    sub: '',
+    stars: '',
+    rated: '',
+    meta: '1 Jan',
+    date: '2026-01-01',
+    full: '1 January 2026',
+  });
+  assert.deepEqual(watchedCell(null), {
+    label: 'last watched',
+    tile: '',
+    name: '—',
+    sub: '',
+    stars: '',
+    rated: '',
+    meta: '',
+    date: null,
+    full: '',
   });
 });

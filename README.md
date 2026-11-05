@@ -220,9 +220,11 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   values of the reading and last-watched rows at the top, which then update from
   Hardcover and Letterboxd (see [Shelf rows](#shelf-rows)); leave one out and
   its row reads `—` until an answer arrives. Edit them by hand as a fallback,
-  since nothing writes them. `listening` (`title`, `creator` and a positive
-  integer `plays`) is only the on-repeat row's fallback. That row shows the most
-  played album over the 7 days before the build:
+  since nothing writes them. On `/now` they are shown as they are, and nothing
+  updates them there, so edit them when the book or the film changes.
+  `listening` (`title`, `creator` and a positive integer `plays`) is only the
+  on-repeat row's fallback. That row shows the most played album over the 7
+  days before the build:
   [src/data/on-repeat.ts](src/data/on-repeat.ts) asks Last.fm with
   `LASTFM_API_KEY`, and a week with no plays reads `—`. Without the key, or when
   Last.fm fails, it logs one `shelf:` warning and shows `listening` from this
@@ -436,7 +438,9 @@ the row's source, as the `/now` cells do: Hardcover, Letterboxd or Last.fm. With
 `/api/activity` at once, then when the answer goes stale, at most a day later,
 with the music widgets' backoff after failures. Each row updates on its own; a
 row the answer leaves out keeps its text, with no error text for visitors.
-Other pages load none of this code.
+Other pages load none of this code. `/now` shows the reading and last-watched
+rows again, as two cells built from the same values; no feed updates them
+there.
 
 [`/api/activity`](functions/api/activity.ts) answers the coding cell's value,
 the contributions calendar and the three rows in one body, `{"coding": {...},
@@ -602,8 +606,9 @@ the site's own, so a request for a file never runs a Function. A grep checks
 `dist/_astro/*.js` for the Last.fm, MusicBrainz, Cover Art Archive, WakaTime,
 Letterboxd, Hardcover and GitHub API hosts.
 [scripts/pages.ts](scripts/pages.ts) checks
-that the music widgets, the coding cell and `/shelf`'s three rows show their
-committed values
+that the music widgets, the coding cell, the contributions heatmap, `/shelf`'s
+three rows and `/now`'s reading and last-watched cells show their committed
+values
 and that every page has a unique title and description. It also enforces a budget
 of gzipped executable JavaScript per page, 5,632 B on `/now` and 5,120 B
 elsewhere (JSON-LD does not count), and reports

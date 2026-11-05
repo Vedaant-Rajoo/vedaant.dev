@@ -1,0 +1,83 @@
+---
+import { shelf } from '../data/shelf';
+import {
+  credits,
+  type LastWatched,
+  type Reading,
+  readingCell,
+  watchedCell,
+} from '../data/shelf-live';
+import Arrow from './Arrow.astro';
+
+// /now passes no value: the build's, the one /shelf's row shows. A state fixture passes one, or
+// null for nothing current.
+type Props =
+  | { kind: 'reading'; value?: Reading | null }
+  | { kind: 'last-watched'; value?: LastWatched | null };
+
+const props = Astro.props;
+// The fixture's value, else the build's; null for nothing current.
+const or = <T,>(given: T | null | undefined, built: T | undefined) =>
+  given === undefined ? (built ?? null) : given;
+const text =
+  props.kind === 'reading'
+    ? readingCell(or(props.value, shelf.reading))
+    : watchedCell(or(props.value, shelf.lastWatched));
+const credit = credits[props.kind];
+---
+
+{/* A /now cell for one of /shelf's live rows, from the same build value, laid out as the other
+    cells: the label with a date on its right, a 32 by 48 tile beside the name and the line under
+    it, then the shelf link and the source's credit. Each text has its own data-row holder, as a
+    /shelf row's, and every holder is there for a value and for null, so a later feed can rewrite
+    them with readingCell's or watchedCell's texts. Each line has its height and truncates, and the
+    date fills a box as wide as its longest text, which a narrow cell or enlarged text moves under
+    the label for a value and null alike, so no text changes the height. The links break onto a
+    second line only when enlarged text needs it, a row gap apart as wide as one overhang, so
+    neither 44px target covers the other's line. pages.ts checks the data-row="name" holder. */}
+<div
+  data-widget={props.kind}
+  data-fixture={props.value !== undefined ? '' : undefined}
+  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
+>
+  <div class="flex flex-col gap-2.5 py-2">
+    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="meta shrink-0 text-xs text-fg-3">{text.label}</span>
+      <span class="meta ml-auto h-5 w-30 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
+        ><abbr title={text.full || undefined} class="no-underline"
+          >{'lead' in text && <span data-row="lead">{text.lead}</span>}<time
+            data-row="meta"
+            datetime={text.date ?? undefined}>{text.meta}</time
+          ></abbr
+        ></span
+      >
+    </span>
+    <span class="flex items-center gap-3">
+      <span
+        aria-hidden="true"
+        data-row="tile"
+        class="flex h-12 w-8 shrink-0 items-center justify-center rounded-sm bg-sunken font-mono text-xs"
+        >{text.tile}</span
+      >
+      <span class="flex min-w-0 flex-col">
+        <span data-row="name" class="h-lh truncate leading-(--lh-snug) font-medium">{text.name}</span>
+        <span class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
+          ><span data-row="sub">{text.sub}</span>{
+            'stars' in text && (
+              <>
+                <span aria-hidden="true" data-row="stars">{text.stars}</span>
+                <span class="sr-only" data-row="rated">{text.rated}</span>
+              </>
+            )
+          }</span
+        >
+      </span>
+    </span>
+  </div>
+  <div class="mt-auto flex flex-wrap items-center justify-between gap-x-1 gap-y-3.5 pt-2">
+    <a href="/shelf" class="meta target link -my-3.5 text-xs text-fg-3"><span>shelf<Arrow>→</Arrow></span></a>
+    <a href={credit.href} class="meta target link -my-3.5 ml-auto text-xs text-fg-3"
+      ><span>{credit.label}<Arrow>↗</Arrow></span></a
+    >
+  </div>
+</div>

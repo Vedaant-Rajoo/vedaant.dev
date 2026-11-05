@@ -3,6 +3,7 @@ import Arrow from '../components/Arrow.astro';
 import Coding from '../components/Coding.astro';
 import Heatmap from '../components/Heatmap.astro';
 import NowPlaying from '../components/NowPlaying.astro';
+import ShelfCell from '../components/ShelfCell.astro';
 import { day } from '../data/format';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
@@ -50,6 +51,8 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
       <NowPlaying />
       <Coding />
       <Heatmap />
+      <ShelfCell kind="last-watched" />
+      <ShelfCell kind="reading" />
     </div>
   </section>
 </Base>
