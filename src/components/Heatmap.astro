@@ -1,0 +1,133 @@
+---
+import { type Contributions, cells, contributionsText } from '../data/contributions';
+import { contributions } from '../data/github';
+import { site } from '../data/site';
+import Arrow from './Arrow.astro';
+
+interface Props {
+  // /now passes none: the build-time calendar. A state fixture passes its own.
+  value?: Contributions;
+}
+
+const { value = contributions } = Astro.props;
+// One nested <svg x> per week column, so each square needs only its row: the same 7 rows repeat
+// 53 times and compress. A shifted <g> costs as much, but its attribute name is a Tailwind word.
+const slots = cells(value);
+const weeks = Array.from({ length: 53 }, (_, w) => slots.slice(w * 7, w * 7 + 7));
+const text = contributionsText(value);
+---
+
+{/* The /now cell, laid out as the coding cell: the label with the day it was made on its right,
+    the total over the window, the calendar, and the legend beside GitHub's credit. 53 week columns
+    at a 13-unit pitch fill the cell; below 686px the calendar keeps that width and scrolls inside
+    its box, which starts at its right edge (direction: rtl), so the latest weeks show first
+    without JS. Every slot is a <rect> with a <title>, in day order, so a later updater rewrites
+    levels and titles and never the SVG's size; slots after end are blank. */}
+<div
+  data-widget="contributions"
+  data-fixture={Astro.props.value ? '' : undefined}
+  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
+>
+  <div class="flex flex-col gap-2.5 py-2">
+    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="meta shrink-0 text-xs text-fg-3">contributions</span>
+      <span class="meta ml-auto h-5 w-52 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
+        ><time data-row="updated" datetime={text.date}>{text.updated}</time></span
+      >
+    </span>
+    {/* Two fixed lines, as the now-playing cell's track and rest: each fits a phone whole, and no
+        text sits between two holders, where a change in the first would move it. */}
+    <span class="flex min-w-0 flex-col">
+      <span data-row="total" class="h-lh truncate leading-(--lh-snug) font-medium">{text.total}</span>
+      <span data-row="since" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2">{text.since}</span>
+    </span>
+  </div>
+  {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a box that scrolls must take focus, or a keyboard cannot scroll it (axe's scrollable-region-focusable); Safari does not focus one on its own. */}
+  <section data-heat-scroll tabindex="0" aria-label="contribution calendar">
+    <svg data-heat viewBox="0 0 686 88" width="686" height="88" aria-hidden="true">
+      {weeks.map((week, w) => (
+        <svg x={w * 13} aria-hidden="true">
+          {week.map((slot, d) => (
+            <rect y={d * 13} width="10" height="10" rx="2" data-level={slot?.level}><title>{slot?.title}</title></rect>
+          ))}
+        </svg>
+      ))}
+    </svg>
+  </section>
+  <div class="mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
+    <span aria-hidden="true" class="meta flex items-center gap-2 text-xs text-fg-3"
+      >less<svg viewBox="0 0 62 10" width="62" height="10" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((level) => <rect x={level * 13} width="10" height="10" rx="2" data-level={level} />)}
+      </svg>more</span
+    >
+    <a href={site.socials.github} class="meta target link -my-3.5 ml-auto shrink-0 text-xs text-fg-3">
+      <span>via github<Arrow>↗</Arrow></span>
+    </a>
+  </div>
+</div>
+
+<style is:global>
+  /* Global, so Astro marks none of the 802 SVG elements with a scope attribute; every selector
+     starts at the widget. It spans the bento's row, as p14 draws it. */
+  [data-widget='contributions'] {
+    grid-column: 1 / -1;
+  }
+  [data-heat-scroll] {
+    overflow-x: auto;
+    direction: rtl;
+  }
+  [data-heat-scroll] > svg {
+    display: block;
+    direction: ltr;
+    min-width: 100%;
+    height: auto;
+  }
+  /* A square's stroke in forced colours reaches half a unit past its column and the calendar. */
+  [data-widget='contributions'] svg {
+    overflow: visible;
+  }
+  /* Level 0 is a faint square; 1 to 4 are the ramp's strongest four steps, each ≥3:1 on --c-bg and
+     on level 0 (scripts/contrast.ts). A slot after end has no level and draws nothing. */
+  [data-widget='contributions'] rect {
+    fill: none;
+  }
+  [data-widget='contributions'] [data-level='0'] {
+    fill: var(--c-sunken);
+  }
+  [data-widget='contributions'] [data-level='1'] {
+    fill: var(--c-ramp-2);
+  }
+  [data-widget='contributions'] [data-level='2'] {
+    fill: var(--c-ramp-3);
+  }
+  [data-widget='contributions'] [data-level='3'] {
+    fill: var(--c-ramp-4);
+  }
+  [data-widget='contributions'] [data-level='4'] {
+    fill: var(--c-ramp-5);
+  }
+  /* Forced colours repaint the page but not an SVG's fill, so the ramp could sit dark on a black
+     Canvas. There, a day with none is a faint GrayText square, quieter than any level; a day with
+     any is edged in the text colour, which keeps the palette's own contrast, and filled with it at
+     four strengths. */
+  @media (forced-colors: active) {
+    [data-widget='contributions'] [data-level] {
+      fill: CanvasText;
+      stroke: CanvasText;
+    }
+    [data-widget='contributions'] [data-level='0'] {
+      fill: GrayText;
+      fill-opacity: 0.3;
+      stroke: none;
+    }
+    [data-widget='contributions'] [data-level='1'] {
+      fill-opacity: 0.5;
+    }
+    [data-widget='contributions'] [data-level='2'] {
+      fill-opacity: 0.65;
+    }
+    [data-widget='contributions'] [data-level='3'] {
+      fill-opacity: 0.8;
+    }
+  }
+</style>

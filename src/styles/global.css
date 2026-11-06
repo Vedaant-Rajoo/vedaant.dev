@@ -18,6 +18,11 @@
   --color-live: var(--c-live);
   --color-mark: var(--c-mark);
   --color-focus: var(--c-focus);
+  --color-ramp-1: var(--c-ramp-1);
+  --color-ramp-2: var(--c-ramp-2);
+  --color-ramp-3: var(--c-ramp-3);
+  --color-ramp-4: var(--c-ramp-4);
+  --color-ramp-5: var(--c-ramp-5);
 
   --font-sans: var(--ff-sans);
   --font-mono: var(--ff-mono);
@@ -112,6 +117,14 @@
     background: var(--c-mark);
     color: var(--c-fg);
   }
+  /* The page rhythm: a page's header, and each section at the top of its main, start
+     --sp-section below what comes before; a header keeps as much below it. */
+  :is(main, main > article) > header {
+    margin-block: var(--sp-section);
+  }
+  main > section {
+    margin-block-start: var(--sp-section);
+  }
   code,
   kbd,
   time,
@@ -121,17 +134,32 @@
   }
 }
 
+/* The underline is --c-fg-3, ≥3:1 on --c-bg: for a link in the text's own colour it is the cue
+   that is not colour alone (scripts/contrast.ts measures it). */
 @utility link {
-  @apply underline decoration-line-2 transition-colors hover:decoration-fg;
+  @apply underline decoration-fg-3 transition-colors hover:decoration-fg;
 }
 @utility target {
   @apply inline-flex min-h-11 min-w-11 items-center;
 }
+/* Its text starts at its padding, so the boxes of a wrapping row line up on the left. */
 @utility box {
-  @apply flex min-h-11 min-w-11 items-center justify-center px-1.5 link;
+  @apply flex min-h-11 min-w-11 items-center px-1.5 link;
 }
 
 @layer components {
+  /* The disclosure marker after a summary's label, the same on every <details>: + closed and −
+     open, drawn as Arrow.astro draws an arrow, so an underline stops at the label. Screen readers
+     hear the summary's own state instead. */
+  [data-marker]::after {
+    content: "+" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
+  }
+  details[open] > summary [data-marker]::after {
+    content: "−" / "";
+  }
   .prose {
     max-width: var(--w-measure);
     overflow-wrap: anywhere;
@@ -173,35 +201,49 @@
   .prose li > :is(ul, ol) {
     margin-block-start: --spacing(2);
   }
-  /* A decision: chose, over, because, each label in a mono column 88px wide. A dd's basis is
-     the rest of its line, so every pair starts a line, and at least 11rem: when large text
-     leaves less beside the label, the dd moves under it, as in /now's dl. */
-  .prose dl {
+  /* The label column: a case study's decisions (chose, over, because) and /now's sections, each
+     label in a mono column 96px wide. A dd's basis is the rest of its line, and at least 11rem, so
+     every pair starts a line, and when large text leaves less beside the label, the dd moves under
+     it. A long word or URL breaks rather than widen the page. */
+  :is(.prose dl, .labels) {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: --spacing(1) var(--sp-row);
+    gap: --spacing(2) --spacing(4);
+    overflow-wrap: anywhere;
   }
-  .prose dt {
-    flex: 0 0 --spacing(22);
+  :is(.prose dl, .labels) > dt {
+    flex: 0 0 --spacing(24);
     font-family: var(--ff-mono);
     font-feature-settings: var(--mono-features);
     font-size: var(--fs-xs);
+    line-height: var(--lh-snug);
     letter-spacing: var(--ls-mono);
     color: var(--c-fg-3);
   }
-  .prose dd {
-    flex: 1 1 max(--spacing(44), 100% - --spacing(22) - var(--sp-row));
+  :is(.prose dl, .labels) > dd {
+    flex: 1 1 max(--spacing(44), 100% - --spacing(28));
     min-width: 0;
   }
-  /* Links as elsewhere. A link in a line of prose keeps the line's height, not 44px. */
-  .prose a {
+  /* Links in prose and in /now's sections, as the link utility draws them. A link in a line of
+     prose keeps the line's height, not 44px. */
+  :is(.prose, .labels) a {
     text-decoration-line: underline;
-    text-decoration-color: var(--c-line-2);
+    text-decoration-color: var(--c-fg-3);
     transition: text-decoration-color var(--d-1) var(--ez-out);
   }
-  .prose a:hover {
+  :is(.prose, .labels) a:hover {
     text-decoration-color: var(--c-fg);
+  }
+  /* An external one ends in ↗ (FR-SH-5), drawn as Arrow.astro draws it, so the underline stops at
+     the word; screen readers skip it. shortcut: internal links are root-relative; absolute web
+     links are outbound. If absolute internal URLs are needed, classify against the configured
+     site origin instead. */
+  :is(.prose, .labels) a:is([href^="https://"], [href^="http://"], [href^="//"])::after {
+    content: "↗" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
   }
   /* A quote is set in italic at text-lg and nothing else: sans italic, synthesized, so
      it requests no font. */
@@ -322,13 +364,11 @@
   }
 }
 
-/* The now-playing row and cell; NowPlaying.astro sets data-state. The coding cell has no live
+/* The now-playing cell; NowPlaying.astro sets data-state. The coding cell has no live
    state, so none of this reaches it. Idle and offline show the meta time; empty and loading,
    which has no snapshot and so no value, show none. live sets "now" in --c-live at text-sm
-   medium after a dot, which pulses at the signature tier as a ring that grows and fades, and
-   stays still when reduced motion is asked for. Forced colours would paint the dot in the
-   Canvas colour, so there it takes CanvasText. The row is an <a> in every state, so only one
-   with a URL takes the hover fill. */
+   medium after the live dot. The cell's link is an <a> in every state, so only one with a URL
+   takes the hover fill. */
 @layer components {
   @media (hover: hover) {
     a[data-widget="now-playing"][href]:hover {
@@ -341,10 +381,14 @@
     font-weight: var(--fw-medium);
     color: var(--c-live);
   }
-  [data-widget="now-playing"][data-state="live"] .meta > ::before {
+  /* The live dot, before a live widget's state word: the presence line's "listening" and this
+     cell's "now". It pulses at the signature tier as a ring that grows and fades, and stays still
+     when reduced motion is asked for. Forced colours would paint it in the Canvas colour, so there
+     it takes CanvasText. */
+  [data-state="live"] [data-live-dot]::before {
     content: "";
     display: inline-block;
-    vertical-align: middle;
+    vertical-align: calc(var(--sp-unit) / 4);
     inline-size: --spacing(1.75);
     block-size: --spacing(1.75);
     margin-inline-end: --spacing(1.5);
@@ -352,12 +396,12 @@
     background: currentColor;
   }
   @media (prefers-reduced-motion: no-preference) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    [data-state="live"] [data-live-dot]::before {
       animation: now-pulse var(--d-sig) var(--ez-out) infinite;
     }
   }
   @media (forced-colors: active) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    [data-state="live"] [data-live-dot]::before {
       forced-color-adjust: none;
       background: CanvasText;
     }

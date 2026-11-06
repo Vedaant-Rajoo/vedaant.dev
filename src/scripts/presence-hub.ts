@@ -107,10 +107,8 @@ function showArtwork(widget: HTMLElement, { artwork = null }: NowPlaying) {
 const attribute = (element: Element, name: string, value: string | null) =>
   value ? element.setAttribute(name, value) : element.removeAttribute(name);
 
-function texts(kind: string | undefined, shown: string, value: NowPlaying, widget: HTMLElement) {
-  return kind === 'presence'
-    ? presenceText(shown, value)
-    : nowPlayingText(shown, value, widget.dataset.variant === 'cell' ? ' ' : ' · ');
+function texts(kind: string | undefined, shown: string, value: NowPlaying) {
+  return kind === 'presence' ? presenceText(shown, value) : nowPlayingText(shown, value);
 }
 
 // A feed's own texts, as the coding cell's, replace the music widgets'.
@@ -131,7 +129,7 @@ function show(widget: HTMLElement, state: string, value: NowPlaying | Coding, te
   write(
     widget,
     kind,
-    text?.(value as never, widget) ?? texts(kind, shown, value as NowPlaying, widget),
+    text?.(value as never, widget) ?? texts(kind, shown, value as NowPlaying),
     value.at,
   );
 }

@@ -1,5 +1,6 @@
 ---
 import { type Coding, codingText, tag, tags } from '../data/coding';
+import { site } from '../data/site';
 import { coding } from '../data/wakatime';
 import Arrow from './Arrow.astro';
 
@@ -9,13 +10,16 @@ interface Props {
 }
 
 const { value = coding, state = value.state } = Astro.props;
-const text = codingText(value);
-const fills = ['fill-fg', 'fill-fg-2', 'fill-fg-3'];
-const bars = ['bg-fg', 'bg-fg-2', 'bg-fg-3'];
-// Six slots keep the bar and open legend steady as the mix refreshes.
+const text = codingText(value, { dataset: { zone: site.timeZone } });
+// Each named share its own step of the neutral ramp, strongest first. 'other' is hatched instead,
+// so the sixth slot, which only it fills, shares the fifth's.
+const fills = ['fill-ramp-5', 'fill-ramp-4', 'fill-ramp-3', 'fill-ramp-2', 'fill-ramp-1'];
+const bars = ['bg-ramp-5', 'bg-ramp-4', 'bg-ramp-3', 'bg-ramp-2', 'bg-ramp-1'];
+// Six slots keep the bar steady as the mix refreshes.
 const slots = Array.from({ length: 6 }, (_, i) => ({
   share: value.shares[i],
-  fill: fills[i % fills.length],
+  fill: fills[Math.min(i, 4)],
+  bar: bars[Math.min(i, 4)],
   x: value.shares.slice(0, i).reduce((sum, { percent }) => sum + percent, 0),
 }));
 ---
@@ -23,15 +27,18 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
 <div
   data-widget="coding"
   data-state={state}
+  data-zone={site.timeZone}
   data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
   aria-live="off"
   aria-busy={state === 'loading' ? 'true' : undefined}
   class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
 >
+  {/* The heartbeat fills a box as wide as its longest text, "last heartbeat 14 Nov, 22:45", which a
+      narrow cell moves under the label in every state alike, so no state changes the height. */}
   <div class="flex flex-col gap-2.5 py-2">
-    <span class="flex items-center gap-2">
+    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span class="meta shrink-0 text-xs text-fg-3">coding</span>
-      <span class="meta ml-auto h-5 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
+      <span class="meta ml-auto h-5 w-52 min-w-0 truncate text-right text-xs leading-5 text-fg-3"
         ><time data-coding="time" datetime={value.at}>{text.time}</time></span
       >
     </span>
@@ -45,7 +52,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
   <language-mix data-tags={JSON.stringify(tags)} class="flex grow flex-col gap-2">
     {/* The legend below is the bar's text for keyboards, touch and screen readers; the hover tooltips repeat it. */}
     <div data-mix-bar aria-hidden="true" class="relative h-1.5">
-      {slots.map(({ share, x }, i) => (
+      {slots.map(({ share, bar, x }, i) => (
         <span
           data-mix-segment
           data-other={share?.name === 'other' ? '' : undefined}
@@ -53,7 +60,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
           style={`--x: ${x}; --w: ${share?.percent ?? 0}`}
         >
           {/* The 2px gap before each later segment separates it, and leaves an empty one undrawn. */}
-          <span data-mix-fill class:list={['absolute right-0 top-2.25 h-1.5', bars[i % bars.length], i > 0 ? 'left-0.5' : 'left-0']} />
+          <span data-mix-fill class:list={['absolute right-0 top-2.25 h-1.5', bar, i > 0 ? 'left-0.5' : 'left-0']} />
           <span data-mix-tip class="invisible absolute bottom-6 flex w-max items-center gap-2 rounded-lg border border-line bg-bg px-2.5 py-2 group-hover/segment:visible">
             <span data-mix-tag class="meta rounded-sm border border-line-2 px-1 text-xs text-fg-2">{share ? tag(tags, share.name) : ''}</span>
             <span data-mix-name class="text-sm font-medium">{share?.name ?? (i === 0 ? '—' : '')}</span>
@@ -62,32 +69,28 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
         </span>
       ))}
     </div>
-    <div class="relative mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
-      <details class="group -my-3.5">
-        <summary class="meta target link cursor-pointer list-none gap-1 whitespace-nowrap text-xs text-fg-2">
-          <span>language mix · last 30 days</span>
-          <span aria-hidden="true" class="group-open:hidden">+</span>
-          <span aria-hidden="true" class="hidden group-open:inline">−</span>
+    {/* The legend opens below its summary, over the credit, so the cell keeps its height. */}
+    <div class="mt-auto flex flex-wrap items-center justify-between gap-1 pt-2">
+      <details class="relative -my-3.5">
+        <summary class="meta target link cursor-pointer list-none whitespace-nowrap text-xs text-fg-2">
+          <span>language mix · last 30 days<span data-marker></span></span>
         </summary>
-        <div class="absolute bottom-full left-0 z-10 mb-2 w-60 max-w-full rounded-lg border border-line bg-bg p-4">
-          <p class="meta mb-3 text-xs text-fg-3">language mix · last 30 days</p>
-          {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
-          <ul role="list" class="meta grid gap-2 text-xs text-fg-3">
-            {slots.map(({ share, fill }, i) => (
-              <li data-other={share?.name === 'other' ? '' : undefined} class="flex h-4 min-w-0 items-center gap-2 leading-4">
-                <svg aria-hidden="true" class="size-2 shrink-0">
-                  <rect width="100%" height="100%" class={fill} />
-                  <line class="other stroke-fg-3" x2="100%" y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
-                </svg>
-                <span data-mix-name class="truncate">{share?.name ?? (i === 0 ? '—' : '')}</span>
-                <span data-mix-percent class="ml-auto w-8 shrink-0 text-right">{share ? `${share.percent}%` : ''}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+        <ul role="list" class="meta absolute top-full left-0 z-10 -mt-2 grid w-56 gap-2 rounded-lg border border-line bg-bg px-2.5 py-2 text-xs text-fg-3">
+          {slots.map(({ share, fill }, i) => (
+            <li data-other={share?.name === 'other' ? '' : undefined} class="flex h-4 min-w-0 items-center gap-2 leading-4">
+              <svg aria-hidden="true" class="size-2 shrink-0">
+                <rect width="100%" height="100%" class={fill} />
+                <line class="other stroke-fg-3" x2="100%" y1="50%" y2="50%" stroke-width="100" stroke-dasharray="2 1" />
+              </svg>
+              <span data-mix-name class="truncate">{share?.name ?? (i === 0 ? '—' : '')}</span>
+              <span data-mix-percent class="ml-auto w-8 shrink-0 text-right">{share ? `${share.percent}%` : ''}</span>
+            </li>
+          ))}
+        </ul>
       </details>
       <a href="https://wakatime.com/" class="meta target link -my-3.5 ml-auto shrink-0 text-xs text-fg-3">
-        <span>via wakatime <Arrow>↗</Arrow></span>
+        <span>via wakatime<Arrow>↗</Arrow></span>
       </a>
     </div>
   </language-mix>
@@ -103,9 +106,12 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
     display: none;
   }
 
-  /* A legend row without a share keeps its height but shows nothing, or only "—" when the mix is
-     empty; one with a share shows its swatch, solid, or dashed for 'other'. */
-  li:has([data-mix-name]:empty),
+  /* The open legend lists only the shares, or "—" alone when the mix is empty. It opens downward,
+     so a row that a refresh drops moves no other row. A share shows its swatch, solid, or dashed
+     for 'other'. */
+  li:has([data-mix-name]:empty) {
+    display: none;
+  }
   li:has([data-mix-percent]:empty) svg {
     visibility: hidden;
   }
@@ -195,6 +201,12 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
         }
       });
       this.onpointerleave = () => this.toggleAttribute('data-quiet', false);
+      // A click outside the open legend closes it, as a popup's would.
+      document.addEventListener('click', (event) => {
+        if (details?.open && !details.contains(event.target as Node)) {
+          details.open = false;
+        }
+      });
     }
 
     attributeChangedCallback() {

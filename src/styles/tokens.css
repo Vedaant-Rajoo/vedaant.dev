@@ -16,6 +16,13 @@
     /* Code blocks, not in the doc: keywords and strings, each ≥8:1 on --c-surface. */
     --c-code-keyword: light-dark(oklch(41% 0.12 300), oklch(78% 0.09 300));
     --c-code-string: light-dark(oklch(41% 0.1 45), oklch(78% 0.09 45));
+    /* A neutral ramp for data marks, not in the doc: five steps 10% of lightness apart, weakest to
+       strongest, each ≥3:1 on --c-bg. The language mix gives each named share its own step. */
+    --c-ramp-1: light-dark(oklch(62% 0.01 260), oklch(53% 0.008 260));
+    --c-ramp-2: light-dark(oklch(52% 0.01 260), oklch(63% 0.008 260));
+    --c-ramp-3: light-dark(oklch(42% 0.01 260), oklch(73% 0.008 260));
+    --c-ramp-4: light-dark(oklch(32% 0.01 260), oklch(83% 0.008 260));
+    --c-ramp-5: light-dark(oklch(22% 0.01 260), oklch(93% 0.008 260));
 
     /* <Font /> in Base.astro defines --ff-geist*: the family, its metric fallback, the stack.
        The var() fallbacks repeat the stacks from astro.config.mjs for a page without <Font />. */
@@ -89,6 +96,11 @@
       --c-focus: #2f6fd6;
       --c-code-keyword: #553781;
       --c-code-string: #753515;
+      --c-ramp-1: #83868c;
+      --c-ramp-2: #66696f;
+      --c-ramp-3: #4a4d53;
+      --c-ramp-4: #303338;
+      --c-ramp-5: #181b1f;
     }
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
@@ -105,6 +117,11 @@
         --c-focus: #86aef5;
         --c-code-keyword: #c0abe9;
         --c-code-string: #e8a587;
+        --c-ramp-1: #696c71;
+        --c-ramp-2: #86898e;
+        --c-ramp-3: #a5a8ad;
+        --c-ramp-4: #c4c7cd;
+        --c-ramp-5: #e5e8ed;
       }
     }
     :root[data-theme="dark"] {
@@ -121,6 +138,11 @@
       --c-focus: #86aef5;
       --c-code-keyword: #c0abe9;
       --c-code-string: #e8a587;
+      --c-ramp-1: #696c71;
+      --c-ramp-2: #86898e;
+      --c-ramp-3: #a5a8ad;
+      --c-ramp-4: #c4c7cd;
+      --c-ramp-5: #e5e8ed;
     }
   }
 

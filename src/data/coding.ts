@@ -1,5 +1,3 @@
-import { minute } from './now-playing';
-
 // The same public value at build and in the hub; private WakaTime fields never reach the page.
 export interface Coding {
   state: 'idle' | 'empty';
@@ -105,6 +103,12 @@ export const tag = (glyphs: Record<string, string>, name: string) =>
   glyphs[name] ?? `.${name.toLowerCase()}`;
 const language = (value: unknown) => (typeof value === 'string' && known.has(value) ? value : null);
 const states = new Set<unknown>(['idle', 'empty']);
+// A whole minute in toISOString's form, as now-playing.ts's minute(); repeated so the /now cell's
+// script imports nothing from the module every page loads, which would split it into a chunk.
+const minute = (value: unknown) => {
+  const time = typeof value === 'string' ? Date.parse(value) : Number.NaN;
+  return time % 60_000 === 0 && new Date(time).toISOString() === value;
+};
 
 // Checks the coding value of a parsed /api/activity body in the form the Function writes; null for
 // anything else, so the hub treats it as a failure.
@@ -116,12 +120,9 @@ export function codingFromLive(body: unknown): Coding | null {
     shares.length <= 6 &&
     shares.every(
       (share, i) =>
-        (share?.name === 'other'
-          ? i === shares.length - 1
-          : language(share?.name) === share?.name && typeof share?.name === 'string') &&
+        (share?.name === 'other' ? i === shares.length - 1 : known.has(share?.name)) &&
         Number.isInteger(share?.percent) &&
-        share.percent > 0 &&
-        share.percent <= 100,
+        share.percent > 0,
     ) &&
     new Set(shares.map(({ name }) => name)).size === shares.length &&
     (shares.length < 6 || shares[5].name === 'other') &&
@@ -131,7 +132,7 @@ export function codingFromLive(body: unknown): Coding | null {
     states.has(state) &&
     // Only an empty day has no time, so an idle cell always has one to show.
     (state === 'empty') === (today === null) &&
-    (name === null || language(name) === name) &&
+    language(name) === name &&
     (today === null || (typeof today === 'string' && /^(?:\d+h )?\d+m$/.test(today))) &&
     (at === null || minute(at)) &&
     validShares;
@@ -146,18 +147,40 @@ export function codingFromLive(body: unknown): Coding | null {
     : null;
 }
 
-// The /now cell's text: the day's time and top language, and the last heartbeat's UTC minute. The
-// value can be up to a day old, kept by the build or by /api/activity, so its day is the last
-// heartbeat's, "that day", not "today". Empty, or offline with nothing known, reads "—".
-export function codingText({ language: name, today, at }: Coding) {
+// The /now cell's text: the day's time and top language, and the last heartbeat's minute in the
+// owner's zone, as the clock shows it: the cell's data-zone, site.timeZone. The value can be up to
+// a day old, kept by the build or by /api/activity, so its day is the last heartbeat's, "that
+// day", not "today", and the heartbeat names its date. Empty, or offline with nothing known, reads
+// "—".
+export function codingText(
+  { language: name, today, at }: Coding,
+  { dataset: { zone } }: { dataset: DOMStringMap },
+) {
   if (!today) {
     return { today: '—', language: '', time: '' };
   }
   return {
     today: `${today} that day`,
     language: name ? `top language ${name}` : '',
-    time: at ? `heartbeat ${at.slice(0, 16)}Z` : '',
+    time: at ? `last heartbeat ${heartbeat(at, zone)}` : '',
   };
+}
+
+// "4 Nov, 22:45": 'en' parts, because Node's en-GB writes "Sept", in the clock's 24-hour form.
+function heartbeat(at: string, zone?: string) {
+  const part = Object.fromEntries(
+    new Intl.DateTimeFormat('en', {
+      timeZone: zone,
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(Date.parse(at))
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${part.day} ${part.month}, ${part.hour}:${part.minute}`;
 }
 
 // One share of the 30-day language mix, in whole percent; 'other' gathers the rest.

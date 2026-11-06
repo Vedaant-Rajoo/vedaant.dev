@@ -1,10 +1,10 @@
 ---
 import Row from '../components/Row.astro';
 import SectionLabel from '../components/SectionLabel.astro';
+import ShelfRow from '../components/ShelfRow.astro';
 import { day, initials } from '../data/format';
-import { onRepeat } from '../data/on-repeat';
 import { shelf } from '../data/shelf';
-import { listeningText, readingText, stars, watchedText, withYear } from '../data/shelf-live';
+import { stars, withYear } from '../data/shelf-live';
 import Base from '../layouts/Base.astro';
 
 const { updated, summary } = shelf;
@@ -13,11 +13,6 @@ const lists = [
   { label: 'films', items: shelf.films },
   { label: 'books', items: shelf.books },
 ].filter(({ items }) => items.length > 0);
-// The three rows the hub keeps current, from their build-time values: always all three, a row with
-// nothing current as "—", so an answer never adds or removes one.
-const reading = readingText(shelf.reading ?? null);
-const watched = watchedText(shelf.lastWatched ?? null);
-const listening = listeningText(onRepeat ?? null);
 ---
 
 <Base title="shelf" description={summary} class="max-w-wide">
@@ -28,31 +23,12 @@ const listening = listeningText(onRepeat ?? null);
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
-  {/* Rows put the sub line under the title, as writing's do; last watched's stars follow it. Stars
-      are in the sans at the sub line's size, as on board 15, and hidden from screen readers, which
-      hear the rating instead. Each row is a widget the hub fills from /api/activity. */}
   <section>
     {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
     <ul role="list" class="divide-y divide-line">
-      <li data-widget="reading">
-        <Row live tile={reading.tile} title={reading.title} sub={reading.sub}>
-          <span data-row="meta">{reading.meta}</span>
-        </Row>
-      </li>
-      <li data-widget="last-watched">
-        <Row live tile={watched.tile} title={watched.title} sub={watched.sub}>
-          <Fragment slot="chips">
-            <span aria-hidden="true" data-row="stars">{watched.stars}</span>
-            <span class="sr-only" data-row="rated">{watched.rated}</span>
-          </Fragment>
-          <time data-row="meta" datetime={watched.date}>{watched.meta}</time>
-        </Row>
-      </li>
-      <li data-widget="on-repeat">
-        <Row live tile={listening.tile} title={listening.title} sub={listening.sub}>
-          <span data-row="meta">{listening.meta}</span>
-        </Row>
-      </li>
+      <ShelfRow kind="reading" />
+      <ShelfRow kind="last-watched" />
+      <ShelfRow kind="on-repeat" />
     </ul>
   </section>
   <div class="lists">
@@ -70,7 +46,6 @@ const listening = listeningText(onRepeat ?? null);
                   sub={`${item.creator} · ${item.sentence}`}
                   href={item.link}
                 >
-                  <Fragment slot="chips" />
                   {label !== 'films' && <time>{item.year}</time>}
                   {'rating' in item && typeof item.rating === 'number' && (
                     <>
@@ -91,33 +66,37 @@ const listening = listeningText(onRepeat ?? null);
 </Base>
 
 <script>
-  import { shelfFromLive, shelfText } from '../data/shelf-live';
+  import { type Shelf, shelfFromLive, shelfText } from '../data/shelf-live';
   import type { Hub } from '../scripts/presence-hub';
 
   // The rows' one feed, added to the hub once it is defined, so its code loads on /shelf alone. The
   // hub reads /api/activity at once, then when the answer goes stale, at most a day after a success.
+  // The hub writes the texts; last watched's whole day goes in its <abbr>, as at build.
   customElements.whenDefined('presence-hub').then(() => {
     const hub = document.querySelector('presence-hub') as Hub;
-    hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+    hub.add(
+      '/api/activity',
+      ['reading', 'last-watched', 'on-repeat'],
+      shelfFromLive,
+      (value: Shelf, widget: HTMLElement) => {
+        const texts = shelfText(value, widget);
+        const abbr = widget.querySelector('abbr');
+        if (abbr && texts && 'full' in texts) {
+          abbr.title = texts.full;
+        }
+        return texts;
+      },
+    );
   });
 </script>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
-  section {
-    margin-block-start: var(--sp-section);
-  }
   /* Albums beside films when two 18rem columns fit, as on board 15; books take the whole width. */
   .lists {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 72), 100%), 1fr));
     gap: calc(var(--sp-unit) * 10) calc(var(--sp-unit) * 12);
     margin-block-start: var(--sp-section);
-  }
-  .lists > section {
-    margin-block-start: 0;
   }
   .books {
     grid-column: 1 / -1;

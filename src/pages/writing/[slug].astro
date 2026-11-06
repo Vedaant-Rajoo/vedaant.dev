@@ -46,7 +46,7 @@ const link = 'target link flex-1 basis-48';
     author: { '@type': 'Person', name: site.fullName, url: Astro.site?.href },
   }}
 >
-  <article class="writing-post wrap-anywhere">
+  <article class="wrap-anywhere">
     <header class="flex flex-col gap-3">
       <h1 class="text-2xl font-semibold">{data.title}</h1>
       <p class="meta text-xs text-fg-3">
@@ -82,12 +82,12 @@ const link = 'target link flex-1 basis-48';
         <nav aria-label="Other writing" class="piece-links meta flex flex-wrap gap-2 border-t border-line pt-6 text-sm">
           {previous && (
             <a href={`/writing/${previous.id}`} class={link}>
-              <span><Arrow>←</Arrow> {previous.data.title}</span>
+              <span><Arrow>←</Arrow>{previous.data.title}</span>
             </a>
           )}
           {next && (
             <a href={`/writing/${next.id}`} class={`${link} justify-end text-right`}>
-              <span>{next.data.title} <Arrow>→</Arrow></span>
+              <span>{next.data.title}<Arrow>→</Arrow></span>
             </a>
           )}
         </nav>
@@ -97,17 +97,8 @@ const link = 'target link flex-1 basis-48';
 </Base>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
   .related,
   .piece-links {
     margin-block-start: var(--sp-section);
-  }
-  /* shortcut: internal links are root-relative; absolute web links are outbound. If
-     absolute internal URLs are needed, classify against the configured site origin instead. */
-  .writing-post :global(.prose a:is([href^="https://"], [href^="http://"], [href^="//"]))::after {
-    content: ' ↗' / '';
-    font-family: var(--ff-sans);
   }
 </style>

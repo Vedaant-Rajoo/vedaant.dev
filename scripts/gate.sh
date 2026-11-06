@@ -23,11 +23,11 @@ grep -q '^Result (' "$tmp/log" || fail 'astro check printed no Result line, so i
 step '2/10 bun test'
 run bun test
 
-step '3/10 bun run build with every remote host unreachable and no Last.fm or WakaTime key'
+step '3/10 bun run build with every remote host unreachable and no Last.fm, WakaTime or GitHub key'
 command -v sandbox-exec > /dev/null || fail 'the offline build needs sandbox-exec (macOS)'
 # astro build opens a socket on this machine, so only localhost stays reachable. The blank keys
 # override a local .env, so the gate builds the unset path, as CI does, and never reads a key.
-run env LASTFM_API_KEY= WAKATIME_API_KEY= sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
+run env LASTFM_API_KEY= WAKATIME_API_KEY= CONTRIBUTIONS_TOKEN= sandbox-exec -p '(version 1)(allow default)(deny network-outbound (remote ip))
   (allow network-outbound (remote ip "localhost:*"))' bun run build
 [ "$(grep -c 'lastfm: no value from Last.fm (no LASTFM_API_KEY)' "$tmp/log")" -eq 1 ] &&
   [ "$(grep -c 'lastfm:' "$tmp/log")" -eq 1 ] ||
@@ -35,6 +35,9 @@ run env LASTFM_API_KEY= WAKATIME_API_KEY= sandbox-exec -p '(version 1)(allow def
 [ "$(grep -c 'wakatime: no value from WakaTime (no WAKATIME_API_KEY)' "$tmp/log")" -eq 1 ] &&
   [ "$(grep -c 'wakatime:' "$tmp/log")" -eq 1 ] ||
   fail 'the build did not fall back to the committed WakaTime snapshot exactly once, for no key'
+[ "$(grep -c 'contributions: no value from GitHub (no CONTRIBUTIONS_TOKEN)' "$tmp/log")" -eq 1 ] &&
+  [ "$(grep -c 'contributions:' "$tmp/log")" -eq 1 ] ||
+  fail 'the build did not fall back to the committed contributions snapshot exactly once, for no key'
 [ "$(grep -c 'shelf: no on-repeat album from Last.fm (no LASTFM_API_KEY)' "$tmp/log")" -eq 1 ] &&
   [ "$(grep -c 'shelf:' "$tmp/log")" -eq 1 ] ||
   fail 'the build did not fall back to the on-repeat row in shelf.json exactly once, for no key'
@@ -67,12 +70,12 @@ routes=$(bun -e 'const r = await Bun.stdin.json(); console.log(JSON.stringify([r
 step '6/10 client JavaScript names no third-party API host'
 # The browser reads only /api/*, and the artwork is an <img>. fromLive's escaped pattern for
 # Cover Art Archive (coverartarchive\.org\/release) is not a match.
-grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release|wakatime\.com|letterboxd\.com|hardcover\.app' \
+grep -l -E 'ws\.audioscrobbler\.com|musicbrainz\.org|coverartarchive\.org/release|wakatime\.com|letterboxd\.com|hardcover\.app|api\.github\.com' \
   dist/_astro/*.js && fail 'a script names a third-party API host, in the files above'
 # grep exits 2 when it cannot read a file, or when no file matches the glob.
 [ "$?" -eq 1 ] || fail 'grep could not read dist/_astro/*.js'
 
-step '7/10 bun scripts/pages.ts: widgets, JS at most 5,120 B gzip, sizes, titles'
+step '7/10 bun scripts/pages.ts: widgets, JS budgets, sizes, titles'
 bun scripts/pages.ts || fail 'bun scripts/pages.ts'
 
 step '8/10 bun scripts/csp-hash.ts: the CSP allows the theme restore as built'

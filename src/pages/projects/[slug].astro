@@ -44,12 +44,12 @@ const back = 'target link -my-3.5';
   <header class="flex flex-col gap-3.5">
     <p class="meta text-xs text-fg-3">
       <a href="/projects" class={back}>
-        <span><Arrow>←</Arrow> projects</span>
+        <span><Arrow>←</Arrow>projects</span>
       </a>
     </p>
     <h1 class="text-2xl font-semibold">{data.title}</h1>
     <p class="text-lg">{data.summary}</p>
-    <p class="meta flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-fg-3">
+    <p class="meta flex flex-wrap items-center gap-x-1.5 gap-y-2 text-xs text-fg-3">
       <time>{data.year}</time>
       {data.stack.length > 0 && <span>·</span>}
       {data.stack.map((name) => <Chip label={name} />)}
@@ -59,7 +59,7 @@ const back = 'target link -my-3.5';
             <span>·</span>
             <a href={href} class="target link">
               <span>
-                {label} <Arrow>↗</Arrow>
+                {label}<Arrow>↗</Arrow>
               </span>
             </a>
           </>
@@ -81,7 +81,7 @@ const back = 'target link -my-3.5';
   <footer class="flex flex-wrap justify-between gap-x-3 gap-y-3.5 border-t border-line pt-6">
     <p class="meta text-xs text-fg-3">
       <a href="/projects" class={back}>
-        <span><Arrow>←</Arrow> all projects</span>
+        <span><Arrow>←</Arrow>all projects</span>
       </a>
     </p>
     {
@@ -101,9 +101,6 @@ const back = 'target link -my-3.5';
 </Base>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
   footer {
     margin-block-start: var(--sp-section);
   }

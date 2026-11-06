@@ -31,9 +31,7 @@ const [ask, link, fix] = notFound.report;
       {
         rows.map(({ word, href, tile, sub }) => (
           <li>
-            <Row tile={tile} title={word} sub={sub} href={href}>
-              <Arrow>→</Arrow>
-            </Row>
+            <Row tile={tile} title={word} sub={sub} href={href} />
           </li>
         ))
       }
@@ -44,7 +42,7 @@ const [ask, link, fix] = notFound.report;
       id="report"
       href={`mailto:${site.email}`}
       class="link -my-3.5 inline-flex min-h-11 items-center text-fg"
-      ><span>{link} <Arrow>→</Arrow></span></a
+      ><span>{link}<Arrow>→</Arrow></span></a
     >{fix}<span class="noscript:hidden"> {notFound.note}</span>
   </p>
   <script>
@@ -62,7 +60,6 @@ const [ask, link, fix] = notFound.report;
 
 <style>
   h1,
-  section,
   .report {
     margin-block-start: var(--sp-section);
   }

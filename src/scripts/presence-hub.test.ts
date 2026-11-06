@@ -257,8 +257,11 @@ test('a timer never waits past a day, even after the clock moves back', async ()
   assert.equal(delay(), 86_400_000);
 });
 
+// The coding cell names the clock's zone, as Coding.astro writes it.
+const zone = 'Asia/Kolkata';
+
 test('/now: the coding cell reads the coding value alone and keeps its text without one', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'idle' }, ['today', 'language', 'time']);
+  const cell = new Widget({ widget: 'coding', state: 'idle', zone }, ['today', 'language', 'time']);
   widgets = [cell];
   hub.connectedCallback();
   hub.add('/api/activity', ['coding'], codingFromLive, codingText);
@@ -278,7 +281,11 @@ test('/now: the coding cell reads the coding value alone and keeps its text with
 });
 
 test('an empty coding holder gains and clears its heartbeat datetime', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'empty' }, ['today', 'language', 'time']);
+  const cell = new Widget({ widget: 'coding', state: 'empty', zone }, [
+    'today',
+    'language',
+    'time',
+  ]);
   cell.holders.time.textContent = '';
   widgets = [cell];
   hub.connectedCallback();
@@ -286,7 +293,7 @@ test('an empty coding holder gains and clears its heartbeat datetime', async () 
   answers.push(answer(body()));
   await elapse();
   assert.equal(cell.holders.time.getAttribute('datetime'), body().coding.at);
-  assert.equal(cell.holders.time.textContent, 'heartbeat 2026-11-01T11:00Z');
+  assert.equal(cell.holders.time.textContent, 'last heartbeat 1 Nov, 16:30');
   answers.push(
     answer({ coding: { state: 'empty', language: null, today: null, at: null, shares: [] } }),
   );
@@ -296,7 +303,7 @@ test('an empty coding holder gains and clears its heartbeat datetime', async () 
 });
 
 test('a daily coding snapshot keeps an absolute heartbeat after a hidden page resumes', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'idle' }, ['today', 'language', 'time']);
+  const cell = new Widget({ widget: 'coding', state: 'idle', zone }, ['today', 'language', 'time']);
   widgets = [cell];
   hub.connectedCallback();
   hub.add('/api/activity', ['coding'], codingFromLive, codingText);
@@ -304,7 +311,7 @@ test('a daily coding snapshot keeps an absolute heartbeat after a hidden page re
   snapshot.coding.at = '2026-11-01T11:55:00.000Z';
   answers.push(answer(snapshot));
   await elapse();
-  const heartbeat = 'heartbeat 2026-11-01T11:55Z';
+  const heartbeat = 'last heartbeat 1 Nov, 17:25';
   assert.equal(cell.holders.time.textContent, heartbeat);
   page.hidden = true;
   for (const listener of listeners) {
@@ -322,7 +329,8 @@ test('a daily coding snapshot keeps an absolute heartbeat after a hidden page re
 
 test('the music widgets ask /api/now-playing each minute, by its Expires', async () => {
   const line = new Widget({ widget: 'presence', state: 'idle' }, ['state', 'track', 'artist']);
-  widgets = [line];
+  const cell = new Widget({ widget: 'now-playing', state: 'idle' }, ['track', 'rest', 'time']);
+  widgets = [line, cell];
   hub.connectedCallback();
   const track = {
     state: 'idle',
@@ -336,6 +344,10 @@ test('the music widgets ask /api/now-playing each minute, by its Expires', async
   answers.push(answer(track, 60), answer(track, 60, 50));
   assert.equal(await elapse(), 0);
   assert.equal(line.holders.track.textContent, 'Song');
+  // The /now cell puts the artist on a line of its own, with no separator before it.
+  assert.equal(cell.holders.track.textContent, 'Song');
+  assert.equal(cell.holders.rest.textContent, '\u2068Band\u2069');
+  assert.equal(cell.holders.time.getAttribute('datetime'), track.at);
   assert.equal(await elapse(), 60_000);
   // A hit 50 s old goes stale in 10 s, but the next poll waits the minute.
   assert.equal(delay(), 60_000);

@@ -1,7 +1,9 @@
 ---
 import Arrow from '../components/Arrow.astro';
 import Coding from '../components/Coding.astro';
+import Heatmap from '../components/Heatmap.astro';
 import NowPlaying from '../components/NowPlaying.astro';
+import ShelfCell from '../components/ShelfCell.astro';
 import { day } from '../data/format';
 import { nowEntry } from '../data/now';
 import { site } from '../data/site';
@@ -27,12 +29,13 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
 <Base title="now" description={summary} class="max-w-wide">
   <header class="flex max-w-col flex-col gap-3">
     <h1 class="text-2xl font-semibold">now</h1>
+    {/* Links in this line keep its height (WCAG 2.5.8's inline exception), as in the footer's. */}
     <p class="meta text-xs text-fg-3">
-      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="target link"><span>history <Arrow>↗</Arrow></span></a> · <a href="/uses" class="target link"><span>how I work <Arrow>→</Arrow></span></a>
+      updated <time datetime={updated} class="whitespace-nowrap">{day(updated)}</time>{stale && ' (it has been a while)'} · from {from} · <a href={site.history} class="link">history<Arrow>↗</Arrow></a> · <a href="/uses" class="link">how I work<Arrow>→</Arrow></a>
     </p>
     <p class="text-fg-2">{summary}</p>
   </header>
-  <dl>
+  <dl class="labels">
     {
       sections.map(({ label, html }) => (
         <>
@@ -45,60 +48,24 @@ const stale = Math.floor((Date.now() - Date.parse(updated)) / 86_400_000) > 60;
   <section class="flex flex-col gap-4">
     <p class="meta text-xs text-fg-3">music live, coding as tracked · refreshes while you look · degrades to the last known value</p>
     <div class="bento grid gap-3">
-      <NowPlaying variant="cell" />
+      <NowPlaying />
       <Coding />
+      <Heatmap />
+      <ShelfCell kind="last-watched" />
+      <ShelfCell kind="reading" />
     </div>
   </section>
 </Base>
 
 <style>
-  header {
-    margin-block: var(--sp-section);
-  }
-  section {
-    margin-block-start: var(--sp-section);
-  }
   .bento {
     grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--sp-unit) * 80), 100%), 1fr));
   }
-  /* The labels: a mono column 96px wide beside the prose, in 65ch inside a 40rem column. A dd's
-     basis is the rest of its line, and at least 11rem, so each pair starts a line, and with large
-     text the dd moves under its label, as in the decisions grid. A long word or URL breaks rather
-     than widen the page. */
+  /* The sections in the label column (global.css), in 65ch inside a 40rem column. */
   dl {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: calc(var(--sp-unit) * 2.5) calc(var(--sp-unit) * 4);
     max-width: min(var(--w-col), var(--w-measure));
-    overflow-wrap: anywhere;
-  }
-  dt {
-    flex: 0 0 calc(var(--sp-unit) * 24);
-    font-family: var(--ff-mono);
-    font-feature-settings: var(--mono-features);
-    font-size: var(--fs-xs);
-    line-height: var(--lh-snug);
-    letter-spacing: var(--ls-mono);
-    color: var(--c-fg-3);
-  }
-  dd {
-    flex: 1 1 max(calc(var(--sp-unit) * 44), 100% - calc(var(--sp-unit) * 28));
-    min-width: 0;
   }
   dd :global(p + p) {
     margin-block-start: var(--sp-row);
-  }
-  /* Longhands, because Tailwind scans this file: the shorthand property's name is also a
-     utility's, which would then compile into every page's CSS. */
-  dd :global(a) {
-    text-decoration-line: underline;
-    text-decoration-color: var(--c-line-2);
-    transition-property: text-decoration-color;
-    transition-duration: var(--d-1);
-    transition-timing-function: var(--ez-out);
-  }
-  dd :global(a:hover) {
-    text-decoration-color: var(--c-fg);
   }
 </style>

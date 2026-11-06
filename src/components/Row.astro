@@ -14,7 +14,8 @@ interface Props {
   note?: string;
   links?: { label: string; href: string }[];
   // A row the hub rewrites: data-row hooks on the tile, title and sub texts, one line each for the
-  // title and the sub line, and a fixed meta cell, so no new text changes its height (CLS 0).
+  // title and the sub line, and a meta cell of fixed width, one line for the hub's text and then
+  // the links, its source's credit, so no new text changes its height (CLS 0).
   live?: boolean;
 }
 
@@ -34,18 +35,19 @@ const {
 // Links do not nest: with links of its own in the right cell, a row is not one <a>. Its text is
 // the link instead, and the text's ::after covers the row as its target and its focus ring. A link
 // to the row's own href appears once, as its label, "repo ↗" or "case study →", in place of the ↗
-// after the title.
+// after the title, and is underlined as the cell's other links are: a click on it opens the row.
 const split = href !== undefined && links.some((link) => link.href !== href);
 const labelled = links.some((link) => link.href === href);
 const Tag = (toggle && 'summary') || (href && !split && 'a') || 'div';
 const Text = split ? 'a' : 'span';
-const hasChips = Astro.slots.has('chips') || live;
 ---
 
-{/* One list row: a tile, the title and its sub line, which ends in the chips slot (each chip
-    after a space), then the paired dates, if any, the default slot, the note and the links.
-    These move under the text when the text would get less than 6rem beside them, or 12rem
-    beside a note, links or a live row's fixed cell, room for the widest chip. Spans only, so
+{/* One list row: a tile, the title and under it its sub line, which ends in the chips slot (each
+    chip after a space), then the paired dates, if any, the default slot, the note and the links.
+    These move under the text when the text would get less than 6rem beside them, 12rem beside
+    a note or links, room for the widest chip, or 10rem beside a live row's fixed cell, so a phone
+    from about 370px wide keeps that cell, and the source it credits, on the row's line. Spans
+    only, so
     the row can be a <summary>. A null end is a current role: the live dot, "now", not muted; an
     ended role is muted; a row without dates is neither. A struck row, an archived project, is
     muted and its title struck through. Every row overhangs the column by 8px, so a link's or a
@@ -78,16 +80,16 @@ const hasChips = Astro.slots.has('chips') || live;
     href={split ? href : undefined}
     class:list={[
       'min-w-0 grow wrap-anywhere',
-      note || links.length > 0 || live ? 'basis-48' : 'basis-24',
+      (live && 'basis-40') || ((note || links.length > 0) && 'basis-48') || 'basis-24',
       'leading-(--lh-snug) text-pretty',
       split &&
         'after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus',
     ]}
   >
-    <span data-row={live ? 'title' : undefined} class:list={['font-medium', struck && 'line-through', live && 'block h-lh truncate']}>{title}</span>{href?.startsWith('https://') && !labelled && <> <Arrow>↗</Arrow></>}{' '}
-    <span class:list={['text-sm leading-(--lh-snug) text-fg-2', hasChips ? 'mt-0.5 block' : 'inline-block', live && 'h-lh truncate']}>{!hasChips && '· '}{live ? <span data-row="sub">{sub}</span> : sub}{hasChips && <slot name="chips" />}</span>
+    <span data-row={live ? 'title' : undefined} class:list={['font-medium', struck && 'line-through', live && 'block h-lh truncate']}>{title}</span>{href?.startsWith('https://') && !labelled && <Arrow>↗</Arrow>}{' '}
+    <span class:list={['mt-0.5 block text-sm leading-(--lh-snug) text-fg-2', live && 'h-lh truncate']}>{live ? <span data-row="sub">{sub}</span> : sub}<slot name="chips" /></span>
   </Text>
-  <span class:list={['meta ml-auto text-right text-xs text-fg-3', live && 'h-lh w-24 shrink-0 whitespace-nowrap']}>
+  <span class:list={['meta ml-auto text-right text-xs text-fg-3', live && 'w-30 shrink-0 whitespace-nowrap']}>
     {
       start && (
         <abbr title={`${month(start)} – ${end ? month(end) : 'Present'}`} class:list={['no-underline whitespace-nowrap', (note || links.length > 0) && 'mb-1 block']}>
@@ -96,7 +98,7 @@ const hasChips = Astro.slots.has('chips') || live;
         </abbr>
       )
     }
-    <slot />
+    {live ? <span class:list={['block h-lh', links.length > 0 && 'mb-1']}><slot /></span> : <slot />}
     {note}
     {
       links.map((link, i) => (
@@ -104,16 +106,13 @@ const hasChips = Astro.slots.has('chips') || live;
           {(i > 0 || note) && ' · '}
           {
             link.href === href ? (
-              <span>{link.label} <Arrow>{link.href.startsWith('https://') ? '↗' : '→'}</Arrow></span>
+              <span class="link">{link.label}<Arrow>{link.href.startsWith('https://') ? '↗' : '→'}</Arrow></span>
             ) : (
               <a
                 href={link.href}
                 class="target link relative -my-2.5 justify-end"
               >
-                <span>
-                  {link.label}
-                  {link.href.startsWith('https://') && <> <Arrow>↗</Arrow></>}
-                </span>
+                <span>{link.label}{link.href.startsWith('https://') && <Arrow>↗</Arrow>}</span>
               </a>
             )
           }
