@@ -44,7 +44,6 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'Geist Mono',
       cssVariable: '--ff-geist-mono',
-      display: 'optional',
       fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       options: {
         variants: [
