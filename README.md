@@ -657,9 +657,10 @@ Chores:
 Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with
 Pages Functions for the live values with committed fallbacks, keyless
 artwork and no analytics. Fonts are committed and load through Astro's Fonts
-API. Geist sans is preloaded with `font-display: optional`, so a slow first visit
-may keep the fallback font throughout; mono and the hero's serif are optional
-too. CSS is inlined into each page, so there is no `dist/_astro/*.css` to
+API. Geist sans and Geist Mono are preloaded with `font-display: optional`, so
+both downloads start while the browser parses the head. A slow first visit may
+keep the fallback fonts throughout; the hero's serif is optional too.
+CSS is inlined into each page, so there is no `dist/_astro/*.css` to
 compare; compare each page's `<style>` instead.
 
 The gate and audits do not cover every launch check. Owner accessibility and
