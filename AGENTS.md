@@ -105,15 +105,18 @@ only names tokens and components; where it differs, the pages win.
 - The activity Function answers
   `{ coding, contributions, reading, lastWatched, listening }` from five
   sources in `functions/sources/`, run at once: WakaTime's
-  `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
-  with `WAKATIME_API_KEY`; GitHub's GraphQL contribution calendar with
-  `CONTRIBUTIONS_TOKEN`; Hardcover with `HARDCOVER_TOKEN`; the public
+  `summaries` of the last 7 days, `users/current` and
+  `users/current/stats/last_30_days` with `WAKATIME_API_KEY`; GitHub's GraphQL
+  contribution calendar with `CONTRIBUTIONS_TOKEN`; Hardcover with
+  `HARDCOVER_TOKEN`; the public
   Letterboxd diary feed; Last.fm's `user.getTopAlbums`. It keeps an answer with
   all five a day (86,400 s). A failed source is left out, so only its widget
   keeps its text, and the answer is kept 600 s; a shelf row is `null` when
   nothing is current, which is a value.
-- `coding` is a daily snapshot: the day's time ("that day", never "today"), top
-  language and last heartbeat's minute, plus the rolling 30-day top five
+- `coding` is a daily snapshot: the time ("that day", never "today") and top
+  language of the newest of the last 7 days (in `site.timeZone`) with at least
+  a minute of coding, `—` only when none has one, and the last heartbeat's
+  minute only when it falls on that day; plus the rolling 30-day top five
   languages and `other`, with space reserved to avoid layout shifts. It never
   exposes a project, branch, file or editor name.
 - `contributions` is `{ end, days }`: the public profile's contribution count

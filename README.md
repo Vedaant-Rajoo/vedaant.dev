@@ -350,24 +350,31 @@ refreshes the snapshot on a schedule.
 ## Coding
 
 The `/now` coding cell shows a day's coding time from WakaTime ("2h 10m that
-day", since the value can be up to a day old), the day's top language, the last
-heartbeat's date and minute in the owner's zone (`site.timeZone`), as the
-clock shows them, and the language mix of the last 30 days. Coding has no live state: a heartbeat is tracked activity, never
-presence, so nothing in the cell is green or moves. A day without coding reads
-`—`. Only language names are shown, never a project, branch, file or editor;
+day", since the day can be up to a week old), the day's top language, the last
+heartbeat's date and minute, when it falls on that day, in the owner's zone
+(`site.timeZone`), as the clock shows them, and the language mix of the last 30
+days. Coding has no live state: a heartbeat is tracked activity, never
+presence, so nothing in the cell is green or moves. The day is the newest of
+the last seven, counted in `site.timeZone`, with at least a minute of coding,
+so a day that has barely begun still shows the last one; the cell reads `—`
+only when none of the seven has a minute. The heartbeat is shown only when it
+falls on that day: a few seconds of coding the next day leave the cell with
+the day's time and language alone, never one day's time beside another day's
+heartbeat. Only language names are shown, never a project, branch, file or editor;
 a name outside the list in [src/data/coding.ts](src/data/coding.ts) counts as
 `other`.
 [src/data/wakatime.ts](src/data/wakatime.ts) reads it once per build when
 `WAKATIME_API_KEY` is set, and otherwise, or on failure, logs one `wakatime:`
 warning and uses the committed
-[snapshot](src/data/snapshots/wakatime.json), a day without coding. With
+[snapshot](src/data/snapshots/wakatime.json), a week without coding. With
 JavaScript, the hub reads the `coding` value of
 [`/api/activity`](functions/api/activity.ts) (below) at once, then when the
 answer goes stale, at most a day later, with a backoff of its own. The cell's
 own script adds that feed, so other pages load none of its code. The
-[coding source](functions/sources/coding.ts) asks WakaTime's
-`status_bar/today`, `users/current` and `users/current/stats/last_30_days` with
-the same Bearer token and waits 2.5 seconds at most. The cell is a daily
+[coding source](functions/sources/coding.ts) asks WakaTime's daily
+`summaries` of the last 7 days in `site.timeZone`, `users/current` and
+`users/current/stats/last_30_days` with the same Bearer token and waits 2.5
+seconds at most. The cell is a daily
 snapshot, not minute-by-minute tracking.
 
 The 30-day mix refreshes through the same `/api/activity` poll as the day's time;
@@ -386,7 +393,8 @@ the Settings page to Preview), and `.env` locally. The existing secret name
 stays unchanged. To rotate the token, replace it in both environments and
 start a new deployment in each, as for the Last.fm key.
 The token must allow reading language stats (`read_stats.languages` or
-`read_stats`), as well as today's summary and the current user's heartbeat.
+`read_stats`), as well as the daily summaries (`read_summaries`) and the
+current user's heartbeat.
 
 ## Contributions
 

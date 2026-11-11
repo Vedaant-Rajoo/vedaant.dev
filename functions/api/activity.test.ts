@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { currentUser, lastMonth, statusBar } from '../../src/data/coding';
+import { currentUser, lastMonth, lastWeek } from '../../src/data/coding';
 import { graphql } from '../../src/data/contributions';
 import { topAlbums } from '../../src/data/now-playing';
 import { hardcover, letterboxd } from '../../src/data/shelf-live';
+import site from '../../src/data/site.json';
 import { handle } from './activity';
 
 const env = {
@@ -56,13 +57,17 @@ const calendar = (from: string, to: string) => {
 };
 // Each source's answer as its upstream gives it, secrets the Function must drop included.
 const upstream: Record<string, (init?: RequestInit) => Response | Promise<Response>> = {
-  [statusBar]: () =>
+  // One day, 1 November in Kolkata, which holds the heartbeat.
+  [lastWeek(site.timeZone)]: () =>
     Response.json({
-      data: {
-        grand_total: { total_seconds: 4860 },
-        languages: [{ name: 'TypeScript', total_seconds: 4860 }],
-        projects: [{ name: 'secret-client-work' }],
-      },
+      data: [
+        {
+          grand_total: { total_seconds: 4860 },
+          languages: [{ name: 'TypeScript', total_seconds: 4860 }],
+          projects: [{ name: 'secret-client-work' }],
+          range: { start: '2026-10-31T18:30:00Z', end: '2026-11-01T18:29:59Z' },
+        },
+      ],
     }),
   [currentUser]: () =>
     Response.json({ data: { last_heartbeat_at: heartbeat, last_project: 'secret-client-work' } }),
@@ -290,7 +295,7 @@ test('a failed source is left out, the rest answer, and the answer is kept 10 mi
     ],
     [
       env,
-      { [statusBar]: () => new Response('no', { status: 503 }) },
+      { [lastWeek(site.timeZone)]: () => new Response('no', { status: 503 }) },
       'coding',
       'coding: no value from WakaTime (HTTP 503)',
     ],

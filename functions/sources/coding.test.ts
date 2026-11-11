@@ -1,21 +1,36 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { currentUser, lastMonth, statusBar } from '../../src/data/coding';
+import { currentUser, lastMonth, lastWeek } from '../../src/data/coding';
+import site from '../../src/data/site.json';
 import { load } from './coding';
 
 const key = 'waka-test-token';
+const summaries = lastWeek(site.timeZone);
 const original = { fetch: globalThis.fetch, warn: console.warn, timeout: AbortSignal.timeout };
 let requests: { url: string; init?: RequestInit }[];
 let warnings: string[];
 
-const recent = new Date(Date.now() - 5 * 60_000).toISOString();
-const bar = (seconds = 4860) =>
+// Five minutes ago, on the last of seven days that end a day after it, so it is on today.
+const now = Date.now();
+const recent = new Date(now - 5 * 60_000).toISOString();
+const range = (daysAgo: number) => {
+  const start = now - 5 * 60_000 - 3_600_000 - daysAgo * 86_400_000;
+  return {
+    start: new Date(start).toISOString(),
+    end: new Date(start + 86_399_000).toISOString(),
+    timezone: site.timeZone,
+  };
+};
+// The week's daily summaries, oldest first; the default has coding only today.
+const week = (seconds = [0, 0, 0, 0, 0, 0, 4860]) =>
   Response.json({
-    data: {
-      grand_total: { total_seconds: seconds },
-      languages: [{ name: 'TypeScript', total_seconds: seconds }],
+    data: seconds.map((total, i) => ({
+      grand_total: { total_seconds: total },
+      languages: total ? [{ name: i % 2 ? 'Rust' : 'TypeScript', total_seconds: total }] : [],
       projects: [{ name: 'secret-client-work' }],
-    },
+      editors: [{ name: 'Zed' }],
+      range: range(seconds.length - 1 - i),
+    })),
   });
 const user = (heartbeat: string | null = recent) =>
   Response.json({ data: { last_heartbeat_at: heartbeat, last_project: 'secret-client-work' } });
@@ -41,15 +56,15 @@ const stats = () =>
 
 // Each test answers WakaTime's three endpoints and records the requests.
 function wakatime(answers: {
-  bar?: () => Response | Promise<Response>;
+  week?: () => Response | Promise<Response>;
   user?: () => Response;
   stats?: () => Response | Promise<Response>;
 }) {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, init });
-    if (url === statusBar) {
-      return (answers.bar ?? bar)();
+    if (url === summaries) {
+      return (answers.week ?? week)();
     }
     if (url === lastMonth) {
       return (answers.stats ?? stats)();
@@ -78,16 +93,32 @@ test('loads today and the 30-day mix, and nothing private', async () => {
   assert.equal(value?.state, 'idle');
   assert.equal(value?.language, 'TypeScript');
   assert.equal(value?.today, '1h 21m');
+  assert.equal(value?.at, new Date(Math.floor(Date.parse(recent) / 60_000) * 60_000).toISOString());
   assert.deepEqual(value?.shares, shares);
-  assert.doesNotMatch(JSON.stringify(value), /secret|projects|editors|Zed/);
+  assert.doesNotMatch(JSON.stringify(value), /secret|projects|editors|Zed|Kolkata/);
 });
 
-test('asks WakaTime with a Bearer token alone', async () => {
+test('a today without a minute loads the newest earlier day with one', async () => {
+  wakatime({ week: () => week([0, 3000, 0, 7800, 59, 0, 20]) });
+  const value = await load(key);
+  assert.equal(value?.state, 'idle');
+  assert.equal(value?.today, '2h 10m');
+  assert.equal(value?.language, 'Rust');
+  // The heartbeat is today's, a later day than the one shown, so the cell names none.
+  assert.equal(value?.at, null);
+  assert.deepEqual(value?.shares, shares);
+});
+
+test('asks WakaTime for the week in the site zone, with a Bearer token alone', async () => {
   wakatime({});
   await load(key);
   assert.deepEqual(
     requests.map(({ url }) => url),
-    [statusBar, currentUser, lastMonth],
+    [summaries, currentUser, lastMonth],
+  );
+  assert.equal(
+    summaries,
+    'https://wakatime.com/api/v1/users/current/summaries?range=Last+7+Days&timezone=Asia%2FKolkata',
   );
   for (const { init } of requests) {
     assert.deepEqual(init?.headers, { Authorization: `Bearer ${key}` });
@@ -107,9 +138,9 @@ test('a missing key is no value, and WakaTime is not asked', async () => {
 });
 
 test('oversized WakaTime bodies fail coding alone, with or without Content-Length', async () => {
-  for (const source of ['bar', 'user', 'stats'] as const) {
+  for (const source of ['week', 'user', 'stats'] as const) {
     for (const declared of [false, true]) {
-      const normal = await { bar, user, stats }[source]().json();
+      const normal = await { week, user, stats }[source]().json();
       const body = JSON.stringify({ ...normal, padding: 'x'.repeat(1_048_576) });
       wakatime({
         [source]: () =>
@@ -125,7 +156,7 @@ test('oversized WakaTime bodies fail coding alone, with or without Content-Lengt
 
 test('an upstream error, a bad body or a thrown fetch is no value', async () => {
   const cases: [Parameters<typeof wakatime>[0], string][] = [
-    [{ bar: () => new Response('no', { status: 503 }) }, 'HTTP 503'],
+    [{ week: () => new Response('no', { status: 503 }) }, 'HTTP 503'],
     [{ user: () => new Response('no', { status: 401 }) }, 'HTTP 401'],
     [{ stats: () => new Response('no', { status: 403 }) }, 'HTTP 403'],
     [{ stats: () => Response.json({ data: {} }, { status: 202 }) }, 'HTTP 202'],
@@ -149,11 +180,20 @@ test('an upstream error, a bad body or a thrown fetch is no value', async () => 
       },
       'unexpected body',
     ],
-    [{ bar: () => Response.json({ data: {} }) }, 'unexpected body'],
-    [{ bar: () => new Response('{') }, 'SyntaxError'],
+    [{ week: () => Response.json({ data: {} }) }, 'unexpected body'],
+    [{ week: () => Response.json({ data: [] }) }, 'unexpected body'],
+    // A day without its range cannot be placed, so the whole week fails.
     [
       {
-        bar: () => {
+        week: () =>
+          Response.json({ data: [{ grand_total: { total_seconds: 4860 }, languages: [] }] }),
+      },
+      'unexpected body',
+    ],
+    [{ week: () => new Response('{') }, 'SyntaxError'],
+    [
+      {
+        week: () => {
           throw new TypeError(`network down, ${key} in the request`);
         },
       },
@@ -168,8 +208,8 @@ test('an upstream error, a bad body or a thrown fetch is no value', async () => 
   assert.doesNotMatch(warnings.join('\n'), new RegExp(key));
 });
 
-test('a day with no coding is a value, not a failure', async () => {
-  wakatime({ bar: () => bar(0) });
+test('a week with no day of a minute is a value, not a failure', async () => {
+  wakatime({ week: () => week([0, 59, 0, 0, 30, 0, 0]) });
   assert.deepEqual(await load(key), {
     state: 'empty',
     language: null,
@@ -179,9 +219,9 @@ test('a day with no coding is a value, not a failure', async () => {
   });
 });
 
-test('an empty day with a malformed users/current body is no value', async () => {
+test('an empty week with a malformed users/current body is no value', async () => {
   for (const body of [{ data: {} }, { data: { last_heartbeat_at: 'not a time' } }]) {
-    wakatime({ bar: () => bar(0), user: () => Response.json(body) });
+    wakatime({ week: () => week([0, 0, 0, 0, 0, 0, 0]), user: () => Response.json(body) });
     assert.equal(await load(key), null);
     assert.equal(warnings.at(-1), 'coding: no value from WakaTime (unexpected body)');
   }
