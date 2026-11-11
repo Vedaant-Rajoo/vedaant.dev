@@ -41,8 +41,9 @@ Neither `dev` nor `preview` runs the Pages Functions
 ([now-playing](functions/api/now-playing.ts) and
 [activity](functions/api/activity.ts)), so there the music widgets and the
 coding cell show the build-time values and turn offline after the first poll (an
-empty value stays `—`), and `/shelf`'s rows keep their build-time text. To run the site
-with the Functions, as Cloudflare does, serve the build with Wrangler's Pages
+empty value stays `—`), and `/shelf`'s rows and `/now`'s contributions, reading
+and last-watched cells keep their build-time text. To run the site with the
+Functions, as Cloudflare does, serve the build with Wrangler's Pages
 runtime, which applies [public/_headers](public/_headers) too:
 
 ```sh
@@ -220,8 +221,8 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
   values of the reading and last-watched rows at the top, which then update from
   Hardcover and Letterboxd (see [Shelf rows](#shelf-rows)); leave one out and
   its row reads `—` until an answer arrives. Edit them by hand as a fallback,
-  since nothing writes them. On `/now` they are shown as they are, and nothing
-  updates them there, so edit them when the book or the film changes.
+  since nothing writes them: `/shelf` and `/now` show them with JavaScript off
+  and until an answer arrives.
   `listening` (`title`, `creator` and a positive integer `plays`) is only the
   on-repeat row's fallback. That row shows the most played album over the 7
   days before the build:
@@ -367,10 +368,12 @@ a name outside the list in [src/data/coding.ts](src/data/coding.ts) counts as
 `WAKATIME_API_KEY` is set, and otherwise, or on failure, logs one `wakatime:`
 warning and uses the committed
 [snapshot](src/data/snapshots/wakatime.json), a week without coding. With
-JavaScript, the hub reads the `coding` value of
-[`/api/activity`](functions/api/activity.ts) (below) at once, then when the
-answer goes stale, at most a day later, with a backoff of its own. The cell's
-own script adds that feed, so other pages load none of its code. The
+JavaScript, `/now`'s one feed
+([src/scripts/now-feed.ts](src/scripts/now-feed.ts)) reads the `coding` value
+of [`/api/activity`](functions/api/activity.ts) (below), with the
+contributions, reading and last-watched values of the same answer, at once,
+then when the answer goes stale, at most a day later, with a backoff of its
+own. The coding cell's script adds that feed, so no other page loads it. The
 [coding source](functions/sources/coding.ts) asks WakaTime's daily
 `summaries` of the last 7 days in `site.timeZone`, `users/current` and
 `users/current/stats/last_30_days` with the same Bearer token and waits 2.5
@@ -423,6 +426,13 @@ into that file, then run
 `bunx biome format --write src/data/snapshots/contributions.json` and
 `bun test`.
 
+With JavaScript, the same `/now` feed redraws the heatmap from each answer's
+`contributions`, checked as the Function writes it: it re-anchors the 371
+squares to the answer's `end` and rewrites each square's level and title and
+the cell's total, first day and `updated` date, never the calendar's size. A
+value the answer leaves out, one that fails the check, or one older than the
+calendar shown leaves the cell as it is.
+
 `CONTRIBUTIONS_TOKEN` is a fine-grained personal access token that reads
 public data only. Create it in GitHub's Settings > Developer settings >
 Personal access tokens > Fine-grained tokens > Generate new token: your
@@ -446,9 +456,11 @@ the row's source, as the `/now` cells do: Hardcover, Letterboxd or Last.fm. With
 `/api/activity` at once, then when the answer goes stale, at most a day later,
 with the music widgets' backoff after failures. Each row updates on its own; a
 row the answer leaves out keeps its text, with no error text for visitors.
-Other pages load none of this code. `/now` shows the reading and last-watched
-rows again, as two cells built from the same values; no feed updates them
-there.
+`/now` shows the reading and last-watched rows again, as two cells built from
+the same values, and its one feed (see [Coding](#coding)) updates them from the
+same answer with the same checks: a row left out keeps its cell's text, and
+`null` reads `—`. The two pages share these checks and texts; no other page
+loads them.
 
 [`/api/activity`](functions/api/activity.ts) answers the coding cell's value,
 the contributions calendar and the three rows in one body, `{"coding": {...},
@@ -616,9 +628,9 @@ Letterboxd, Hardcover and GitHub API hosts.
 [scripts/pages.ts](scripts/pages.ts) checks
 that the music widgets, the coding cell, the contributions heatmap, `/shelf`'s
 three rows and `/now`'s reading and last-watched cells show their committed
-values
+values, that none of `/now`'s live widgets is marked as a state fixture,
 and that every page has a unique title and description. It also enforces a budget
-of gzipped executable JavaScript per page, 5,632 B on `/now` and 5,120 B
+of gzipped executable JavaScript per page, 7,168 B on `/now` and 5,120 B
 elsewhere (JSON-LD does not count), and reports
 HTML and CSS sizes against 30 KB and 12 KB gzip targets. The gate then checks
 the CSP theme-script hash, contrast, and that colours come from tokens. It

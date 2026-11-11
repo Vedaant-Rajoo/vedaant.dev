@@ -69,9 +69,10 @@ const lists = [
   import { type Shelf, shelfFromLive, shelfText } from '../data/shelf-live';
   import type { Hub } from '../scripts/presence-hub';
 
-  // The rows' one feed, added to the hub once it is defined, so its code loads on /shelf alone. The
-  // hub reads /api/activity at once, then when the answer goes stale, at most a day after a success.
-  // The hub writes the texts; last watched's whole day goes in its <abbr>, as at build.
+  // The rows' one feed, added to the hub once it is defined, so its code loads on /shelf alone,
+  // apart from shelf-live.ts's checks and texts, which /now's feed shares. The hub reads
+  // /api/activity at once, then when the answer goes stale, at most a day after a success. The hub
+  // writes the texts; last watched's whole day goes in its <abbr>, as at build.
   customElements.whenDefined('presence-hub').then(() => {
     const hub = document.querySelector('presence-hub') as Hub;
     hub.add(

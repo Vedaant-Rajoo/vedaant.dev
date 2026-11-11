@@ -125,14 +125,20 @@ only names tokens and components; where it differs, the pages win.
   Levels and the total are derived from the counts. It never names a
   repository, and a window with no activity is a value.
 - A page asks `/api/activity` once per poll, from one feed its own script adds
-  to the hub: the coding cell's on `/now`, the three rows' on `/shelf`. Each
-  loads only its own checks and texts.
+  to the hub: on `/now`, `src/scripts/now-feed.ts` for the coding,
+  contributions, reading and last-watched cells, added by the coding cell's
+  script so the page needs no script of its own; on `/shelf`, the three rows'.
+  No other page loads either feed; the two share `shelf-live.ts`'s row checks
+  and texts, one chunk both pages load.
+- Each value in a feed's answer is checked on its own: one left out, or one
+  that fails its check, keeps its widget's last value while the others update,
+  and a shelf row's `null` is a value.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never
   commit, log or print a secret. The build must pass with every API down and
   every secret unset, from committed snapshots.
-- Client JS ≤5 KB gz per page, 5.5 KB on `/now`: no UI framework,
+- Client JS ≤5 KB gz per page, 7 KB on `/now`: no UI framework,
   `<ClientRouter />` or page transitions. Try CSS first, then a plain
   `<script>` or a custom element.
 - LCP ≤1.8s on Lighthouse's mobile test; CLS 0, live-state changes included.

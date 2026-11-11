@@ -1,8 +1,8 @@
 // Reads every page in dist/: the live widgets, /shelf's three live rows and /now's reading and
-// last-watched cells show the committed values, client JS (inline scripts and the /_astro/ modules
-// a page loads or imports, gzip each) stays within budget, and titles and descriptions are present
-// and unique. HTML and CSS sizes are reported, never failed. Run after `bun run build`; exits 1 on
-// a problem.
+// last-watched cells show the committed values, none of /now's live widgets is a state fixture,
+// client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each) stays
+// within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
+// reported, never failed. Run after `bun run build`; exits 1 on a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -16,8 +16,8 @@ import {
   watchedText,
 } from '../src/data/shelf-live';
 
-// Client JS gzip per page, as AGENTS.md sets it: 5.5 KB on /now, 5 KB on every other page.
-const budget = (page: string) => (page === 'now/index.html' ? 5632 : 5120);
+// Client JS gzip per page, as AGENTS.md sets it: 7 KB on /now, 5 KB on every other page.
+const budget = (page: string) => (page === 'now/index.html' ? 7168 : 5120);
 const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
@@ -168,6 +168,16 @@ for (const page of pages.sort()) {
         `${page}: the ${name} row does not show shelf.json's value, credited, once on ${where}, and on no other page`,
       );
     }
+  }
+
+  // The hub skips a widget marked as a state fixture, so none of /now's live widgets may carry one.
+  const fixtures = all(html, /(<[a-z][^>]*\bdata-widget="[^"]*"[^>]*>)/g).filter((tag) =>
+    /\bdata-fixture\b/.test(tag),
+  );
+  if (nowPage && fixtures.length > 0) {
+    problems.push(
+      `${page}: ${fixtures.length} live widget(s) marked data-fixture, which the hub skips`,
+    );
   }
 
   const seen = new Map<string, number>();

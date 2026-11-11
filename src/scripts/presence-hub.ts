@@ -7,13 +7,15 @@ import {
   presenceText,
 } from '../data/now-playing';
 import type { Shelf } from '../data/shelf-live';
+import type { Parts } from './now-feed';
 
 // The one <presence-hub> per page (Base.astro) keeps the live widgets current. Each feed reads one
 // of the site's own endpoints: the music widgets /api/now-playing, and, added by its page's own
-// script, the /now coding cell or /shelf's three rows /api/activity, once per poll.
+// script, /now's four daily cells or /shelf's three rows /api/activity, once per poll.
 // One request at a time, later after failures, each feed on its own (FR-LV-4).
 // Only widgets built from the build-time value are driven; state fixtures carry data-fixture.
-type Value = NowPlaying | Coding | Shelf;
+// /now's value is composite: each cell takes its own part.
+type Value = NowPlaying | Coding | Shelf | Parts | NonNullable<Parts[keyof Parts]>;
 // Seconds before the next poll after one, two and three or more failures in a row.
 const waits = [120, 240, 600];
 
@@ -30,12 +32,16 @@ class Feed {
     readonly kinds: string[],
     readonly read: (body: unknown) => Value | null,
     // An added feed's texts, from its own read's value (hence never), for one of its widgets: the
-    // coding cell's, or a shelf row's by its data-row hooks, with the date for its <time>; none
-    // leaves the widget as it is.
+    // coding cell's, a /now cell's or a shelf row's by its data-row hooks, with the date for its
+    // <time>; none leaves the widget as it is.
     readonly text?: (
       value: never,
       widget: HTMLElement,
     ) => Record<string, string | null | undefined> | undefined,
+    // A composite value's part for one widget, as /now's four cells take theirs: undefined when the
+    // answer leaves it out or it fails its check, which is that widget's failure while the others
+    // update; null is a value, nothing current. Without one, every widget takes the whole value.
+    readonly part?: (value: never, widget: HTMLElement) => Value | null | undefined,
   ) {}
 
   schedule = () => {
@@ -62,16 +68,12 @@ class Feed {
     this.failures = value ? 0 : this.failures + 1;
     this.last = value ?? this.last;
     for (const widget of this.widgets) {
-      if (!value) {
-        fail(widget, this.last);
-      } else if ('state' in value) {
-        show(widget, value.state, value, this.text);
-      } else {
-        const texts = this.text?.(value as never, widget);
-        if (texts) {
-          write(widget, 'row', texts, texts.date);
-        }
-      }
+      // Without a part, every widget takes the whole value; a failed poll gives each none. A widget
+      // whose texts throw keeps the texts it shows, and the others and the next poll go on.
+      try {
+        const own = value && this.part ? this.part(value as never, widget) : value;
+        this.update(widget, value ? own : undefined);
+      } catch {}
     }
     this.busy = false;
     // After a success, when the answer goes stale, so the next poll finds the browser's copy stale
@@ -84,6 +86,21 @@ class Feed {
       : Math.max(stale as number, now + 60_000) || now + 60_000;
     this.schedule();
   };
+
+  // One widget's part of a poll: none fails it, one with a state is shown, and any other, a null
+  // row too, is written with the feed's texts for the widget, unless it has none.
+  update(widget: HTMLElement, own: Value | null | undefined) {
+    if (own === undefined) {
+      fail(widget, this.last);
+    } else if (own && 'state' in own) {
+      show(widget, own.state, own, this.text);
+    } else {
+      const texts = this.text?.(own as never, widget);
+      if (texts) {
+        write(widget, 'row', texts, texts.date);
+      }
+    }
+  }
 }
 
 const feeds = [new Feed('/api/now-playing', ['now-playing', 'presence'], fromLive)];
@@ -206,8 +223,8 @@ customElements.define(
       }
     }
 
-    // A feed a page's own script adds, as the coding cell's and /shelf's do, so no other page loads
-    // its code. The hub still makes every request.
+    // A feed a page's own script adds, as /now's and /shelf's do, so no other page loads its code.
+    // The hub still makes every request.
     add(...feed: ConstructorParameters<typeof Feed>) {
       start(new Feed(...feed));
     }

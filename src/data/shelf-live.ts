@@ -111,8 +111,9 @@ export const credits = {
 // /now's cells for the reading and last-watched rows: the rows' texts, laid out as a bento cell,
 // by the cell's data-row hooks. The label; the row's date on its right, as reading's `lead` and
 // then the <time> text `meta`, with the whole of it in `full` for the <abbr>; the tile; the name;
-// and the line under it, with last watched's stars. Nothing current reads "—". /shelf's script
-// imports neither, so its chunk leaves them out.
+// and the line under it, with last watched's stars. Nothing current reads "—". /now's feed imports
+// them; /shelf's script does not, but the two pages share this module's chunk, so /shelf loads them
+// too.
 export function readingCell(row: Reading | null) {
   const { tile, meta: page } = readingText(row);
   return {

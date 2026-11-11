@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   cells,
+  contributionsFromLive,
   contributionsRequest,
   contributionsText,
   graphql,
@@ -113,4 +114,37 @@ test('contributionsText: the total since the first Sunday, or no public activity
     'since 9 Nov 2025',
   );
   assert.equal(contributionsText(snapshot).total, '615 contributions');
+});
+
+test('contributionsFromLive: a whole window ending on a real day, or null', () => {
+  const live = (contributions: unknown) => contributionsFromLive({ coding: null, contributions });
+  assert.deepEqual(live(snapshot), snapshot);
+  // Sunday 2026-11-08 starts a column, so 365 days; a Saturday closes one, 371.
+  assert.deepEqual(live({ end: '2026-11-08', days: Array(365).fill(0) })?.days.length, 365);
+  assert.deepEqual(live({ end: '2026-11-07', days: Array(371).fill(2) })?.days.length, 371);
+  // Anything the hub would trust wrongly; a value that would throw on coercion is refused, not
+  // thrown, so the answer's other parts still update.
+  const days = snapshot.days;
+  for (const value of [
+    undefined,
+    null,
+    'x',
+    { end: snapshot.end },
+    { end: snapshot.end, days: days.slice(1) },
+    { end: snapshot.end, days: [...days, 0] },
+    { end: '2026-11-05', days },
+    { end: '2026-02-30', days: Array(366).fill(0) },
+    { end: '2026-11-04T00:00:00Z', days },
+    { end: { toString: null }, days },
+    { end: 20261104, days },
+    { end: snapshot.end, days: days.map((count, i) => (i ? count : -1)) },
+    { end: snapshot.end, days: days.map((count, i) => (i ? count : 1.5)) },
+    { end: snapshot.end, days: days.map((count, i) => (i ? count : '1')) },
+    { end: snapshot.end, days: days.map((count, i) => (i ? count : 2 ** 53)) },
+  ]) {
+    assert.equal(live(value), null, JSON.stringify(value));
+  }
+  assert.equal(contributionsFromLive(null), null);
+  // Only end and days are passed on.
+  assert.deepEqual(Object.keys(live({ ...snapshot, total: 615 }) ?? {}), ['end', 'days']);
 });
