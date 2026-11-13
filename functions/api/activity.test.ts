@@ -1,11 +1,18 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
-import { currentUser, lastMonth, statusBar } from '../../src/data/coding';
+import { currentUser, lastMonth, lastWeek } from '../../src/data/coding';
+import { graphql } from '../../src/data/contributions';
 import { topAlbums } from '../../src/data/now-playing';
 import { hardcover, letterboxd } from '../../src/data/shelf-live';
+import site from '../../src/data/site.json';
 import { handle } from './activity';
 
-const env = { WAKATIME_API_KEY: 'waka-key', HARDCOVER_TOKEN: 'hc-token', LASTFM_API_KEY: 'fm-key' };
+const env = {
+  WAKATIME_API_KEY: 'waka-key',
+  CONTRIBUTIONS_TOKEN: 'gh-token',
+  HARDCOVER_TOKEN: 'hc-token',
+  LASTFM_API_KEY: 'fm-key',
+};
 const origin = 'https://vedaantrajoo.com';
 const original = {
   fetch: globalThis.fetch,
@@ -30,15 +37,37 @@ const cache = {
 } as unknown as Cache;
 
 const heartbeat = new Date(start - 5 * 60_000).toISOString();
+const date = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+// Each day's contribution count: its day of the month.
+const count = (ms: number) => Number(date(ms).slice(8));
+// GitHub's calendar for the request's own two ranges, so it follows the mocked Date.now.
+const calendar = (from: string, to: string) => {
+  const days = [];
+  for (
+    let at = Date.parse(from.slice(0, 10));
+    at <= Date.parse(to.slice(0, 10));
+    at += 86_400_000
+  ) {
+    days.push({ date: date(at), contributionCount: count(at), contributionLevel: 'NONE' });
+  }
+  return {
+    commitContributionsByRepository: [{ repository: { name: 'secret-client-work' } }],
+    contributionCalendar: { weeks: [{ contributionDays: days }] },
+  };
+};
 // Each source's answer as its upstream gives it, secrets the Function must drop included.
-const upstream: Record<string, () => Response | Promise<Response>> = {
-  [statusBar]: () =>
+const upstream: Record<string, (init?: RequestInit) => Response | Promise<Response>> = {
+  // One day, 1 November in Kolkata, which holds the heartbeat.
+  [lastWeek(site.timeZone)]: () =>
     Response.json({
-      data: {
-        grand_total: { total_seconds: 4860 },
-        languages: [{ name: 'TypeScript', total_seconds: 4860 }],
-        projects: [{ name: 'secret-client-work' }],
-      },
+      data: [
+        {
+          grand_total: { total_seconds: 4860 },
+          languages: [{ name: 'TypeScript', total_seconds: 4860 }],
+          projects: [{ name: 'secret-client-work' }],
+          range: { start: '2026-10-31T18:30:00Z', end: '2026-11-01T18:29:59Z' },
+        },
+      ],
     }),
   [currentUser]: () =>
     Response.json({ data: { last_heartbeat_at: heartbeat, last_project: 'secret-client-work' } }),
@@ -51,6 +80,10 @@ const upstream: Record<string, () => Response | Promise<Response>> = {
         editors: [{ name: 'Zed' }],
       },
     }),
+  [graphql]: (init) => {
+    const { a, b, c, d } = JSON.parse(String(init?.body)).variables;
+    return Response.json({ data: { user: { head: calendar(a, b), tail: calendar(c, d) } } });
+  },
   [hardcover]: () =>
     Response.json({
       data: {
@@ -82,19 +115,26 @@ const full = {
     at: heartbeat.replace(/:\d\d\.\d+Z$/, ':00.000Z'),
     shares: [{ name: 'TypeScript', percent: 100 }],
   },
+  // The test's day is a Sunday, so the window is 52 whole weeks and that one day.
+  contributions: {
+    end: '2026-11-01',
+    days: Array.from({ length: 365 }, (_, i) => count(Date.parse('2025-11-02') + i * 86_400_000)),
+  },
   reading: { title: 'Dune', creator: 'Frank Herbert', started: '2026-10', page: 120 },
   lastWatched: { title: 'Clueless', year: 1995, rating: 3.5, date: '2026-10-28' },
   listening: { title: 'STAY ALIVE', creator: 'JUNGKOOK', plays: 7 },
 };
 
 // Answers each upstream URL from `upstream`, with `overrides` replacing some.
-function sources(overrides: Record<string, () => Response | Promise<Response>> = {}) {
+function sources(
+  overrides: Record<string, (init?: RequestInit) => Response | Promise<Response>> = {},
+) {
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     requests.push({ url, init });
     const answer = overrides[url] ?? upstream[url];
     assert.ok(answer, `unexpected request to ${url}`);
-    return answer();
+    return answer(init);
   };
 }
 
@@ -152,14 +192,20 @@ test('every source answering: one body, kept a day by the edge and the browser',
   });
   const body = await response.json();
   assert.deepEqual(body, full);
-  assert.deepEqual(Object.keys(body), ['coding', 'reading', 'lastWatched', 'listening']);
-  assert.doesNotMatch(JSON.stringify(body), /secret|editors|Zed|project/);
+  assert.deepEqual(Object.keys(body), [
+    'coding',
+    'contributions',
+    'reading',
+    'lastWatched',
+    'listening',
+  ]);
+  assert.doesNotMatch(JSON.stringify(body), /secret|editors|Zed|project|repository|NONE/);
   assert.deepEqual(warnings, []);
   await Promise.all(waits);
   assert.deepEqual([...store.keys()], [`${origin}/api/activity`]);
 });
 
-test('six upstream requests, all at once, carrying nothing of the visitor', async () => {
+test('seven upstream requests, all at once, carrying nothing of the visitor', async () => {
   const budgets: number[] = [];
   AbortSignal.timeout = (ms: number) => {
     budgets.push(ms);
@@ -170,19 +216,22 @@ test('six upstream requests, all at once, carrying nothing of the visitor', asyn
     release = resolve;
   });
   const slow = Object.fromEntries(
-    Object.entries(upstream).map(([url, answer]) => [url, () => held.then(answer)]),
+    Object.entries(upstream).map(([url, answer]) => [
+      url,
+      (init?: RequestInit) => held.then(() => answer(init)),
+    ]),
   );
   sources(slow);
   const pending = get();
-  for (let turn = 0; turn < 50 && requests.length < 6; turn++) {
+  for (let turn = 0; turn < 50 && requests.length < 7; turn++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
   // Every request starts before any answers: the slowest source, not their sum, bounds the wait.
-  assert.equal(requests.length, 6);
+  assert.equal(requests.length, 7);
   release();
   assert.deepEqual(await (await pending).json(), full);
-  // WakaTime's one 2.5 s for its three, Hardcover's and Letterboxd's 3 s, Last.fm's 2.5 s.
-  assert.deepEqual(budgets.sort(), [2_500, 2_500, 3_000, 3_000]);
+  // WakaTime's one 2.5 s for its three, GitHub's, Hardcover's and Letterboxd's 3 s, Last.fm's 2.5 s.
+  assert.deepEqual(budgets.sort(), [2_500, 2_500, 3_000, 3_000, 3_000]);
   for (const { url, init } of requests) {
     assert.doesNotMatch(url, /user=x|visitor/);
     assert.doesNotMatch(JSON.stringify(init?.headers ?? {}), /cookie|visitor/i);
@@ -204,14 +253,19 @@ test('a later hit carries its age, so a browser keeps it only for what is left',
     assert.equal(hit.headers.get('age'), String(elapsed));
     assert.deepEqual(await hit.json(), full);
   }
-  assert.equal(requests.length, 6);
+  assert.equal(requests.length, 7);
   // A day on, a cache that still holds the entry is not trusted: the sources are asked again.
   now = start + 86_400_000;
   const fresh = await get();
   assert.equal(fresh.headers.get('x-cache'), 'miss');
   assert.equal(fresh.headers.get('age'), null);
   assert.equal(fresh.headers.get('date'), new Date(now).toUTCString());
-  assert.equal(requests.length, 12);
+  assert.equal(requests.length, 14);
+  // Monday's window holds one more day, and the answer is whole again, so it is kept a day.
+  assert.equal(fresh.headers.get('cache-control'), daily);
+  const { contributions } = await fresh.json();
+  assert.equal(contributions.end, '2026-11-02');
+  assert.equal(contributions.days.length, 366);
 });
 
 test('nothing current is a value: null rows, kept a day like any answer', async () => {
@@ -224,6 +278,7 @@ test('nothing current is a value: null rows, kept a day like any answer', async 
   assert.equal(response.headers.get('cache-control'), daily);
   assert.deepEqual(await response.json(), {
     coding: full.coding,
+    contributions: full.contributions,
     reading: null,
     lastWatched: null,
     listening: null,
@@ -240,9 +295,24 @@ test('a failed source is left out, the rest answer, and the answer is kept 10 mi
     ],
     [
       env,
-      { [statusBar]: () => new Response('no', { status: 503 }) },
+      { [lastWeek(site.timeZone)]: () => new Response('no', { status: 503 }) },
       'coding',
       'coding: no value from WakaTime (HTTP 503)',
+    ],
+    [
+      { ...env, CONTRIBUTIONS_TOKEN: undefined },
+      {},
+      'contributions',
+      'contributions: no value from GitHub (no CONTRIBUTIONS_TOKEN)',
+    ],
+    [
+      env,
+      {
+        [graphql]: () =>
+          Response.json({ errors: [{ type: 'RATE_LIMITED', message: 'slow down' }] }),
+      },
+      'contributions',
+      'contributions: no value from GitHub (GraphQL RATE_LIMITED)',
     ],
     [
       env,
@@ -289,7 +359,7 @@ test('every source failing answers null with no-store, never stored', async () =
   }
   await Promise.all(waits);
   assert.equal(store.size, 0);
-  assert.doesNotMatch(warnings.join('\n'), /waka-key|hc-token|fm-key/);
+  assert.doesNotMatch(warnings.join('\n'), /waka-key|gh-token|hc-token|fm-key/);
 });
 
 // Any other export (onRequest, onRequestPost) would make Pages answer more than GET.

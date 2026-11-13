@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { after, afterEach, beforeEach, test } from 'node:test';
-import { codingFromLive, codingText } from '../data/coding';
+import { cells } from '../data/contributions';
 import { shelfFromLive, shelfText } from '../data/shelf-live';
+import { nowFeed } from './now-feed';
 import type { Hub } from './presence-hub';
 
 // Just enough of a page for the hub: widgets with text holders, one visibility listener, and
@@ -35,7 +36,11 @@ class Element {
     return this.attributes.get(name) ?? null;
   }
 }
-class Time extends Element {}
+class Time extends Element {
+  get dateTime() {
+    return this.getAttribute('datetime') ?? '';
+  }
+}
 class Widget extends Element {
   holders: Record<string, Element>;
   constructor(
@@ -44,7 +49,7 @@ class Widget extends Element {
   ) {
     super();
     this.holders = Object.fromEntries(
-      names.map((name) => [name, name === 'meta' || name === 'time' ? new Time() : new Element()]),
+      names.map((name) => [name, /^(meta|time|updated)$/.test(name) ? new Time() : new Element()]),
     );
   }
   querySelector(selector: string) {
@@ -257,36 +262,55 @@ test('a timer never waits past a day, even after the clock moves back', async ()
   assert.equal(delay(), 86_400_000);
 });
 
-test('/now: the coding cell reads the coding value alone and keeps its text without one', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'idle' }, ['today', 'language', 'time']);
+// The coding cell names the clock's zone, as Coding.astro writes it.
+const zone = 'Asia/Kolkata';
+
+test('/now: the coding cell reads the coding value and keeps its text without one', async () => {
+  const cell = new Widget({ widget: 'coding', state: 'idle', zone }, ['today', 'language', 'time']);
   widgets = [cell];
   hub.connectedCallback();
-  hub.add('/api/activity', ['coding'], codingFromLive, codingText);
+  hub.add(...nowFeed);
   answers.push(answer(body()));
   await elapse();
   assert.deepEqual(requests, ['/api/activity']);
   assert.equal(cell.holders.today.textContent, '2h 10m that day');
   assert.equal(cell.dataset.state, 'idle');
   assert.equal(delay(), 86_400_000);
-  // The coding source failed: the rows came, the cell keeps its text, marked offline.
+  // The coding source failed: the rows came, the cell keeps its text, marked offline, and the
+  // answer, kept 10 minutes, is asked for again when it goes stale.
   const { coding: _, ...rest } = body();
   answers.push(answer(rest, 600));
   await elapse();
   assert.equal(cell.holders.today.textContent, '2h 10m that day');
   assert.equal(cell.dataset.state, 'offline');
-  assert.equal(delay(), 120_000);
+  assert.equal(delay(), 600_000);
 });
 
-test('an empty coding holder gains and clears its heartbeat datetime', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'empty' }, ['today', 'language', 'time']);
+test('a coding holder gains and clears its heartbeat datetime, idle without one too', async () => {
+  const cell = new Widget({ widget: 'coding', state: 'empty', zone }, [
+    'today',
+    'language',
+    'time',
+  ]);
   cell.holders.time.textContent = '';
   widgets = [cell];
   hub.connectedCallback();
-  hub.add('/api/activity', ['coding'], codingFromLive, codingText);
+  hub.add(...nowFeed);
   answers.push(answer(body()));
   await elapse();
   assert.equal(cell.holders.time.getAttribute('datetime'), body().coding.at);
-  assert.equal(cell.holders.time.textContent, 'heartbeat 2026-11-01T11:00Z');
+  assert.equal(cell.holders.time.textContent, 'last heartbeat 1 Nov, 16:30');
+  // A day with coding whose last heartbeat fell on a later day: idle with no heartbeat line, as the
+  // build writes it.
+  answers.push(
+    answer({ coding: { state: 'idle', language: 'Go', today: '45m', at: null, shares: [] } }),
+  );
+  await elapse();
+  assert.equal(cell.dataset.state, 'idle');
+  assert.equal(cell.holders.today.textContent, '45m that day');
+  assert.equal(cell.holders.language.textContent, ' · top language Go');
+  assert.equal(cell.holders.time.getAttribute('datetime'), null);
+  assert.equal(cell.holders.time.textContent, '');
   answers.push(
     answer({ coding: { state: 'empty', language: null, today: null, at: null, shares: [] } }),
   );
@@ -296,15 +320,15 @@ test('an empty coding holder gains and clears its heartbeat datetime', async () 
 });
 
 test('a daily coding snapshot keeps an absolute heartbeat after a hidden page resumes', async () => {
-  const cell = new Widget({ widget: 'coding', state: 'idle' }, ['today', 'language', 'time']);
+  const cell = new Widget({ widget: 'coding', state: 'idle', zone }, ['today', 'language', 'time']);
   widgets = [cell];
   hub.connectedCallback();
-  hub.add('/api/activity', ['coding'], codingFromLive, codingText);
+  hub.add(...nowFeed);
   const snapshot = body();
   snapshot.coding.at = '2026-11-01T11:55:00.000Z';
   answers.push(answer(snapshot));
   await elapse();
-  const heartbeat = 'heartbeat 2026-11-01T11:55Z';
+  const heartbeat = 'last heartbeat 1 Nov, 17:25';
   assert.equal(cell.holders.time.textContent, heartbeat);
   page.hidden = true;
   for (const listener of listeners) {
@@ -322,7 +346,8 @@ test('a daily coding snapshot keeps an absolute heartbeat after a hidden page re
 
 test('the music widgets ask /api/now-playing each minute, by its Expires', async () => {
   const line = new Widget({ widget: 'presence', state: 'idle' }, ['state', 'track', 'artist']);
-  widgets = [line];
+  const cell = new Widget({ widget: 'now-playing', state: 'idle' }, ['track', 'rest', 'time']);
+  widgets = [line, cell];
   hub.connectedCallback();
   const track = {
     state: 'idle',
@@ -336,8 +361,253 @@ test('the music widgets ask /api/now-playing each minute, by its Expires', async
   answers.push(answer(track, 60), answer(track, 60, 50));
   assert.equal(await elapse(), 0);
   assert.equal(line.holders.track.textContent, 'Song');
+  // The /now cell puts the artist on a line of its own, with no separator before it.
+  assert.equal(cell.holders.track.textContent, 'Song');
+  assert.equal(cell.holders.rest.textContent, '\u2068Band\u2069');
+  assert.equal(cell.holders.time.getAttribute('datetime'), track.at);
   assert.equal(await elapse(), 60_000);
   // A hit 50 s old goes stale in 10 s, but the next poll waits the minute.
   assert.equal(delay(), 60_000);
   assert.deepEqual(requests, ['/api/now-playing', '/api/now-playing']);
+});
+
+// /now's other three daily cells as Heatmap.astro and ShelfCell.astro build them: the calendar's
+// 371 squares, each with its <title>, and the <abbr> around a cell's date.
+class Square extends Element {
+  firstChild = { textContent: 'build' };
+}
+class Heat extends Widget {
+  squares = Array.from({ length: 371 }, () => new Square());
+  constructor() {
+    super({ widget: 'contributions' }, ['total', 'since', 'updated']);
+    // The build's calendar, older than every answer below.
+    this.holders.updated.setAttribute('datetime', '2026-10-25');
+  }
+  querySelector(selector: string) {
+    return selector === 'time' ? this.holders.updated : super.querySelector(selector);
+  }
+  querySelectorAll(selector: string) {
+    assert.equal(selector, '[data-heat] rect');
+    return this.squares;
+  }
+}
+class Cell extends Widget {
+  abbr = { title: 'build' };
+  querySelector(selector: string) {
+    return selector === 'abbr' ? (this.abbr as unknown as Element) : super.querySelector(selector);
+  }
+}
+const nowCells = () =>
+  [
+    new Widget({ widget: 'coding', state: 'idle', zone }, ['today', 'language', 'time']),
+    new Heat(),
+    new Cell({ widget: 'reading' }, ['tile', 'name', 'sub', 'lead', 'meta']),
+    new Cell({ widget: 'last-watched' }, ['tile', 'name', 'sub', 'stars', 'rated', 'meta']),
+  ] as const;
+// A window ending on `end`, one count per day, each day's count its index mod 5.
+const calendar = (end: string) => ({
+  end,
+  days: Array.from({ length: 365 + new Date(end).getUTCDay() }, (_, i) => i % 5),
+});
+const nowBody = (end = '2026-11-01') => ({
+  ...body(),
+  reading: { title: 'Dune', creator: 'Frank Herbert', started: '2026-10', page: 42 },
+  contributions: calendar(end),
+});
+const texts = (widget: Widget) =>
+  Object.fromEntries(Object.entries(widget.holders).map(([name, e]) => [name, e.textContent]));
+const squares = (heat: Heat) =>
+  heat.squares.map((square) => [square.getAttribute('data-level'), square.firstChild.textContent]);
+
+test('/now: one request per poll feeds the coding, heatmap, reading and last-watched cells', async () => {
+  const page4 = nowCells();
+  const [coding, heat, reading, watched] = page4;
+  widgets = [...page4];
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  answers.push(answer(nowBody()));
+  assert.equal(await elapse(), 0);
+  assert.deepEqual(requests, ['/api/activity']);
+  assert.equal(coding.holders.today.textContent, '2h 10m that day');
+  // Sunday 2026-11-01: 365 days from 2 Nov 2025, the last column one day, six blank squares.
+  assert.deepEqual(texts(heat), {
+    total: '730 contributions',
+    since: 'since 2 Nov 2025',
+    updated: 'updated 1 Nov 2026',
+  });
+  assert.equal(heat.holders.updated.getAttribute('datetime'), '2026-11-01');
+  const slots = cells(calendar('2026-11-01'));
+  assert.deepEqual(
+    squares(heat),
+    slots.map((slot) => (slot ? [String(slot.level), slot.title] : [null, ''])),
+  );
+  assert.deepEqual(squares(heat)[1], ['1', '1 contribution on 3 Nov 2025']);
+  assert.deepEqual(texts(reading), {
+    tile: 'du',
+    name: 'Dune',
+    sub: 'Frank Herbert · p. 42',
+    lead: 'started ',
+    meta: 'Oct ’26',
+  });
+  assert.equal(reading.holders.meta.getAttribute('datetime'), '2026-10');
+  assert.equal(reading.abbr.title, 'started October 2026');
+  assert.deepEqual(texts(watched), {
+    tile: 'cl',
+    name: '\u2068Clueless\u2069 (1995)',
+    sub: '',
+    stars: '',
+    rated: '',
+    meta: '28 Oct',
+  });
+  assert.equal(watched.holders.meta.getAttribute('datetime'), '2026-10-28');
+  assert.equal(watched.abbr.title, '28 October 2026');
+  assert.equal(delay(), 86_400_000);
+  answers.push(answer(nowBody()));
+  await elapse();
+  assert.equal(requests.length, 2);
+});
+
+test('/now: a partial answer updates what it has, and a null row reads "—"', async () => {
+  const page4 = nowCells();
+  const [coding, heat, reading, watched] = page4;
+  widgets = [...page4];
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  answers.push(answer(nowBody()));
+  await elapse();
+  const before = { heat: texts(heat), squares: squares(heat) };
+  // No coding, a calendar one day short, nothing being read, and a new film, rated.
+  const { coding: _, ...rest } = nowBody();
+  answers.push(
+    answer(
+      {
+        ...rest,
+        contributions: { end: '2026-11-02', days: calendar('2026-11-01').days },
+        reading: null,
+        lastWatched: { title: 'Heat', year: 1995, rating: 4.5, date: '2026-11-01' },
+      },
+      600,
+    ),
+  );
+  await elapse();
+  assert.equal(coding.holders.today.textContent, '2h 10m that day');
+  assert.equal(coding.dataset.state, 'offline');
+  assert.deepEqual({ heat: texts(heat), squares: squares(heat) }, before);
+  assert.deepEqual(texts(reading), { tile: '', name: '—', sub: '', lead: '', meta: '' });
+  assert.equal(reading.holders.meta.getAttribute('datetime'), null);
+  assert.equal(reading.abbr.title, '');
+  assert.deepEqual(texts(watched), {
+    tile: 'he',
+    name: '\u2068Heat\u2069 (1995)',
+    sub: '',
+    stars: '★★★★½',
+    rated: 'rated 4.5 of 5',
+    meta: '1 Nov',
+  });
+  assert.equal(watched.abbr.title, '1 November 2026');
+  // A success, kept 10 minutes: asked for again when it goes stale.
+  assert.equal(delay(), 600_000);
+});
+
+test("/now: failures keep every cell's last value and back off", async () => {
+  const page4 = nowCells();
+  const [coding, heat, reading, watched] = page4;
+  widgets = [...page4];
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  answers.push(answer(nowBody()));
+  await elapse();
+  const before = {
+    heat: texts(heat),
+    squares: squares(heat),
+    reading: texts(reading),
+    watched: texts(watched),
+    abbr: [reading.abbr.title, watched.abbr.title],
+  };
+  answers.push(
+    () => new Response('', { status: 503 }),
+    () => new Response('null', { status: 200 }),
+    // Only /shelf's on-repeat row: nothing for /now, so a failure here.
+    answer({ listening: body().listening }, 600),
+  );
+  const waits = [await elapse(), await elapse(), await elapse()];
+  assert.deepEqual(waits, [86_400_000, 120_000, 240_000]);
+  assert.equal(delay(), 600_000);
+  assert.equal(coding.dataset.state, 'offline');
+  assert.equal(coding.holders.today.textContent, '2h 10m that day');
+  assert.deepEqual(
+    {
+      heat: texts(heat),
+      squares: squares(heat),
+      reading: texts(reading),
+      watched: texts(watched),
+      abbr: [reading.abbr.title, watched.abbr.title],
+    },
+    before,
+  );
+  assert.equal(requests.length, 4);
+});
+
+test("/now: the heatmap re-anchors at a week's rollover and never goes back", async () => {
+  const heat = new Heat();
+  widgets = [heat];
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  // Saturday 2026-10-31: 371 days from 26 Oct 2025, every square drawn.
+  answers.push(answer(nowBody('2026-10-31'), 600));
+  await elapse();
+  assert.equal(texts(heat).since, 'since 26 Oct 2025');
+  assert.deepEqual(squares(heat)[0], ['0', 'no contributions on 26 Oct 2025']);
+  assert.ok(squares(heat).every(([level]) => level !== null));
+  // Sunday: the oldest week leaves on the left, a one-day column starts, six squares go blank.
+  answers.push(answer(nowBody('2026-11-01'), 600));
+  await elapse();
+  assert.equal(texts(heat).since, 'since 2 Nov 2025');
+  assert.equal(texts(heat).updated, 'updated 1 Nov 2026');
+  assert.deepEqual(squares(heat)[0], ['0', 'no contributions on 2 Nov 2025']);
+  assert.deepEqual(squares(heat)[364], ['4', '4 contributions on 1 Nov 2026']);
+  assert.deepEqual(squares(heat).slice(365), Array(6).fill([null, '']));
+  // A cached answer older than the one shown changes nothing; the same day again redraws.
+  const shown = { heat: texts(heat), squares: squares(heat) };
+  answers.push(answer(nowBody('2026-10-31'), 600));
+  await elapse();
+  assert.deepEqual({ heat: texts(heat), squares: squares(heat) }, shown);
+  assert.equal(heat.holders.updated.getAttribute('datetime'), '2026-11-01');
+  answers.push(answer({ contributions: { end: '2026-11-01', days: Array(365).fill(0) } }, 600));
+  await elapse();
+  assert.equal(texts(heat).total, 'no public activity');
+  assert.ok(
+    squares(heat)
+      .slice(0, 365)
+      .every(([level]) => level === '0'),
+  );
+});
+
+test('/now: a cell whose texts throw keeps its texts, and the others and the feed go on', async () => {
+  const page4 = nowCells();
+  const [coding, heat, reading] = page4;
+  widgets = [...page4];
+  // A calendar whose squares lost their <title>s: heat() throws on the first.
+  for (const square of heat.squares) {
+    (square as { firstChild: unknown }).firstChild = null;
+  }
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  answers.push(answer(nowBody()));
+  await elapse();
+  assert.equal(heat.holders.total.textContent, 'build');
+  assert.equal(coding.holders.today.textContent, '2h 10m that day');
+  assert.equal(reading.holders.name.textContent, 'Dune');
+  assert.equal(delay(), 86_400_000);
+});
+
+test('/now: a cell without an <abbr> still gets its texts', async () => {
+  const watched = new Widget({ widget: 'last-watched' }, ['name', 'meta']);
+  widgets = [watched];
+  hub.connectedCallback();
+  hub.add(...nowFeed);
+  answers.push(answer(nowBody()));
+  await elapse();
+  assert.equal(watched.holders.name.textContent, '⁨Clueless⁩ (1995)');
+  assert.equal(watched.holders.meta.getAttribute('datetime'), '2026-10-28');
 });

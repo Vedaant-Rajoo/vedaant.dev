@@ -55,14 +55,16 @@ only names tokens and components; where it differs, the pages win.
 - Tailwind is v4 via `@tailwindcss/vite`, never the doc's v3 config. At most 12
   dependencies and 20 components; share a component only on its second use.
 - Style only through the tokens in `src/styles/tokens.css`, named as in the
-  doc's §4.2 (plus the code colours `--c-code-keyword` and `--c-code-string`),
-  with no arbitrary values: literal durations escape the reduced-motion reset.
+  doc's §4.2 (plus the code colours `--c-code-keyword` and `--c-code-string`,
+  and the neutral ramp `--c-ramp-1` to `--c-ramp-5` for data marks), with no
+  arbitrary values: literal durations escape the reduced-motion reset.
   Mockup markup and inline styles show intent, not code.
 - Contrast in both themes, hex fallbacks included, on `--c-bg`: body ≥15:1,
-  secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text ≥3:1; on the row
-  hover fill (`--c-surface`) body text may drop to 14:1, and code-block text
-  is secondary (≥8:1). Measure after token edits (`bun scripts/contrast.ts`);
-  the doc's light `--c-live` and light hex `--c-fg-2` fail.
+  secondary ≥8:1, meta ≥4.5:1, live text ≥4.6:1, non-text (link underlines and
+  every ramp step included, empty heatmap days excepted) ≥3:1; on the row hover
+  fill (`--c-surface`) body text may drop to 14:1, and code-block text is
+  secondary (≥8:1). Measure after token edits (`bun scripts/contrast.ts`); the
+  doc's light `--c-live` and light hex `--c-fg-2` fail.
 - `--c-live` (green) marks only live state. No icon set; use text glyphs.
 - Home has no photo, CTA button, social-icon row or © line, and nothing on it
   expands except the `<details>` folding older work roles.
@@ -100,36 +102,60 @@ only names tokens and components; where it differs, the pages win.
   namespace, when bound) and keeping MusicBrainz requests at least 1.1 seconds
   apart within each isolate; a failed or slow lookup, or a slow KV read, only
   leaves `artwork` `null`.
-- The activity Function answers `{ coding, reading, lastWatched, listening }`
-  from four sources in `functions/sources/`, run at once: WakaTime's
-  `status_bar/today`, `users/current` and `users/current/stats/last_30_days`
-  with `WAKATIME_API_KEY`; Hardcover with `HARDCOVER_TOKEN`; the public
+- The activity Function answers
+  `{ coding, contributions, reading, lastWatched, listening }` from five
+  sources in `functions/sources/`, run at once: WakaTime's
+  `summaries` of the last 7 days, `users/current` and
+  `users/current/stats/last_30_days` with `WAKATIME_API_KEY`; GitHub's GraphQL
+  contribution calendar with `CONTRIBUTIONS_TOKEN`; Hardcover with
+  `HARDCOVER_TOKEN`; the public
   Letterboxd diary feed; Last.fm's `user.getTopAlbums`. It keeps an answer with
-  all four a day (86,400 s). A failed source is left out, so only its widget
+  all five a day (86,400 s). A failed source is left out, so only its widget
   keeps its text, and the answer is kept 600 s; a shelf row is `null` when
   nothing is current, which is a value.
-- `coding` is a daily snapshot: the day's time ("that day", never "today"), top
-  language and last heartbeat's minute, plus the rolling 30-day top five
+- `coding` is a daily snapshot: the time ("that day", never "today") and top
+  language of the newest of the last 7 days (in `site.timeZone`) with at least
+  a minute of coding, `—` only when none has one, and the last heartbeat's
+  minute only when it falls on that day; plus the rolling 30-day top five
   languages and `other`, with space reserved to avoid layout shifts. It never
   exposes a project, branch, file or editor name.
+- `contributions` is `{ end, days }`: the public profile's contribution count
+  for each UTC day, oldest first, from the Sunday 52 weeks before the Sunday
+  of `end`'s week to `end`, the day the answer was made (365 to 371 counts).
+  Levels and the total are derived from the counts. It never names a
+  repository, and a window with no activity is a value.
 - A page asks `/api/activity` once per poll, from one feed its own script adds
-  to the hub: the coding cell's on `/now`, the three rows' on `/shelf`. Each
-  loads only its own checks and texts.
+  to the hub: on `/now`, `src/scripts/now-feed.ts` for the coding,
+  contributions, reading and last-watched cells, added by the coding cell's
+  script so the page needs no script of its own; on `/shelf`, the three rows'.
+  No other page loads either feed; the two share `shelf-live.ts`'s row checks
+  and texts, one chunk both pages load.
+- Each value in a feed's answer is checked on its own: one left out, or one
+  that fails its check, keeps its widget's last value while the others update,
+  and a shelf row's `null` is a value.
 - Read secrets only from the host's environment: through `astro:env/server` at
   build, because `import.meta.env` inlines them, and from `context.env` in a
   Function, never from `import.meta.env`, `process.env` or a global. Never
   commit, log or print a secret. The build must pass with every API down and
   every secret unset, from committed snapshots.
-- Client JS ≤5 KB gz per page: no UI framework, `<ClientRouter />` or page
-  transitions. Try CSS first, then a plain `<script>` or a custom element.
+- Client JS ≤5 KB gz per page, 7 KB on `/now`: no UI framework,
+  `<ClientRouter />` or page transitions. Try CSS first, then a plain
+  `<script>` or a custom element.
 - LCP ≤1.8s on Lighthouse's mobile test; CLS 0, live-state changes included.
   Never animate the LCP element (measure it: a hero line, not the name) except
   by a mark's background swipe, which moves no text. Never animate the name.
-- Load fonts with the Astro Fonts API, not `@fontsource` imports. Preload only
-  Geist sans, with `font-display: optional` so a late file never re-wraps text;
-  at most 2 font requests on first paint and 90 KB total, except the hero's one
-  serif word: a third request, `font-display: optional`, which the browser may
-  leave unused for a view and never swaps in.
+- Load fonts with the Astro Fonts API, not `@fontsource` imports. Every page
+  first paints in its fonts, never a fallback: the faces are
+  `font-display: block`, and the theme restore hides `<body>` until
+  `document.fonts.ready`, at most 3 s, so no text re-wraps in view. Preload
+  Geist sans and Geist Mono on every page, and the hero's one serif word only on
+  home; at most 3 font requests and 90 KB total. Keep each weight axis cut to the
+  weights the pages render (sans 400 to 700, mono 400 to 500).
+- While the page is hidden, `html::before` and `html::after` draw the loading
+  ghost (design L1) in `global.css`: shapes only, never text, from tokens.
+  `Base`'s `hero` and `crumb` props and the page's column pick its shapes. After
+  a layout change near the top of a page, check that the ghost still lands on
+  the loaded page at 1280, 390 and 320 px.
 - Targets ≥44px, except a link inside a line of prose, which keeps the line's
   height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
   the nav wraps instead of collapsing into a hamburger.

@@ -1,4 +1,4 @@
-import { day, initials, monthYear } from './format';
+import { dayMonth, fullDay, initials, month, monthYear } from './format';
 import type { OnRepeat } from './now-playing';
 
 // /shelf's mappers, checks and text, in shelf.json's shapes, shared at build and in the browser.
@@ -76,8 +76,8 @@ export const stars = (value: number) => '★'.repeat(value) + (value % 1 ? '½' 
 // right-to-left title does not pull the year to its left.
 export const withYear = (title: string, year: number) => `\u2068${title}\u2069 (${year})`;
 
-// Each row's texts by their data-row hooks, and last watched's date for its <time>. Nothing current
-// reads "—".
+// Each row's texts by their data-row hooks, and last watched's date for its <time>, with the whole
+// day for its <abbr>, as a /writing row's date. Nothing current reads "—".
 export const readingText = (row: Reading | null) => ({
   tile: row ? initials(row.title) : '',
   title: `reading · ${row?.title ?? '—'}`,
@@ -90,8 +90,9 @@ export const watchedText = (row: LastWatched | null) => ({
   sub: '',
   stars: row?.rating ? stars(row.rating) : '',
   rated: row?.rating ? `rated ${row.rating} of 5` : '',
-  meta: row ? day(row.date) : '',
+  meta: row ? dayMonth(row.date) : '',
   date: row?.date ?? null,
+  full: row ? fullDay(row.date) : '',
 });
 export const listeningText = (row: OnRepeat | null) => ({
   tile: '♪',
@@ -100,11 +101,48 @@ export const listeningText = (row: OnRepeat | null) => ({
   meta: row ? `${row.plays} ${row.plays === 1 ? 'play' : 'plays'}` : '',
 });
 
+// Each live row's source, by its data-widget, credited as /now's cells credit theirs.
+export const credits = {
+  reading: { label: 'via hardcover', href: 'https://hardcover.app/' },
+  'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/' },
+  'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/' },
+};
+
+// /now's cells for the reading and last-watched rows: the rows' texts, laid out as a bento cell,
+// by the cell's data-row hooks. The label; the row's date on its right, as reading's `lead` and
+// then the <time> text `meta`, with the whole of it in `full` for the <abbr>; the tile; the name;
+// and the line under it, with last watched's stars. Nothing current reads "—". /now's feed imports
+// them; /shelf's script does not, but the two pages share this module's chunk, so /shelf loads them
+// too.
+export function readingCell(row: Reading | null) {
+  const { tile, meta: page } = readingText(row);
+  return {
+    label: 'reading',
+    tile,
+    name: row?.title ?? '—',
+    sub: [row?.creator, page].filter(Boolean).join(' · '),
+    date: row?.started ?? null,
+    lead: row?.started ? 'started ' : '',
+    meta: row?.started ? monthYear(row.started) : '',
+    full: row?.started ? `started ${month(row.started)}` : '',
+  };
+}
+export function watchedCell(row: LastWatched | null) {
+  // The row's "last watched · …" title is the cell's label and name instead.
+  const { title, ...texts } = watchedText(row);
+  return { ...texts, label: 'last watched', name: row ? withYear(row.title, row.year) : '—' };
+}
+
 // The texts of the row a widget shows, by its data-widget; none when the answer leaves it out.
+// Annotated, so the union keeps last watched's own fields.
 export function shelfText(
   { reading, lastWatched, listening }: Shelf,
   { dataset: { widget: kind } }: { dataset: DOMStringMap },
-) {
+):
+  | ReturnType<typeof readingText>
+  | ReturnType<typeof watchedText>
+  | ReturnType<typeof listeningText>
+  | undefined {
   if (kind === 'reading') {
     return reading === undefined ? undefined : readingText(reading);
   }

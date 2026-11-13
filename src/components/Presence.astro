@@ -25,41 +25,16 @@ const text = presenceText(state, value);
   aria-busy={state === 'loading' ? 'true' : 'false'}
   class="meta min-h-4 min-w-0 truncate text-sm font-medium leading-(--lh-snug) text-fg-3"
 >
-  <bdi data-presence="city">{from}</bdi>{' · '}<span data-presence="state"
+  <bdi data-presence="city">{from}</bdi>{' · '}<span data-presence="state" data-live-dot
     >{text.state}</span
   ><bdi data-presence="track">{text.track}</bdi><span data-presence="artist"
     >{text.artist}</span
   >
 </p>
 
+{/* Live, the state word takes --c-live after the live dot (global.css). */}
 <style>
   [data-state="live"] [data-presence="state"] {
     color: var(--c-live);
-  }
-  [data-state="live"] [data-presence="state"]::before {
-    content: "";
-    display: inline-block;
-    vertical-align: calc(var(--sp-unit) / 4);
-    inline-size: calc(var(--sp-unit) * 1.75);
-    block-size: calc(var(--sp-unit) * 1.75);
-    margin-inline-end: calc(var(--sp-unit) * 1.5);
-    border-radius: var(--r-pill);
-    background: currentColor;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    [data-state="live"] [data-presence="state"]::before {
-      animation: now-pulse var(--d-sig) var(--ez-out) infinite;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    [data-presence="state"]::before {
-      animation: none;
-    }
-  }
-  @media (forced-colors: active) {
-    [data-state="live"] [data-presence="state"]::before {
-      forced-color-adjust: none;
-      background: CanvasText;
-    }
   }
 </style>

@@ -1,5 +1,12 @@
 ---
 // A link's arrow: → a page of this site, ↗ one that leaves it, ← the way back. Screen readers skip it.
+// The gap to its word is the arrow's own padding, after the word, or before it for ←, so callers
+// write no space: an inline-block takes no part in its link's underline, which then stops at the word.
+const glyph = await Astro.slots.render('default');
 ---
 
-<span aria-hidden="true" class="inline-block font-sans"><slot /></span>
+<span
+  aria-hidden="true"
+  class:list={['inline-block font-sans', glyph.trim() === '←' ? 'pe-1' : 'ps-1']}
+  set:html={glyph}
+/>

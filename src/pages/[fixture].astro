@@ -1,10 +1,18 @@
 ---
 import type { GetStaticPaths } from 'astro';
+import type { ComponentProps } from 'astro/types';
 import Coding from '../components/Coding.astro';
+import Heatmap from '../components/Heatmap.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import Presence from '../components/Presence.astro';
+import ShelfCell from '../components/ShelfCell.astro';
+import ShelfRow from '../components/ShelfRow.astro';
 import type { Share, Coding as Today } from '../data/coding';
+import type { Contributions } from '../data/contributions';
 import type { NowPlaying as Value } from '../data/now-playing';
+import { onRepeat } from '../data/on-repeat';
+import { shelf } from '../data/shelf';
+import calendar from '../data/snapshots/contributions.json';
 import snapshot from '../data/snapshots/lastfm.json';
 import Base from '../layouts/Base.astro';
 
@@ -45,15 +53,49 @@ const states = [
   { state: 'loading', value: none, coding: noDay, codingState: 'loading', mix: [] },
 ] as const;
 const widgets = [
-  { name: 'NowPlaying', Widget: NowPlaying, props: {} },
-  { name: 'Presence', Widget: Presence, props: {} },
-  { name: 'NowPlaying cell', Widget: NowPlaying, props: { variant: 'cell' } },
+  { name: 'Presence', Widget: Presence },
+  { name: 'NowPlaying', Widget: NowPlaying },
 ] as const;
+// /shelf's live rows have no state: the build's values, or null in the empty and loading rows, which
+// reads "—".
+const rows: ComponentProps<typeof ShelfRow>[] = [
+  { kind: 'reading', value: shelf.reading ?? null },
+  { kind: 'last-watched', value: shelf.lastWatched ?? null },
+  { kind: 'on-repeat', value: onRepeat ?? null },
+];
+// The heatmap has no state of its own: its three fixtures are values. Full is a made-up 371-day
+// window ending on a Saturday, every day active and each active level drawn; empty is the committed
+// window with no activity; stale is the committed window cut to its first 365 days, so it ends on
+// a Sunday, days before the build, with six blank slots after it.
+const heatmaps: { state: string; value: Contributions }[] = [
+  { state: 'full', value: { end: '2026-11-07', days: Array.from({ length: 371 }, (_, i) => 1 + ((i * 7) % 40)) } },
+  { state: 'empty', value: { end: calendar.end, days: calendar.days.map(() => 0) } },
+  { state: 'stale', value: { end: '2026-11-01', days: calendar.days.slice(0, 365) } },
+];
+// /now's two shelf cells have no state either: the build's values; made-up long ones with no
+// optional field, which truncate; and null, which reads "—".
+const shelfCells: { state: string; cells: ComponentProps<typeof ShelfCell>[] }[] = [
+  {
+    state: 'build',
+    cells: [
+      { kind: 'last-watched', value: shelf.lastWatched ?? null },
+      { kind: 'reading', value: shelf.reading ?? null },
+    ],
+  },
+  {
+    state: 'long',
+    cells: [
+      { kind: 'last-watched', value: { title: 'A film whose title runs on well past the end of its line', year: 1968, date: '2026-01-01' } },
+      { kind: 'reading', value: { title: 'A book whose title runs on well past the end of its line', creator: 'First Author, Second Author, Third Author' } },
+    ],
+  },
+  { state: 'null', cells: [{ kind: 'last-watched', value: null }, { kind: 'reading', value: null }] },
+];
 ---
 
-{/* A dev page, so its labels name the components. One row per state, its three widgets side by
-    side while each fits 12rem, else one under another; the basis is fixed, so a widget's width
-    never depends on its state. Each label keeps two lines, so filling a height moves nothing. Only
+{/* A dev page, so its labels name the components. One row per state, its widgets side by side
+    while each fits 12rem, else one under another; the basis is fixed, so a widget's width never
+    depends on its state. Each label keeps two lines, so filling a height moves nothing. Only
     utilities other pages already use: Tailwind reads this file too, and a new one would reach
     every page's CSS. */}
 <Base
@@ -72,31 +114,78 @@ const widgets = [
       {
         states.map(({ state, value, coding, codingState, mix }) => (
           <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
-            {widgets.map(({ name, Widget, props }) => (
-              <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+            {widgets.map(({ name, Widget }) => (
+              <div data-column class="flex min-w-0 grow basis-48 flex-col gap-1.5">
                 <p class="meta flex flex-col text-xs text-fg-3">
                   <span>{state} · {name}</span>
                   <span data-height class="whitespace-nowrap">unmeasured</span>
                 </p>
-                <Widget value={value} state={state} {...props} />
+                <Widget value={value} state={state} />
               </div>
             ))}
-            {/* The coding cell takes its own value, so it is not in the widget list. */}
-            <div class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+            {/* The coding cell and the shelf rows take their own values, so they are not in the
+                widget list. */}
+            <div data-column class="flex min-w-0 grow basis-48 flex-col gap-1.5">
               <p class="meta flex flex-col text-xs text-fg-3">
                 <span>{state} · Coding</span>
                 <span data-height class="whitespace-nowrap">unmeasured</span>
               </p>
               <Coding value={{ ...coding, shares: [...mix] }} state={codingState} />
             </div>
+            {rows.map((row) => (
+              <div data-column class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+                <p class="meta flex flex-col text-xs text-fg-3">
+                  <span>{state} · ShelfRow {row.kind}</span>
+                  <span data-height class="whitespace-nowrap">unmeasured</span>
+                </p>
+                {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+                <ul role="list">
+                  <ShelfRow {...(state === 'empty' || state === 'loading' ? { ...row, value: null } : row)} />
+                </ul>
+              </div>
+            ))}
+          </li>
+        ))
+      }
+    </ol>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line">
+      {
+        heatmaps.map(({ state, value }) => (
+          <li data-column class="flex min-w-0 flex-col gap-1.5 py-2.5">
+            <p class="meta flex flex-col text-xs text-fg-3">
+              <span>{state} · Heatmap</span>
+              <span data-height class="whitespace-nowrap">unmeasured</span>
+            </p>
+            <Heatmap value={value} />
+          </li>
+        ))
+      }
+    </ol>
+    {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
+    <ol role="list" class="divide-y divide-line wrap-anywhere">
+      {
+        shelfCells.map(({ state, cells }) => (
+          <li class="flex flex-wrap gap-x-6 gap-y-2 py-2.5">
+            {cells.map((cell) => (
+              <div data-column class="flex min-w-0 grow basis-48 flex-col gap-1.5">
+                <p class="meta flex flex-col text-xs text-fg-3">
+                  <span>{state} · ShelfCell {cell.kind}</span>
+                  <span data-height class="whitespace-nowrap">unmeasured</span>
+                </p>
+                <ShelfCell {...cell} />
+              </div>
+            ))}
           </li>
         ))
       }
     </ol>
   </div>
   {/* Each widget's border-box height as laid out now, and again whenever that box changes size: a
-      resize, a font arriving, larger text, zoom. A widget is its column's last element, so the /now
-      cell is measured whole, its credit included ("the bento cell its full height").
+      resize, a font arriving, larger text, zoom. A widget is its column's second element, after the
+      label (in dev, Astro inserts a component's script after its first use), so the /now cell is
+      measured whole, its credit included ("the bento cell its full height"), and a shelf row with
+      its list.
       Rounded to 0.001px, finer than any layout unit, so two heights that differ never print the
       same. Inline, so it exists only in this page's HTML: Astro would emit a processed <script>
       into dist/_astro/ although the page has no path. */}
@@ -108,7 +197,7 @@ const widgets = [
           target.parentElement.querySelector('[data-height]').textContent = `${height}px`;
         }
       });
-      for (const widget of document.querySelectorAll('main li > div > :last-child')) {
+      for (const widget of document.querySelectorAll('[data-column] > :nth-child(2)')) {
         observer.observe(widget, { box: 'border-box' });
       }
     }

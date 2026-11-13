@@ -27,7 +27,7 @@ const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + ma
   <div class="flex items-center gap-3">
     <div class="min-w-0 flex-1"><Presence /></div>
     <a href="/now" class="meta target link -my-3.5 shrink-0 justify-end text-sm text-fg-3">
-      <span>now <Arrow>→</Arrow></span>
+      <span>now<Arrow>→</Arrow></span>
     </a>
   </div>
   {/* The email link copies, as the footer's does. */}
@@ -35,22 +35,19 @@ const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + ma
     <span>{site.hero.today}</span>
     <span class="-mx-1.5 flex flex-wrap gap-2">
       <a href="/resume.pdf" class="box">
-        <span>résumé · <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time> <Arrow>↗</Arrow></span>
+        <span>résumé<span class="inline-block ps-1">· <time datetime={site.resume.updated} class="text-xs">{resumeMonth}</time></span><Arrow>↗</Arrow></span>
       </a>
       <a href={`mailto:${site.email}`} class="box" data-copy>
-        <span>email <Arrow>→</Arrow></span>
+        <span>email<Arrow>→</Arrow></span>
       </a>
       <a href="/uses" class="box">
-        <span>how I work <Arrow>→</Arrow></span>
+        <span>how I work<Arrow>→</Arrow></span>
       </a>
     </span>
   </p>
 </section>
 
 <style>
-  section {
-    margin-block-start: var(--sp-section);
-  }
   /* The serif's only face is its sloped one, which an upright word still matches: the word slopes
      in the serif and stays upright in the sans fallback, "plain sans" when the font is late. */
   .accent {

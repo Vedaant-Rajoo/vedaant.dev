@@ -1,7 +1,7 @@
-// Contrast of the Ledger colour tokens against the background, and of the text
-// that sits on --c-surface against it, both themes, for the oklch values and for the hex
-// fallbacks. Run `bun scripts/contrast.ts`; it reads src/styles/tokens.css and exits 1 when a
-// pair is under its target.
+// Contrast of the Ledger colour tokens against the background, of the text that sits on
+// --c-surface against it, and of the non-text marks against the background, both themes, for the
+// oklch values and for the hex fallbacks. Run `bun scripts/contrast.ts`; it reads
+// src/styles/tokens.css and exits 1 when a pair is under its target.
 import { readFileSync } from 'node:fs';
 
 const TARGETS: Record<string, number> = { fg: 15, 'fg-2': 8, 'fg-3': 4.5, live: 4.6, focus: 3 };
@@ -11,6 +11,14 @@ const ON_SURFACE: Record<string, number> = {
   'code-keyword': 8,
   'code-string': 8,
 };
+// Non-text marks on --c-bg, ≥3:1, by use: the link underline and each step of the neutral ramp.
+const NON_TEXT: [use: string, token: string, target: number][] = [
+  ['underline', 'fg-3', 3],
+  ...[1, 2, 3, 4, 5].map((step): [string, string, number] => ['ramp', `ramp-${step}`, 3]),
+];
+// The heatmap's levels 1 to 4 (ramp-2 to ramp-5) on its level 0 (--c-sunken), ≥3:1, so a day with
+// any contribution stands apart from a day with none as well as from the page.
+const ON_LEVEL_0 = [2, 3, 4, 5].map((step) => `ramp-${step}`);
 const THEMES = ['light', 'dark'] as const;
 type Theme = (typeof THEMES)[number];
 type Swatch = { hex: string; clipped: boolean };
@@ -101,7 +109,14 @@ for (let depth = 0; end < css.length; end += 1) {
   }
 }
 const required = [
-  ...new Set([...Object.keys(TARGETS), ...Object.keys(ON_SURFACE), 'bg', 'surface']),
+  ...new Set([
+    ...Object.keys(TARGETS),
+    ...Object.keys(ON_SURFACE),
+    ...NON_TEXT.map(([, token]) => token),
+    'bg',
+    'surface',
+    'sunken',
+  ]),
 ];
 for (const block of css.slice(start, end).matchAll(/(:root[^{]*)\{([^}]*)\}/g)) {
   const theme: Theme = /\[data-theme="dark"\]|:not\(\[data-theme="light"\]\)/.test(block[1])
@@ -156,9 +171,11 @@ for (const theme of THEMES) {
     ['oklch', oklch[theme]],
     ['hex', hex[theme]],
   ] as const) {
-    for (const [ground, name, target] of [
-      ...Object.entries(TARGETS).map(([n, t]) => ['bg', n, t] as const),
-      ...Object.entries(ON_SURFACE).map(([n, t]) => ['surface', n, t] as const),
+    for (const [ground, name, target, use] of [
+      ...Object.entries(TARGETS).map(([n, t]) => ['bg', n, t, ''] as const),
+      ...Object.entries(ON_SURFACE).map(([n, t]) => ['surface', n, t, ''] as const),
+      ...NON_TEXT.map(([use, n, t]) => ['bg', n, t, ` (${use})`] as const),
+      ...ON_LEVEL_0.map((n) => ['sunken', n, 3, ' (heatmap on level 0)'] as const),
     ]) {
       const fg = swatches[name];
       const bg = swatches[ground];
@@ -172,7 +189,7 @@ for (const theme of THEMES) {
       failed += pass ? 0 : 1;
       const clip = fg.clipped || bg.clipped ? ' (clipped)' : '';
       console.log(
-        `| ${theme} | ${name} | ${source} | ${fg.hex}${clip} | ${ground} ${bg.hex} | ${r.toFixed(2)}:1 | ≥ ${target} | ${pass ? 'pass' : 'FAIL'} |`,
+        `| ${theme} | ${name}${use} | ${source} | ${fg.hex}${clip} | ${ground} ${bg.hex} | ${r.toFixed(2)}:1 | ≥ ${target} | ${pass ? 'pass' : 'FAIL'} |`,
       );
     }
   }

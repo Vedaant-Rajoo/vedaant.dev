@@ -4,35 +4,25 @@ import { type NowPlaying, nowPlayingText } from '../data/now-playing';
 import Arrow from './Arrow.astro';
 
 interface Props {
-  // The home row passes neither: the build-time value, idle even when Last.fm said live, and empty
-  // as "—". A state fixture passes both.
+  // /now passes neither: the build-time value, idle even when Last.fm said live, and empty as "—".
+  // A state fixture passes both.
   value?: NowPlaying;
   state?: NowPlaying['state'] | 'offline' | 'loading';
-  // The /now cell in place of the home row. Both have the same root and the same three holders,
-  // so the hub drives them alike, and a variant alone is not a fixture.
-  variant?: 'row' | 'cell';
 }
 
-const {
-  value = nowPlaying,
-  state = value.state === 'empty' ? 'empty' : 'idle',
-  variant = 'row',
-} = Astro.props;
+const { value = nowPlaying, state = value.state === 'empty' ? 'empty' : 'idle' } = Astro.props;
 const { at, url, artwork } = value;
-const text = nowPlayingText(state, value, variant === 'cell' ? ' ' : ' · ');
+const text = nowPlayingText(state, value);
 const When = at ? 'time' : 'span';
 const root = {
   href: url,
   'data-widget': 'now-playing',
-  'data-variant': variant === 'cell' ? 'cell' : undefined,
   'data-state': state,
   'data-fixture': Astro.props.value || Astro.props.state ? '' : undefined,
   'aria-live': 'off',
   'aria-busy': state === 'loading' ? 'true' : undefined,
 } as const;
-// The tile's ♪ under the artwork, which the hub fills or hides; both variants draw it.
-const tile =
-  'relative flex shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs';
+// The tile's ♪ under the artwork, which the hub fills or hides.
 const image = {
   'data-now-playing': 'artwork',
   src: artwork,
@@ -43,69 +33,48 @@ const image = {
   hidden: !artwork,
   class: 'absolute inset-0 size-full object-cover',
 } as const;
-// The time fills a fixed cell, so a state change moves nothing beside it.
-const cell = 'meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3';
-const time = 'grow self-stretch text-right leading-5';
 ---
 
-{/* The home music row, in Row's anatomy, one line per cell. The hub moves it between states by
-    setting data-state, href and the text of the track, the rest and the time, so all three are
-    here in every state, and the row is an <a> throughout: without a URL it has no href and is
-    not a link. No box moves when they change: the text truncates instead of wrapping, nothing
-    else on its line follows the changing text, and the time fills a fixed cell, which large
-    text moves under the text in every state alike. aria-live="off" keeps the changes silent, as
-    the design asks; <bdi> keeps a right-to-left track from reordering the rest. */}
-{
-  variant === 'row' && (
-    <a
-      {...root}
-      class="-mx-2 flex min-h-13 flex-wrap items-center gap-3 rounded-sm px-2 py-2.5 transition-colors duration-(--d-2)"
-    >
-      <span aria-hidden="true" class={`${tile} size-8`}>♪<img {...image} alt="" /></span>
-      <span class="min-w-0 grow basis-16 truncate leading-(--lh-snug)"
-        ><bdi data-now-playing="track" class="font-medium">{text.track}</bdi><span
-          data-now-playing="rest"
-          class="text-sm leading-(--lh-snug) text-fg-2"
-          >{text.rest}</span
-        ></span
-      >
-      <span class={cell}><When data-now-playing="time" datetime={at} class={time}>{text.time}</When></span>
-    </a>
-  )
-}
 {/* The /now cell: the label with the state on its right, the 56px tile, the track over artist ·
     album, and Last.fm's credit in the bottom right corner, a link of its own outside the cell's
     link; justify-between keeps it at the bottom beside a taller coding cell, and its 44px target
-    overlaps the padding instead of adding height. Every line has a fixed
-    height and truncates, the state fills the row's fixed cell, and only the width moves the
-    text under the tile, so no state or text changes the cell's height. The label is a .meta of
-    plain text: global.css paints an element inside a .meta live, never its text.
+    overlaps the padding instead of adding height. The hub moves the cell between states by
+    setting data-state, href and the text of the track, the rest and the time, so all three are
+    here in every state, and the link is an <a> throughout: without a URL it has no href and is
+    not a link. Every line has a fixed height and truncates, the state fills a fixed cell, and
+    only the width moves the text under the tile, so no state or text changes the cell's height.
+    aria-live="off" keeps the changes silent, as the design asks; <bdi> keeps a right-to-left track
+    from reordering the rest. The label is a .meta of plain text: global.css paints an element
+    inside a .meta live, never its text.
     shortcut: h-lh needs the lh unit (Chrome 109, Safari 16.4, Firefox 120); before those,
     an empty artist line collapses and the title moves. A rem height per line works there,
     if they matter. */}
-{
-  variant === 'cell' && (
-    <div class="flex flex-col justify-between gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4">
-      <a {...root} class="-mx-2 flex flex-col gap-2.5 rounded-sm px-2 py-2 transition-colors duration-(--d-2)">
-        <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span class="meta text-xs text-fg-3">now playing</span>
-          <span class={cell}><When data-now-playing="time" datetime={at} class={time}>{text.time}</When></span>
-        </span>
-        <span class="flex flex-wrap items-center gap-3">
-          <span aria-hidden="true" class={`${tile} size-14`}>♪<img {...image} alt="" /></span>
-          <span class="flex min-w-0 grow basis-24 flex-col">
-            <span class="h-lh truncate leading-(--lh-snug)"
-              ><bdi data-now-playing="track" class="font-medium">{text.track}</bdi></span
-            >
-            <span data-now-playing="rest" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
-              >{text.rest}</span
-            >
-          </span>
-        </span>
-      </a>
-      <a href="https://www.last.fm/" class="meta target link -my-3.5 self-end text-xs text-fg-3">
-        <span>via last.fm <Arrow>↗</Arrow></span>
-      </a>
-    </div>
-  )
-}
+<div class="flex flex-col justify-between gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4">
+  {/* biome-ignore lint/a11y/useValidAnchor: the href is the track's URL, set by the hub; without one this is no link. */}
+  <a {...root} class="-mx-2 flex flex-col gap-2.5 rounded-sm px-2 py-2 transition-colors duration-(--d-2)">
+    <span class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="meta text-xs text-fg-3">now playing</span>
+      <span class="meta ml-auto flex h-5 w-16 shrink-0 items-center text-xs whitespace-nowrap text-fg-3"
+        ><When data-now-playing="time" data-live-dot datetime={at} class="grow self-stretch text-right leading-5">{text.time}</When></span
+      >
+    </span>
+    <span class="flex flex-wrap items-center gap-3">
+      <span
+        aria-hidden="true"
+        class="relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-sunken font-mono text-xs"
+        >♪<img {...image} alt="" /></span
+      >
+      <span class="flex min-w-0 grow basis-24 flex-col">
+        <span class="h-lh truncate leading-(--lh-snug)"
+          ><bdi data-now-playing="track" class="font-medium">{text.track}</bdi></span
+        >
+        <span data-now-playing="rest" class="mt-0.5 h-lh truncate text-sm leading-(--lh-snug) text-fg-2"
+          >{text.rest}</span
+        >
+      </span>
+    </span>
+  </a>
+  <a href="https://www.last.fm/" class="meta target link -my-3.5 self-end text-xs text-fg-3">
+    <span>via last.fm<Arrow>↗</Arrow></span>
+  </a>
+</div>

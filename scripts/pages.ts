@@ -1,23 +1,41 @@
-// Reads every page in dist/: the live widgets and /shelf's three live rows show the committed
-// values, client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each)
-// stays within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
+// Reads every page in dist/: the live widgets, /shelf's three live rows and /now's reading and
+// last-watched cells show the committed values, none of /now's live widgets is a state fixture,
+// client JS (inline scripts and the /_astro/ modules a page loads or imports, gzip each) stays
+// within budget, and titles and descriptions are present and unique. HTML and CSS sizes are
 // reported, never failed. Run after `bun run build`; exits 1 on a problem.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { listeningText, readingText, watchedText } from '../src/data/shelf-live';
+import { contributionsText } from '../src/data/contributions';
+import {
+  credits,
+  listeningText,
+  readingCell,
+  readingText,
+  watchedCell,
+  watchedText,
+} from '../src/data/shelf-live';
 
-const BUDGET = 5120;
+// Client JS gzip per page, as AGENTS.md sets it: 7 KB on /now, 5 KB on every other page.
+const budget = (page: string) => (page === 'now/index.html' ? 7168 : 5120);
 const problems: string[] = [];
 const titles = new Map<string, string>();
 const { track, at } = JSON.parse(readFileSync('src/data/snapshots/lastfm.json', 'utf8'));
 const coding = JSON.parse(readFileSync('src/data/snapshots/wakatime.json', 'utf8'));
 const { reading, lastWatched, listening } = JSON.parse(readFileSync('src/data/shelf.json', 'utf8'));
-// A keyless build shows each shelf row once; missing shelf.json rows read "—".
+const calendar = contributionsText(
+  JSON.parse(readFileSync('src/data/snapshots/contributions.json', 'utf8')),
+);
+// A keyless build shows each shelf row once on /shelf; missing shelf.json rows read "—".
 const rows = {
   reading: readingText(reading ?? null).title,
   'last-watched': watchedText(lastWatched ?? null).title,
   'on-repeat': listeningText(listening ?? null).title,
+};
+// /now's reading and last-watched cells show the same values, as the cells name them.
+const shelfCells: Record<string, string> = {
+  reading: readingCell(reading ?? null).name,
+  'last-watched': watchedCell(lastWatched ?? null).name,
 };
 // gzip(1), not zlib: every earlier measurement used it, and the two differ by a few bytes.
 const gz = (input: string | Buffer) =>
@@ -27,6 +45,22 @@ const attr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).e
 const entities: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" };
 const decode = (s = '') => s.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => entities[e]);
 const sum = (sizes: number[]) => sizes.reduce((a, b) => a + b, 0);
+// The element whose start tag begins at `at`, up to the tag that closes it: tags are counted, void
+// and self-closed ones skipped. Text holds no "<" (Astro escapes it), so only tags match.
+const voids = /^(area|br|col|embed|hr|img|input|link|meta|source|wbr)$/i;
+function element(html: string, at: number) {
+  let depth = 0;
+  for (const tag of html.slice(at).matchAll(/<(\/?)([a-z][\w-]*)\b[^>]*?(\/?)>/gi)) {
+    const [, closing, name, selfClosed] = tag;
+    if (closing || !(selfClosed || voids.test(name))) {
+      depth += closing ? -1 : 1;
+    }
+    if (depth === 0) {
+      return html.slice(at, at + (tag.index ?? 0) + tag[0].length);
+    }
+  }
+  return html.slice(at);
+}
 
 function load(page: string, module: string, seen: Map<string, number>) {
   if (!/^\/_astro\/[\w./-]+\.js$/.test(module) || !existsSync(`dist${module}`)) {
@@ -71,7 +105,7 @@ for (const page of pages.sort()) {
   const names: string[] = coding.shares.length
     ? coding.shares.map(({ name }: { name: string }) => name)
     : ['—'];
-  const language = coding.today && coding.language ? `top language ${coding.language}` : '';
+  const language = coding.today && coding.language ? ` · top language ${coding.language}` : '';
   const today = coding.today ? `${coding.today} that day` : '—';
   const codes =
     cells.length === (page === 'now/index.html' ? 1 : 0) &&
@@ -86,14 +120,64 @@ for (const page of pages.sort()) {
     problems.push(`${page}: the coding cell does not show the snapshot`);
   }
 
+  // The heatmap, on /now only: once, with the snapshot's texts and day, and 371 titled squares.
+  const heatmaps = html.split('data-widget="contributions"').length - 1;
+  const texts = (row: string) =>
+    all(html, new RegExp(`\\bdata-row="${row}"[^>]*>([^<]*)<`, 'g'))
+      .map(decode)
+      .join('|');
+  const updated = all(html, /(<time\b[^>]*\bdata-row="updated"[^>]*>)/g);
+  const squares = all(html, /<rect\b[^>]*>(<title>)/g).length;
+  const nowPage = page === 'now/index.html';
+  const heats =
+    heatmaps === Number(nowPage) &&
+    (!nowPage ||
+      (texts('total') === calendar.total &&
+        texts('since') === calendar.since &&
+        texts('updated') === calendar.updated &&
+        updated.length === 1 &&
+        attr(updated[0], 'datetime') === calendar.date &&
+        squares === 371));
+  if (!heats) {
+    problems.push(
+      `${page}: the heatmap does not show the snapshot's texts and day and 371 squares once, on /now alone`,
+    );
+  }
+
+  // Each shelf row once on /shelf, and reading and last watched once more on /now, as cells, and
+  // on no other page. Inside the widget's own element, its holder shows the value exactly (the
+  // row's title, or the cell's name) and its source is credited, with its link; a cell also
+  // links to /shelf.
   for (const [name, title] of Object.entries(rows)) {
-    const shelfPage = page === 'shelf/index.html';
-    const count = html.split(`data-widget="${name}"`).length - 1;
-    if (count !== Number(shelfPage) || (shelfPage && !decode(html).includes(title))) {
+    const cell = nowPage && name in shelfCells;
+    const shown = page === 'shelf/index.html' || cell;
+    const found = [...html.matchAll(new RegExp(`<[a-z][^>]*\\bdata-widget="${name}"`, 'g'))];
+    const own = found.length > 0 ? element(html, found[0].index ?? 0) : '';
+    const [hook, text] = cell ? ['name', shelfCells[name]] : ['title', title];
+    const holders = all(own, new RegExp(`\\bdata-row="${hook}"[^>]*>([^<]*)<`, 'g')).map(decode);
+    const credit = credits[name as keyof typeof credits];
+    const credited = own.includes(`href="${credit.href}"`) && own.includes(credit.label);
+    const ok =
+      holders.length === 1 &&
+      holders[0] === text &&
+      credited &&
+      (!cell || own.includes('href="/shelf"'));
+    if (found.length !== Number(shown) || (shown && !ok)) {
+      const where = name in shelfCells ? '/shelf and once on /now' : '/shelf';
       problems.push(
-        `${page}: the ${name} row does not show shelf.json's value once, on /shelf alone`,
+        `${page}: the ${name} row does not show shelf.json's value, credited, once on ${where}, and on no other page`,
       );
     }
+  }
+
+  // The hub skips a widget marked as a state fixture, so none of /now's live widgets may carry one.
+  const fixtures = all(html, /(<[a-z][^>]*\bdata-widget="[^"]*"[^>]*>)/g).filter((tag) =>
+    /\bdata-fixture\b/.test(tag),
+  );
+  if (nowPage && fixtures.length > 0) {
+    problems.push(
+      `${page}: ${fixtures.length} live widget(s) marked data-fixture, which the hub skips`,
+    );
   }
 
   const seen = new Map<string, number>();
@@ -116,7 +200,7 @@ for (const page of pages.sort()) {
   const css = sum(all(styled, /<style\b[^>]*>([\s\S]*?)<\/style>/g).map(gz));
   const size = gz(Buffer.from(html));
   const report = [
-    `${page}: JS ${js} B, ${BUDGET - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
+    `${page}: JS ${js} B, ${budget(page) - js} B left (${parts.map((p) => p.join(' ')).join(', ')})`,
     `HTML ${size} B`,
     `CSS ${css} B`,
   ];
@@ -127,8 +211,8 @@ for (const page of pages.sort()) {
     report.push('over the 30 KB HTML / 12 KB CSS target');
   }
   console.log(report.join('; '));
-  if (js > BUDGET) {
-    problems.push(`${page}: ${js} B of JS gzip, over ${BUDGET} B`);
+  if (js > budget(page)) {
+    problems.push(`${page}: ${js} B of JS gzip, over ${budget(page)} B`);
   }
 
   const title = decode(/<title>([^<]*)<\/title>/.exec(html)?.[1]).trim();

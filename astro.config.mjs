@@ -20,21 +20,25 @@ export default defineConfig({
   // Committed latin variable files (fontsource 5.3.0; licence in src/assets/fonts/OFL.txt), one
   // per family, so the build needs no network. The sans subset also includes ← → ↗ from
   // google/fonts ofl/geist/Geist[wght].ttf, version 1.800, matching its existing glyphs.
+  // Each weight axis is cut to the weights the pages render (sans 400 to 700, as <strong> is
+  // bolder than 400; mono 400 and 500), which took the pair from 52 KB to 36 KB:
+  // fonttools varLib.instancer <fontsource file> wght=400:700 (mono: wght=400:500)
   // The fallback stacks are repeated in tokens.css; Astro puts a metric-matched face
-  // before them. Sans and mono are optional: used if ready within their short block
-  // period and never swapped in later, so they cannot re-wrap text.
+  // before them. All three faces are block: Base.astro's inline script hides the page until
+  // the fonts it uses are ready (at most 3 s), so the first paint is already in them and
+  // nothing re-wraps in view. With JS off the text stays invisible until its font arrives.
   fonts: [
     {
       provider: fontProviders.local(),
       name: 'Geist',
       cssVariable: '--ff-geist',
-      display: 'optional',
+      display: 'block',
       fallbacks: ['system-ui', '-apple-system', 'sans-serif'],
       options: {
         variants: [
           {
-            src: ['./src/assets/fonts/geist-latin-wght-normal.woff2'],
-            weight: '100 900',
+            src: ['./src/assets/fonts/geist-latin-wght-400-700-normal.woff2'],
+            weight: '400 700',
             style: 'normal',
           },
         ],
@@ -44,13 +48,13 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'Geist Mono',
       cssVariable: '--ff-geist-mono',
-      display: 'optional',
+      display: 'block',
       fallbacks: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       options: {
         variants: [
           {
-            src: ['./src/assets/fonts/geist-mono-latin-wght-normal.woff2'],
-            weight: '100 900',
+            src: ['./src/assets/fonts/geist-mono-latin-wght-400-500-normal.woff2'],
+            weight: '400 500',
             style: 'normal',
           },
         ],
@@ -58,8 +62,8 @@ export default defineConfig({
     },
     {
       // The hero's one serif word (licence in src/assets/fonts/OFL-instrument-serif.txt).
-      // optional: used only if it is ready at once and never swapped in, so a late font leaves the
-      // word in the sans and nothing moves. No fallbacks: tokens.css puts the sans after it.
+      // block, like the others, so the page waits for it too. No fallbacks: tokens.css puts the
+      // sans after it.
       // The file holds only the glyphs of hero.accent, "systems" (3 KB, not the latin file's
       // 22 KB, so less of the first view's bandwidth); site.ts rejects an accent it cannot draw.
       // Made from fontsource 5.3.0's latin 400 italic with fonttools:
@@ -67,7 +71,7 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'Instrument Serif',
       cssVariable: '--ff-instrument-serif',
-      display: 'optional',
+      display: 'block',
       fallbacks: [],
       options: {
         variants: [
@@ -88,13 +92,15 @@ export default defineConfig({
   // every run, so the leading dot allows the whole domain. Cloudflare owns its DNS, so this keeps
   // Vite's host check closed to DNS rebinding.
   server: { allowedHosts: ['.trycloudflare.com'] },
-  // The Last.fm and WakaTime keys come only from the host's environment: encrypted Pages secrets
-  // in a Cloudflare build, a gitignored .env locally. Astro reads a secret when the build runs and
-  // never inlines it; unset, lastfm.ts and wakatime.ts use the committed snapshots.
+  // The Last.fm, WakaTime and GitHub keys come only from the host's environment: encrypted Pages
+  // secrets in a Cloudflare build, a gitignored .env locally. Astro reads a secret when the build
+  // runs and never inlines it; unset, lastfm.ts, wakatime.ts and github.ts use the committed
+  // snapshots.
   env: {
     schema: {
       LASTFM_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
       WAKATIME_API_KEY: envField.string({ context: 'server', access: 'secret', optional: true }),
+      CONTRIBUTIONS_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
     },
   },
   vite: {

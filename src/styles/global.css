@@ -18,6 +18,11 @@
   --color-live: var(--c-live);
   --color-mark: var(--c-mark);
   --color-focus: var(--c-focus);
+  --color-ramp-1: var(--c-ramp-1);
+  --color-ramp-2: var(--c-ramp-2);
+  --color-ramp-3: var(--c-ramp-3);
+  --color-ramp-4: var(--c-ramp-4);
+  --color-ramp-5: var(--c-ramp-5);
 
   --font-sans: var(--ff-sans);
   --font-mono: var(--ff-mono);
@@ -66,6 +71,205 @@
   body {
     padding-inline: var(--sp-gutter);
   }
+  /* Base.astro's inline script sets data-fonts until the page's fonts are ready. */
+  [data-fonts="loading"] body {
+    visibility: hidden;
+  }
+
+  /* The loading ghost (design L1): bars where the page will land, shapes only, as text would be in
+     the fallback font. html::before draws the header and title, and on home the hero, the meta
+     strip and the work label; html::after draws home's first four ledger rows. The geometry comes
+     from the layout's own tokens; home's breakpoints are where its lines wrap. It fades in after
+     --d-2, so a fast or cached load never shows it, and goes with the same cut as the page shows. */
+  :root[data-fonts="loading"] {
+    --g-col: var(--w-col);
+    --g-bar: linear-gradient(var(--c-sunken) 0 0);
+    /* The header: pt-5 and a 44 px row; below 370 px the nav wraps to a second row. */
+    --g-head: calc(var(--sp-unit) * 16);
+    --g-nav-x: 100%;
+    --g-nav-y: calc(var(--sp-unit) * 10.5);
+    --g-nav-w: calc(var(--sp-unit) * 76);
+    --g-top: calc(var(--g-head) + var(--sp-section));
+    /* The title: the hero's name on home, a page's h1 elsewhere, below a back link if any. */
+    --g-fs: var(--fs-2xl);
+    --g-tw: 3.5;
+    --g-crumb: 0px;
+    --g-crumb-w: 0px;
+  }
+  :root[data-fonts="loading"][data-ghost~="crumb"] {
+    --g-crumb: calc(var(--fs-xs) * var(--lh-snug) + var(--sp-unit) * 3.5);
+    --g-crumb-w: calc(var(--sp-unit) * 17);
+  }
+  :root[data-fonts="loading"][data-ghost~="wide"] {
+    --g-col: var(--w-wide);
+  }
+  :root[data-fonts="loading"][data-ghost~="home"] {
+    --g-fs: var(--fs-3xl);
+    --g-tw: 1.75;
+    /* The hero's lines, the meta strip, the call-to-action row and the work section. */
+    --g-h: calc(var(--g-top) + var(--g-fs) * var(--lh-tight) + var(--sp-unit) * 4);
+    --g-hl: calc(var(--fs-lg) * var(--lh-snug));
+    --g-n: 1;
+    --g-h1: calc(var(--sp-unit) * 142);
+    --g-h2: 0px;
+    --g-h3: 0px;
+    --g-p: calc(var(--g-h) + var(--g-hl) * var(--g-n) + var(--sp-unit) * 4);
+    --g-pr: calc(var(--fs-sm) * var(--lh-snug));
+    --g-c: calc(var(--g-p) + var(--g-pr) + var(--sp-unit) * 4);
+    --g-line: calc(var(--fs-base) * var(--lh-body));
+    --g-c1: calc(var(--g-c) + var(--sp-unit) * 5.5);
+    --g-c2x: calc(var(--sp-unit) * 72);
+    --g-c2y: var(--g-c1);
+    --g-c2w: calc(var(--sp-unit) * 84);
+    --g-c3y: var(--g-c1);
+    --g-c3w: 0px;
+    --g-ch: calc(var(--sp-unit) * 11);
+    --g-r: calc(var(--g-c) + var(--g-ch) + var(--sp-section));
+    --g-rp: calc(var(--g-line) + var(--sp-unit) * 7);
+  }
+  @media (width < 700px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-c1: calc(var(--g-c) + var(--g-line) / 2);
+      --g-c2x: 0px;
+      --g-c2y: calc(var(--g-c) + var(--g-line) + var(--sp-unit) * 5.5);
+      --g-c2w: min(100%, calc(var(--sp-unit) * 84));
+      --g-ch: calc(var(--g-line) + var(--sp-unit) * 11);
+    }
+  }
+  @media (width < 640px) {
+    :root[data-fonts="loading"] {
+      --g-nav-w: calc(var(--sp-unit) * 68);
+    }
+  }
+  @media (width < 620px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-n: 2;
+      --g-h1: 100%;
+      --g-h2: 40%;
+    }
+  }
+  @media (width < 480px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-rp: calc(var(--sp-unit) * 16);
+    }
+  }
+  @media (width < 370px) {
+    :root[data-fonts="loading"] {
+      --g-head: calc(var(--sp-unit) * 29);
+      --g-nav-x: 0px;
+      --g-nav-y: calc(var(--sp-unit) * 23.5);
+    }
+  }
+  @media (width < 360px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-c2w: calc(var(--sp-unit) * 48);
+      --g-c3y: calc(var(--g-c2y) + var(--sp-unit) * 13);
+      --g-c3w: calc(var(--sp-unit) * 26);
+      --g-ch: calc(var(--g-line) + var(--sp-unit) * 24);
+    }
+  }
+  @media (width < 350px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-n: 3;
+      --g-h1: 80%;
+      --g-h2: 98%;
+      --g-h3: 16%;
+    }
+  }
+  :root[data-fonts="loading"]::before,
+  :root[data-fonts="loading"][data-ghost~="home"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: max(var(--sp-gutter), calc((100% - var(--g-col)) / 2));
+    pointer-events: none;
+    background-repeat: no-repeat;
+    animation: ghost-in var(--d-1) var(--ez-out) var(--d-2) both;
+  }
+  /* Header, title and one meta line: what every page opens with. */
+  :root[data-fonts="loading"]::before {
+    inset-block: 0;
+    background-image: var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar);
+    background-position:
+      0 calc(var(--sp-unit) * 10.5 - var(--fs-base) * 0.275),
+      var(--g-nav-x) calc(var(--g-nav-y) - var(--fs-sm) * 0.275),
+      0 calc(var(--g-top) + var(--fs-xs) * (var(--lh-snug) - 0.55) / 2),
+      0 calc(var(--g-top) + var(--g-crumb) + var(--g-fs) * (var(--lh-tight) - 0.7) / 2),
+      0
+      calc(
+        var(--g-top) +
+        var(--g-crumb) +
+        var(--g-fs) *
+        var(--lh-tight) +
+        var(--sp-unit) *
+        5.5 -
+        var(--fs-sm) *
+        0.25
+      );
+    background-size:
+      calc(var(--sp-unit) * 7) calc(var(--fs-base) * 0.55),
+      var(--g-nav-w) calc(var(--fs-sm) * 0.55),
+      var(--g-crumb-w) calc(var(--fs-xs) * 0.55),
+      calc(var(--g-fs) * var(--g-tw)) calc(var(--g-fs) * 0.7),
+      min(100%, calc(var(--sp-unit) * 96)) calc(var(--fs-sm) * 0.5);
+  }
+  :root[data-fonts="loading"][data-ghost~="home"]::before {
+    background-image:
+      var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar),
+      var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar),
+      repeating-linear-gradient(
+        90deg,
+        var(--c-line) 0 calc(var(--sp-unit) * 0.75),
+        transparent 0 calc(var(--sp-unit) * 1.5)
+      ),
+      var(--g-bar);
+    background-position:
+      0 calc(var(--sp-unit) * 10.5 - var(--fs-base) * 0.275),
+      var(--g-nav-x) calc(var(--g-nav-y) - var(--fs-sm) * 0.275),
+      0 calc(var(--g-top) + var(--g-fs) * (var(--lh-tight) - 0.7) / 2),
+      0 calc(var(--g-h) + var(--g-hl) * 0.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-h) + var(--g-hl) * 1.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-h) + var(--g-hl) * 2.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-p) + var(--g-pr) / 2 - var(--fs-sm) * 0.275),
+      0 calc(var(--g-c1) - var(--fs-base) * 0.275),
+      var(--g-c2x) calc(var(--g-c2y) - var(--fs-base) * 0.275),
+      0 calc(var(--g-c3y) - var(--fs-base) * 0.275),
+      0 var(--g-r),
+      0 calc(var(--g-r) + 1px + var(--sp-stack) + var(--fs-xs) * (var(--lh-snug) - 0.6) / 2);
+    background-size:
+      calc(var(--sp-unit) * 7) calc(var(--fs-base) * 0.55),
+      var(--g-nav-w) calc(var(--fs-sm) * 0.55),
+      calc(var(--g-fs) * var(--g-tw)) calc(var(--g-fs) * 0.7),
+      var(--g-h1) calc(var(--fs-lg) * 0.55),
+      var(--g-h2) calc(var(--fs-lg) * 0.55),
+      var(--g-h3) calc(var(--fs-lg) * 0.55),
+      min(calc(var(--sp-unit) * 107), calc(100% - var(--sp-unit) * 16)) calc(var(--fs-sm) * 0.55),
+      calc(var(--sp-unit) * 68) calc(var(--fs-base) * 0.55),
+      var(--g-c2w) calc(var(--fs-base) * 0.55),
+      var(--g-c3w) calc(var(--fs-base) * 0.55),
+      100% 1px,
+      calc(var(--sp-unit) * 11) calc(var(--fs-xs) * 0.6);
+  }
+  /* Home's first four ledger rows: a tile and the hairline under each, one row's pitch repeated. */
+  :root[data-fonts="loading"][data-ghost~="home"]::after {
+    inset-block-start: calc(var(--g-r) + 1px + var(--sp-stack) * 2 + var(--fs-xs) * var(--lh-snug));
+    block-size: calc(var(--g-rp) * 4);
+    background-image:
+      linear-gradient(
+        transparent calc((var(--g-rp) - var(--sp-unit) * 8) / 2),
+        var(--c-sunken) 0 calc((var(--g-rp) + var(--sp-unit) * 8) / 2),
+        transparent 0
+      ),
+      linear-gradient(transparent calc(var(--g-rp) - 1px), var(--c-line) 0);
+    background-repeat: repeat-y;
+    background-size:
+      calc(var(--sp-unit) * 8) var(--g-rp),
+      100% var(--g-rp);
+  }
+  @keyframes ghost-in {
+    from {
+      opacity: 0;
+    }
+  }
   h1,
   h2,
   h3 {
@@ -103,6 +307,10 @@
       background-size: 100% 100%;
     }
   }
+  /* The swipe waits while the page is hidden for its fonts, so it plays in view. */
+  [data-fonts="loading"] mark {
+    animation-play-state: paused;
+  }
   :focus-visible {
     outline: --spacing(0.5) solid var(--c-focus);
     outline-offset: --spacing(0.5);
@@ -111,6 +319,14 @@
   ::selection {
     background: var(--c-mark);
     color: var(--c-fg);
+  }
+  /* The page rhythm: a page's header, and each section at the top of its main, start
+     --sp-section below what comes before; a header keeps as much below it. */
+  :is(main, main > article) > header {
+    margin-block: var(--sp-section);
+  }
+  main > section {
+    margin-block-start: var(--sp-section);
   }
   code,
   kbd,
@@ -121,17 +337,32 @@
   }
 }
 
+/* The underline is --c-fg-3, ≥3:1 on --c-bg: for a link in the text's own colour it is the cue
+   that is not colour alone (scripts/contrast.ts measures it). */
 @utility link {
-  @apply underline decoration-line-2 transition-colors hover:decoration-fg;
+  @apply underline decoration-fg-3 transition-colors hover:decoration-fg;
 }
 @utility target {
   @apply inline-flex min-h-11 min-w-11 items-center;
 }
+/* Its text starts at its padding, so the boxes of a wrapping row line up on the left. */
 @utility box {
-  @apply flex min-h-11 min-w-11 items-center justify-center px-1.5 link;
+  @apply flex min-h-11 min-w-11 items-center px-1.5 link;
 }
 
 @layer components {
+  /* The disclosure marker after a summary's label, the same on every <details>: + closed and −
+     open, drawn as Arrow.astro draws an arrow, so an underline stops at the label. Screen readers
+     hear the summary's own state instead. */
+  [data-marker]::after {
+    content: "+" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
+  }
+  details[open] > summary [data-marker]::after {
+    content: "−" / "";
+  }
   .prose {
     max-width: var(--w-measure);
     overflow-wrap: anywhere;
@@ -173,35 +404,49 @@
   .prose li > :is(ul, ol) {
     margin-block-start: --spacing(2);
   }
-  /* A decision: chose, over, because, each label in a mono column 88px wide. A dd's basis is
-     the rest of its line, so every pair starts a line, and at least 11rem: when large text
-     leaves less beside the label, the dd moves under it, as in /now's dl. */
-  .prose dl {
+  /* The label column: a case study's decisions (chose, over, because) and /now's sections, each
+     label in a mono column 96px wide. A dd's basis is the rest of its line, and at least 11rem, so
+     every pair starts a line, and when large text leaves less beside the label, the dd moves under
+     it. A long word or URL breaks rather than widen the page. */
+  :is(.prose dl, .labels) {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: --spacing(1) var(--sp-row);
+    gap: --spacing(2) --spacing(4);
+    overflow-wrap: anywhere;
   }
-  .prose dt {
-    flex: 0 0 --spacing(22);
+  :is(.prose dl, .labels) > dt {
+    flex: 0 0 --spacing(24);
     font-family: var(--ff-mono);
     font-feature-settings: var(--mono-features);
     font-size: var(--fs-xs);
+    line-height: var(--lh-snug);
     letter-spacing: var(--ls-mono);
     color: var(--c-fg-3);
   }
-  .prose dd {
-    flex: 1 1 max(--spacing(44), 100% - --spacing(22) - var(--sp-row));
+  :is(.prose dl, .labels) > dd {
+    flex: 1 1 max(--spacing(44), 100% - --spacing(28));
     min-width: 0;
   }
-  /* Links as elsewhere. A link in a line of prose keeps the line's height, not 44px. */
-  .prose a {
+  /* Links in prose and in /now's sections, as the link utility draws them. A link in a line of
+     prose keeps the line's height, not 44px. */
+  :is(.prose, .labels) a {
     text-decoration-line: underline;
-    text-decoration-color: var(--c-line-2);
+    text-decoration-color: var(--c-fg-3);
     transition: text-decoration-color var(--d-1) var(--ez-out);
   }
-  .prose a:hover {
+  :is(.prose, .labels) a:hover {
     text-decoration-color: var(--c-fg);
+  }
+  /* An external one ends in ↗ (FR-SH-5), drawn as Arrow.astro draws it, so the underline stops at
+     the word; screen readers skip it. shortcut: internal links are root-relative; absolute web
+     links are outbound. If absolute internal URLs are needed, classify against the configured
+     site origin instead. */
+  :is(.prose, .labels) a:is([href^="https://"], [href^="http://"], [href^="//"])::after {
+    content: "↗" / "";
+    display: inline-block;
+    padding-inline-start: --spacing(1);
+    font-family: var(--ff-sans);
   }
   /* A quote is set in italic at text-lg and nothing else: sans italic, synthesized, so
      it requests no font. */
@@ -322,13 +567,11 @@
   }
 }
 
-/* The now-playing row and cell; NowPlaying.astro sets data-state. The coding cell has no live
+/* The now-playing cell; NowPlaying.astro sets data-state. The coding cell has no live
    state, so none of this reaches it. Idle and offline show the meta time; empty and loading,
    which has no snapshot and so no value, show none. live sets "now" in --c-live at text-sm
-   medium after a dot, which pulses at the signature tier as a ring that grows and fades, and
-   stays still when reduced motion is asked for. Forced colours would paint the dot in the
-   Canvas colour, so there it takes CanvasText. The row is an <a> in every state, so only one
-   with a URL takes the hover fill. */
+   medium after the live dot. The cell's link is an <a> in every state, so only one with a URL
+   takes the hover fill. */
 @layer components {
   @media (hover: hover) {
     a[data-widget="now-playing"][href]:hover {
@@ -341,10 +584,14 @@
     font-weight: var(--fw-medium);
     color: var(--c-live);
   }
-  [data-widget="now-playing"][data-state="live"] .meta > ::before {
+  /* The live dot, before a live widget's state word: the presence line's "listening" and this
+     cell's "now". It pulses at the signature tier as a ring that grows and fades, and stays still
+     when reduced motion is asked for. Forced colours would paint it in the Canvas colour, so there
+     it takes CanvasText. */
+  [data-state="live"] [data-live-dot]::before {
     content: "";
     display: inline-block;
-    vertical-align: middle;
+    vertical-align: calc(var(--sp-unit) / 4);
     inline-size: --spacing(1.75);
     block-size: --spacing(1.75);
     margin-inline-end: --spacing(1.5);
@@ -352,12 +599,12 @@
     background: currentColor;
   }
   @media (prefers-reduced-motion: no-preference) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    [data-state="live"] [data-live-dot]::before {
       animation: now-pulse var(--d-sig) var(--ez-out) infinite;
     }
   }
   @media (forced-colors: active) {
-    [data-widget="now-playing"][data-state="live"] .meta > ::before {
+    [data-state="live"] [data-live-dot]::before {
       forced-color-adjust: none;
       background: CanvasText;
     }
