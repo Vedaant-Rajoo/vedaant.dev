@@ -79,6 +79,201 @@
   [data-fonts="loading"] mark {
     animation-play-state: paused;
   }
+
+  /* The loading ghost (design L1): bars where the page will land, shapes only, as text would be in
+     the fallback font. html::before draws the header and title, and on home the hero, the meta
+     strip and the work label; html::after draws home's first four ledger rows. The geometry comes
+     from the layout's own tokens; home's breakpoints are where its lines wrap. It fades in after
+     --d-2, so a fast or cached load never shows it, and goes with the same cut as the page shows. */
+  :root[data-fonts="loading"] {
+    --g-col: var(--w-col);
+    --g-bar: linear-gradient(var(--c-sunken) 0 0);
+    /* The header: pt-5 and a 44 px row; below 370 px the nav wraps to a second row. */
+    --g-head: calc(var(--sp-unit) * 16);
+    --g-nav-x: 100%;
+    --g-nav-y: calc(var(--sp-unit) * 10.5);
+    --g-nav-w: calc(var(--sp-unit) * 76);
+    --g-top: calc(var(--g-head) + var(--sp-section));
+    /* The title: the hero's name on home, a page's h1 elsewhere, below a back link if any. */
+    --g-fs: var(--fs-2xl);
+    --g-tw: 3.5;
+    --g-crumb: 0px;
+    --g-crumb-w: 0px;
+  }
+  :root[data-fonts="loading"][data-ghost~="crumb"] {
+    --g-crumb: calc(var(--fs-xs) * var(--lh-snug) + var(--sp-unit) * 3.5);
+    --g-crumb-w: calc(var(--sp-unit) * 17);
+  }
+  :root[data-fonts="loading"][data-ghost~="wide"] {
+    --g-col: var(--w-wide);
+  }
+  :root[data-fonts="loading"][data-ghost~="home"] {
+    --g-fs: var(--fs-3xl);
+    --g-tw: 1.75;
+    /* The hero's lines, the meta strip, the call-to-action row and the work section. */
+    --g-h: calc(var(--g-top) + var(--g-fs) * var(--lh-tight) + var(--sp-unit) * 4);
+    --g-hl: calc(var(--fs-lg) * var(--lh-snug));
+    --g-n: 1;
+    --g-h1: calc(var(--sp-unit) * 142);
+    --g-h2: 0px;
+    --g-h3: 0px;
+    --g-p: calc(var(--g-h) + var(--g-hl) * var(--g-n) + var(--sp-unit) * 4);
+    --g-pr: calc(var(--fs-sm) * var(--lh-snug));
+    --g-c: calc(var(--g-p) + var(--g-pr) + var(--sp-unit) * 4);
+    --g-line: calc(var(--fs-base) * var(--lh-body));
+    --g-c1: calc(var(--g-c) + var(--sp-unit) * 5.5);
+    --g-c2x: calc(var(--sp-unit) * 72);
+    --g-c2y: var(--g-c1);
+    --g-c2w: calc(var(--sp-unit) * 84);
+    --g-c3y: var(--g-c1);
+    --g-c3w: 0px;
+    --g-ch: calc(var(--sp-unit) * 11);
+    --g-r: calc(var(--g-c) + var(--g-ch) + var(--sp-section));
+    --g-rp: calc(var(--g-line) + var(--sp-unit) * 7);
+  }
+  @media (width < 700px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-c1: calc(var(--g-c) + var(--g-line) / 2);
+      --g-c2x: 0px;
+      --g-c2y: calc(var(--g-c) + var(--g-line) + var(--sp-unit) * 5.5);
+      --g-c2w: min(100%, calc(var(--sp-unit) * 84));
+      --g-ch: calc(var(--g-line) + var(--sp-unit) * 11);
+    }
+  }
+  @media (width < 640px) {
+    :root[data-fonts="loading"] {
+      --g-nav-w: calc(var(--sp-unit) * 68);
+    }
+  }
+  @media (width < 620px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-n: 2;
+      --g-h1: 100%;
+      --g-h2: 40%;
+    }
+  }
+  @media (width < 480px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-rp: calc(var(--sp-unit) * 16);
+    }
+  }
+  @media (width < 370px) {
+    :root[data-fonts="loading"] {
+      --g-head: calc(var(--sp-unit) * 29);
+      --g-nav-x: 0px;
+      --g-nav-y: calc(var(--sp-unit) * 23.5);
+    }
+  }
+  @media (width < 360px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-c2w: calc(var(--sp-unit) * 48);
+      --g-c3y: calc(var(--g-c2y) + var(--sp-unit) * 13);
+      --g-c3w: calc(var(--sp-unit) * 26);
+      --g-ch: calc(var(--g-line) + var(--sp-unit) * 24);
+    }
+  }
+  @media (width < 350px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-n: 3;
+      --g-h1: 80%;
+      --g-h2: 98%;
+      --g-h3: 16%;
+    }
+  }
+  :root[data-fonts="loading"]::before,
+  :root[data-fonts="loading"][data-ghost~="home"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: max(var(--sp-gutter), calc((100% - var(--g-col)) / 2));
+    pointer-events: none;
+    background-repeat: no-repeat;
+    animation: ghost-in var(--d-1) var(--ez-out) var(--d-2) both;
+  }
+  /* Header, title and one meta line: what every page opens with. */
+  :root[data-fonts="loading"]::before {
+    inset-block: 0;
+    background-image: var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar);
+    background-position:
+      0 calc(var(--sp-unit) * 10.5 - var(--fs-base) * 0.275),
+      var(--g-nav-x) calc(var(--g-nav-y) - var(--fs-sm) * 0.275),
+      0 calc(var(--g-top) + var(--fs-xs) * (var(--lh-snug) - 0.55) / 2),
+      0 calc(var(--g-top) + var(--g-crumb) + var(--g-fs) * (var(--lh-tight) - 0.7) / 2),
+      0
+      calc(
+        var(--g-top) +
+        var(--g-crumb) +
+        var(--g-fs) *
+        var(--lh-tight) +
+        var(--sp-unit) *
+        5.5 -
+        var(--fs-sm) *
+        0.25
+      );
+    background-size:
+      calc(var(--sp-unit) * 7) calc(var(--fs-base) * 0.55),
+      var(--g-nav-w) calc(var(--fs-sm) * 0.55),
+      var(--g-crumb-w) calc(var(--fs-xs) * 0.55),
+      calc(var(--g-fs) * var(--g-tw)) calc(var(--g-fs) * 0.7),
+      min(100%, calc(var(--sp-unit) * 96)) calc(var(--fs-sm) * 0.5);
+  }
+  :root[data-fonts="loading"][data-ghost~="home"]::before {
+    background-image:
+      var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar),
+      var(--g-bar), var(--g-bar), var(--g-bar), var(--g-bar),
+      repeating-linear-gradient(
+        90deg,
+        var(--c-line) 0 calc(var(--sp-unit) * 0.75),
+        transparent 0 calc(var(--sp-unit) * 1.5)
+      ),
+      var(--g-bar);
+    background-position:
+      0 calc(var(--sp-unit) * 10.5 - var(--fs-base) * 0.275),
+      var(--g-nav-x) calc(var(--g-nav-y) - var(--fs-sm) * 0.275),
+      0 calc(var(--g-top) + var(--g-fs) * (var(--lh-tight) - 0.7) / 2),
+      0 calc(var(--g-h) + var(--g-hl) * 0.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-h) + var(--g-hl) * 1.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-h) + var(--g-hl) * 2.5 - var(--fs-lg) * 0.275),
+      0 calc(var(--g-p) + var(--g-pr) / 2 - var(--fs-sm) * 0.275),
+      0 calc(var(--g-c1) - var(--fs-base) * 0.275),
+      var(--g-c2x) calc(var(--g-c2y) - var(--fs-base) * 0.275),
+      0 calc(var(--g-c3y) - var(--fs-base) * 0.275),
+      0 var(--g-r),
+      0 calc(var(--g-r) + 1px + var(--sp-stack) + var(--fs-xs) * (var(--lh-snug) - 0.6) / 2);
+    background-size:
+      calc(var(--sp-unit) * 7) calc(var(--fs-base) * 0.55),
+      var(--g-nav-w) calc(var(--fs-sm) * 0.55),
+      calc(var(--g-fs) * var(--g-tw)) calc(var(--g-fs) * 0.7),
+      var(--g-h1) calc(var(--fs-lg) * 0.55),
+      var(--g-h2) calc(var(--fs-lg) * 0.55),
+      var(--g-h3) calc(var(--fs-lg) * 0.55),
+      min(calc(var(--sp-unit) * 107), calc(100% - var(--sp-unit) * 16)) calc(var(--fs-sm) * 0.55),
+      calc(var(--sp-unit) * 68) calc(var(--fs-base) * 0.55),
+      var(--g-c2w) calc(var(--fs-base) * 0.55),
+      var(--g-c3w) calc(var(--fs-base) * 0.55),
+      100% 1px,
+      calc(var(--sp-unit) * 11) calc(var(--fs-xs) * 0.6);
+  }
+  /* Home's first four ledger rows: a tile and the hairline under each, one row's pitch repeated. */
+  :root[data-fonts="loading"][data-ghost~="home"]::after {
+    inset-block-start: calc(var(--g-r) + 1px + var(--sp-stack) * 2 + var(--fs-xs) * var(--lh-snug));
+    block-size: calc(var(--g-rp) * 4);
+    background-image:
+      linear-gradient(
+        transparent calc((var(--g-rp) - var(--sp-unit) * 8) / 2),
+        var(--c-sunken) 0 calc((var(--g-rp) + var(--sp-unit) * 8) / 2),
+        transparent 0
+      ),
+      linear-gradient(transparent calc(var(--g-rp) - 1px), var(--c-line) 0);
+    background-repeat: repeat-y;
+    background-size:
+      calc(var(--sp-unit) * 8) var(--g-rp),
+      100% var(--g-rp);
+  }
+  @keyframes ghost-in {
+    from {
+      opacity: 0;
+    }
+  }
   h1,
   h2,
   h3 {

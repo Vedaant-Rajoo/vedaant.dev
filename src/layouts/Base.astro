@@ -13,11 +13,17 @@ interface Props {
   // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
   // answers 200, so it asks not to be indexed.
   noindex?: boolean;
-  // Home: the page opens with the hero, so it preloads the serif word's font.
+  // Home: the page opens with the hero, so it preloads the serif word's font and its loading
+  // ghost (global.css) draws the hero.
   hero?: boolean;
+  // A back link sits above the title, so the loading ghost draws it and lowers the title.
+  crumb?: boolean;
 }
 
-const { title, description, class: className, schema, noindex = false, hero = false } = Astro.props;
+const { title, description, class: className, schema, noindex = false, hero = false, crumb = false } = Astro.props;
+// The loading ghost's shapes (global.css): home's, or the header and title in the page's column.
+const column = className.includes('max-w-wide') ? 'wide' : 'col';
+const ghost = [hero ? 'home' : column, crumb && 'crumb'].filter(Boolean).join(' ');
 const fullTitle = title === undefined ? site.fullName : `${title} · ${site.fullName}`;
 // site is the production origin, so a preview or dev build names production too. A build's
 // Astro.url ends in a slash, as Pages serves each page at its directory URL.
@@ -32,7 +38,7 @@ const jsonLd =
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-ghost={ghost}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

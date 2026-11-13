@@ -151,6 +151,11 @@ only names tokens and components; where it differs, the pages win.
   Geist sans and Geist Mono on every page, and the hero's one serif word only on
   home; at most 3 font requests and 90 KB total. Keep each weight axis cut to the
   weights the pages render (sans 400 to 700, mono 400 to 500).
+- While the page is hidden, `html::before` and `html::after` draw the loading
+  ghost (design L1) in `global.css`: shapes only, never text, from tokens.
+  `Base`'s `hero` and `crumb` props and the page's column pick its shapes. After
+  a layout change near the top of a page, check that the ghost still lands on
+  the loaded page at 1280, 390 and 320 px.
 - Targets ≥44px, except a link inside a line of prose, which keeps the line's
   height (WCAG 2.5.8's inline exception). No horizontal scroll at 320px, and
   the nav wraps instead of collapsing into a hamburger.
