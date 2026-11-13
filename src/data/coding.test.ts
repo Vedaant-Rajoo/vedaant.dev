@@ -116,7 +116,7 @@ test('a day without a minute yet shows the newest earlier day that has one, with
   });
   assert.deepEqual(codingText(value as Coding, { dataset: { zone: 'Asia/Kolkata' } }), {
     today: '2h 10m that day',
-    language: 'top language Go',
+    language: ' · top language Go',
     time: 'last heartbeat 6 Nov, 23:40',
   });
   // The newest day wins whatever the order, and a minute is enough.
@@ -152,7 +152,7 @@ test("the heartbeat shows only when it is on the day shown, never a later day's"
   assert.equal(later?.today, '2h 0m');
   assert.deepEqual(codingText(later as Coding, cell), {
     today: '2h 0m that day',
-    language: 'top language TypeScript',
+    language: ' · top language TypeScript',
     time: '',
   });
   // The hub takes an idle value without a heartbeat as it is.
@@ -325,7 +325,7 @@ test('codingText: the heartbeat date and minute, in the clock zone, stay true fo
   const cell = { dataset: { zone: 'Asia/Kolkata' } };
   assert.deepEqual(codingText(value, cell), {
     today: '1h 20m that day',
-    language: 'top language TypeScript',
+    language: ' · top language TypeScript',
     time: 'last heartbeat 1 Nov, 17:25',
   });
   assert.equal(

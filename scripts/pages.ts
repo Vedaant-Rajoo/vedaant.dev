@@ -105,7 +105,7 @@ for (const page of pages.sort()) {
   const names: string[] = coding.shares.length
     ? coding.shares.map(({ name }: { name: string }) => name)
     : ['—'];
-  const language = coding.today && coding.language ? `top language ${coding.language}` : '';
+  const language = coding.today && coding.language ? ` · top language ${coding.language}` : '';
   const today = coding.today ? `${coding.today} that day` : '—';
   const codes =
     cells.length === (page === 'now/index.html' ? 1 : 0) &&

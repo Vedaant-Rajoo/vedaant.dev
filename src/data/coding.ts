@@ -196,7 +196,8 @@ export function codingText(
   }
   return {
     today: `${today} that day`,
-    language: name ? `top language ${name}` : '',
+    // The separator is text, not a ::before, which Chrome counts as a shift when the time changes.
+    language: name ? ` · top language ${name}` : '',
     time: at ? `last heartbeat ${heartbeat(at, zone)}` : '',
   };
 }

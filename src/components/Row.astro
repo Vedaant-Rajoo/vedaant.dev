@@ -45,15 +45,14 @@ const Text = split ? 'a' : 'span';
 {/* One list row: a tile, the title and under it its sub line, which ends in the chips slot (each
     chip after a space), then the paired dates, if any, the default slot, the note and the links.
     These move under the text when the text would get less than 6rem beside them, 12rem beside
-    a note or links, room for the widest chip, or 10rem beside a live row's fixed cell, so a phone
-    from about 370px wide keeps that cell, and the source it credits, on the row's line. Spans
-    only, so
-    the row can be a <summary>. A null end is a current role: the live dot, "now", not muted; an
-    ended role is muted; a row without dates is neither. A struck row, an archived project, is
-    muted and its title struck through. Every row overhangs the column by 8px, so a link's or a
-    toggle's hover fill clears the text. Dates above a note or links take a line of their own. A
-    word too long for its line breaks rather than widen the page, as in Now's and Writing's
-    lists. */}
+    a note or links, room for the widest chip, or 15rem beside a live row's fixed cell, room for
+    its title and sub line, so below about 450px that cell, and the source it credits, take a line
+    of their own. Spans only, so the row can be a <summary>. A null end is a current role: the
+    live dot, "now", not muted; an ended role is muted; a row without dates is neither. A struck
+    row, an archived project, is muted and its title struck through. Every row overhangs the column
+    by 8px, so a link's or a toggle's hover fill clears the text. Dates above a note or links take a
+    line of their own. A word too long for its line breaks rather than widen the page, as in Now's
+    and Writing's lists. */}
 <Tag
   href={split ? undefined : href}
   class:list={[
@@ -80,7 +79,7 @@ const Text = split ? 'a' : 'span';
     href={split ? href : undefined}
     class:list={[
       'min-w-0 grow wrap-anywhere',
-      (live && 'basis-40') || ((note || links.length > 0) && 'basis-48') || 'basis-24',
+      (live && 'basis-60') || ((note || links.length > 0) && 'basis-48') || 'basis-24',
       'leading-(--lh-snug) text-pretty',
       split &&
         'after:absolute after:inset-0 after:rounded-sm focus-visible:outline-none focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-focus',

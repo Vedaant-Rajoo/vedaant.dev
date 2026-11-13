@@ -308,7 +308,7 @@ test('a coding holder gains and clears its heartbeat datetime, idle without one 
   await elapse();
   assert.equal(cell.dataset.state, 'idle');
   assert.equal(cell.holders.today.textContent, '45m that day');
-  assert.equal(cell.holders.language.textContent, 'top language Go');
+  assert.equal(cell.holders.language.textContent, ' · top language Go');
   assert.equal(cell.holders.time.getAttribute('datetime'), null);
   assert.equal(cell.holders.time.textContent, '');
   answers.push(

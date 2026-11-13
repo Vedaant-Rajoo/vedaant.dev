@@ -31,8 +31,10 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
   data-fixture={Astro.props.value || Astro.props.state ? '' : undefined}
   aria-live="off"
   aria-busy={state === 'loading' ? 'true' : undefined}
-  class="flex flex-col gap-2 rounded-lg border border-line px-4.5 pt-2 pb-4"
+  class="flex flex-col gap-2 overflow-x-clip rounded-lg border border-line px-4.5 pt-2 pb-4"
 >
+  {/* Clipped sideways only: with large text on a phone, the mix bar's hidden tooltips run past the
+      viewport and would scroll the page. At 100% they stay inside, and the legend still opens down. */}
   {/* The heartbeat fills a box as wide as its longest text, "last heartbeat 14 Nov, 22:45", which a
       narrow cell moves under the label in every state alike, so no state changes the height. */}
   <div class="flex flex-col gap-2.5 py-2">
@@ -69,10 +71,12 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
         </span>
       ))}
     </div>
-    {/* The legend opens below its summary, over the credit, so the cell keeps its height. */}
+    {/* The legend opens below its summary, over the credit, so the cell keeps its height. The
+        summary's 44px target is its padding, so when large text wraps its label, the legend's top
+        and the credit's target still overlap that padding, not the label. */}
     <div class="mt-auto flex flex-wrap items-center justify-between gap-x-1 gap-y-3.5 pt-2">
       <details class="relative -my-3.5">
-        <summary class="meta target link cursor-pointer list-none whitespace-nowrap text-xs text-fg-2">
+        <summary class="meta target link cursor-pointer list-none py-3.5 text-xs text-fg-2">
           <span>language mix · last 30 days<span data-marker></span></span>
         </summary>
         {/* biome-ignore lint/a11y/noRedundantRoles: Safari drops list semantics when list-style is none. */}
@@ -97,11 +101,6 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
 </div>
 
 <style>
-  /* The top language follows the day's time on its line; the dot goes when there is none. */
-  [data-coding='language']:not(:empty)::before {
-    content: ' · ';
-  }
-
   summary::-webkit-details-marker {
     display: none;
   }
@@ -111,6 +110,11 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
      for 'other'. */
   li:has([data-mix-name]:empty) {
     display: none;
+  }
+  /* At most the cell's text width on a phone, the viewport less the page's gutters and the cell's
+     padding and border, so large text never widens the page: a name then truncates. */
+  ul {
+    max-width: calc(100vw - 2 * (var(--sp-gutter) + var(--sp-unit) * 5));
   }
   li:has([data-mix-percent]:empty) svg {
     visibility: hidden;
