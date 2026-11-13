@@ -1,14 +1,22 @@
 ---
-updated: "2026-10-22"
+updated: "2026-11-13"
 from: "Bhilai"
-building: "this site and fettle, a macOS DAC sample-rate switcher"
+building: "a Neovim plugin for agentic coding and an existing Markdown writer"
 summary: "What I am focused on at the moment. Overwritten, not appended; the old versions live in Git."
 ---
 
 ## building
 
-This site, and a small macOS app that watches what is playing and switches the DAC's output rate to match.
+Building a Neovim plugin for an easier agentic coding workflow, and upgrading an existing Markdown writer.
 
 ## playing
 
-League of Legends (Miss Fortune, ADC) and Wild Rift (Garen). Final Fantasy when there is a whole evening.
+Slay the Spire 2 runs and Elden Ring.
+
+## cooking
+
+Experimenting with Indo-Mexican fusion.
+
+## learning
+
+What Neovim 0.12 bundling its own tree-sitter parsers changes about a config.
