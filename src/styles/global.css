@@ -71,13 +71,9 @@
   body {
     padding-inline: var(--sp-gutter);
   }
-  /* Base.astro's inline script sets data-fonts until the page's fonts are ready. Animations
-     wait too, so the hero's swipe plays in view. */
+  /* Base.astro's inline script sets data-fonts until the page's fonts are ready. */
   [data-fonts="loading"] body {
     visibility: hidden;
-  }
-  [data-fonts="loading"] mark {
-    animation-play-state: paused;
   }
 
   /* The loading ghost (design L1): bars where the page will land, shapes only, as text would be in
@@ -310,6 +306,10 @@
     to {
       background-size: 100% 100%;
     }
+  }
+  /* The swipe waits while the page is hidden for its fonts, so it plays in view. */
+  [data-fonts="loading"] mark {
+    animation-play-state: paused;
   }
   :focus-visible {
     outline: --spacing(0.5) solid var(--c-focus);
