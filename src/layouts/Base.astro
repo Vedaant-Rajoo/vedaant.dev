@@ -13,9 +13,11 @@ interface Props {
   // The 404 page. Pages serves it for every unknown path, so it has no URL to name, and at /404 it
   // answers 200, so it asks not to be indexed.
   noindex?: boolean;
+  // Home: the page opens with the hero, so it preloads the serif word's font.
+  hero?: boolean;
 }
 
-const { title, description, class: className, schema, noindex = false } = Astro.props;
+const { title, description, class: className, schema, noindex = false, hero = false } = Astro.props;
 const fullTitle = title === undefined ? site.fullName : `${title} · ${site.fullName}`;
 // site is the production origin, so a preview or dev build names production too. A build's
 // Astro.url ends in a slash, as Pages serves each page at its directory URL.
@@ -60,6 +62,14 @@ const jsonLd =
     {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
         first paint, and its theme-color meta applies whatever the OS prefers. */}
     <script is:inline>
+      // The fonts are block, so a page hidden until the ones it uses are ready (at most 3 s) first
+      // paints in them and nothing re-wraps in view. With JS off nothing is hidden.
+      {
+        const show = () => delete document.documentElement.dataset.fonts;
+        document.documentElement.dataset.fonts = 'loading';
+        setTimeout(show, 3000);
+        document.fonts.ready.then(show);
+      }
       try {
         const stored = localStorage.getItem('theme');
         const theme = stored === 'light' || stored === 'dark' ? stored : 'system';
@@ -76,7 +86,7 @@ const jsonLd =
     <noscript><style is:inline>#theme-toggle { display: none; }</style></noscript>
     <Font cssVariable="--ff-geist" preload />
     <Font cssVariable="--ff-geist-mono" preload />
-    <Font cssVariable="--ff-instrument-serif" />
+    <Font cssVariable="--ff-instrument-serif" preload={hero} />
   </head>
   <body>
     <a

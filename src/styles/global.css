@@ -71,6 +71,14 @@
   body {
     padding-inline: var(--sp-gutter);
   }
+  /* Base.astro's inline script sets data-fonts until the page's fonts are ready. Animations
+     wait too, so the hero's swipe plays in view. */
+  [data-fonts="loading"] body {
+    visibility: hidden;
+  }
+  [data-fonts="loading"] mark {
+    animation-play-state: paused;
+  }
   h1,
   h2,
   h3 {

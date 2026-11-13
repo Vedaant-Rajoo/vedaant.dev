@@ -10,6 +10,7 @@ import Base from '../layouts/Base.astro';
 <Base
   description={site.hero.role}
   class="max-w-col"
+  hero
   schema={{ '@type': 'Person', name: site.fullName, sameAs: Object.values(site.socials) }}
 >
   <Hero />
