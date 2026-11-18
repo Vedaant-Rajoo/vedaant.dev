@@ -71,7 +71,7 @@
   body {
     padding-inline: var(--sp-gutter);
   }
-  /* Base.astro's inline script sets data-fonts until the page's fonts are ready. */
+  /* Base.astro's inline script sets data-fonts until the page's fonts are ready or 3 s pass. */
   [data-fonts="loading"] body {
     visibility: hidden;
   }
