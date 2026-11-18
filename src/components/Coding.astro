@@ -165,7 +165,7 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
     }
   }
 
-  /* Escape hides an open tooltip until the pointer leaves the bar (WCAG 1.4.13). */
+  /* Escape hides an open tooltip until the pointer leaves the whole mix, not just the bar (WCAG 1.4.13). */
   [data-quiet] [data-mix-tip],
   [data-quiet] [data-mix-segment]::after {
     visibility: hidden;
