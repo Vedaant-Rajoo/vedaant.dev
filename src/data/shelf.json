@@ -1,6 +1,6 @@
 {
   "updated": "2026-10-28",
-  "summary": "Albums, films and books I'd hand you, with a sentence on why I like each one.",
+  "summary": "albums, films and books I would push across the table at you if you asked me what to read, watch or listen to next.",
   "reading": {
     "title": "A Game of Thrones",
     "creator": "George R. R. Martin",
@@ -61,13 +61,6 @@
       "year": 2019,
       "sentence": "So good I had to watch it twice to get everything.",
       "link": "https://en.wikipedia.org/wiki/Parasite_(2019_film)"
-    },
-    {
-      "title": "The Dark Knight",
-      "creator": "Christopher Nolan",
-      "year": 2008,
-      "sentence": "This is the best three hours I've spent watching a dark movie.",
-      "link": "https://en.wikipedia.org/wiki/The_Dark_Knight"
     },
     {
       "title": "Pulp Fiction",
