@@ -149,8 +149,8 @@
   @media (width < 444px) {
     :root[data-fonts="loading"][data-ghost~="home"] {
       --g-n: 2;
-      --g-h1: 100%;
-      --g-h2: calc(var(--sp-unit) * 12);
+      --g-h1: calc(var(--sp-unit) * 57);
+      --g-h2: calc(var(--sp-unit) * 43);
     }
   }
   @media (width < 370px) {
@@ -158,12 +158,6 @@
       --g-head: calc(var(--sp-unit) * 29);
       --g-nav-x: 0px;
       --g-nav-y: calc(var(--sp-unit) * 23.5);
-    }
-  }
-  @media (width < 334px) {
-    :root[data-fonts="loading"][data-ghost~="home"] {
-      --g-h1: 80%;
-      --g-h2: 60%;
     }
   }
   :root[data-fonts="loading"]::before,
