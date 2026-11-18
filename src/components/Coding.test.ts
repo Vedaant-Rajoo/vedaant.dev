@@ -165,7 +165,7 @@ test('language mix closes its legend and quiets its tooltips as connectedCallbac
   // The open legend stays open for a click on a row and for Escape from outside it.
   listeners.click({ target: row });
   press('Escape', outside);
-  assert.equal(details.open, true);
+  assert.deepEqual([details.open, focused], [true, false]);
   // Escape from inside closes it and focuses the summary; a click outside closes it alone.
   press('Escape', summary);
   assert.deepEqual([details.open, focused], [false, true]);
