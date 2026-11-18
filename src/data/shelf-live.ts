@@ -101,11 +101,13 @@ export const listeningText = (row: OnRepeat | null) => ({
   meta: row ? `${row.plays} ${row.plays === 1 ? 'play' : 'plays'}` : '',
 });
 
-// Each live row's source, by its data-widget, credited as /now's cells credit theirs.
+// Each live row's source, by its data-widget, credited as /now's cells credit theirs. Letterboxd
+// and Last.fm link the owner's profile, Last.fm's user page as its API terms (2.7) ask; Hardcover
+// links its home page, as the owner's Hardcover handle is not known.
 export const credits = {
   reading: { label: 'via hardcover', href: 'https://hardcover.app/' },
-  'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/' },
-  'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/' },
+  'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/newedia/' },
+  'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/user/newedia' },
 };
 
 // /now's cells for the reading and last-watched rows: the rows' texts, laid out as a bento cell,
