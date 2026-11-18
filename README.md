@@ -678,9 +678,13 @@ Chores:
 Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with
 Pages Functions for the live values with committed fallbacks, keyless
 artwork and no analytics. Fonts are committed and load through Astro's Fonts
-API. Geist sans and Geist Mono are preloaded with `font-display: optional`, so
-both downloads start while the browser parses the head. A slow first visit may
-keep the fallback fonts throughout; the hero's serif is optional too.
+API with `font-display: block`. Every page preloads Geist sans and Geist Mono;
+only home preloads the hero's serif. An inline script in `<head>` restores the
+stored theme before first paint and sets `data-fonts="loading"`, which hides
+`<body>` and draws the loading ghost (`global.css`). It removes the attribute
+when `document.fonts.ready` resolves, read after `DOMContentLoaded`, or after
+3 s, whichever comes first. A font still loading at 3 s can shift text when it
+arrives.
 CSS is inlined into each page, so there is no `dist/_astro/*.css` to
 compare; compare each page's `<style>` instead.
 
