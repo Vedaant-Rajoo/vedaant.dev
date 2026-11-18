@@ -163,9 +163,6 @@ const slots = Array.from({ length: 6 }, (_, i) => ({
     [data-mix-segment]:hover::after {
       visibility: visible;
     }
-    [data-mix-bar]:hover [data-mix-segment]:not(:hover) > [data-mix-fill] {
-      opacity: 0.35;
-    }
   }
 
   /* Escape hides an open tooltip until the pointer leaves the bar (WCAG 1.4.13). */
