@@ -1,6 +1,7 @@
 ---
 import { nowPlaying } from '../data/lastfm';
 import { type NowPlaying, nowPlayingText } from '../data/now-playing';
+import { credits } from '../data/shelf-live';
 import Arrow from './Arrow.astro';
 
 interface Props {
@@ -74,7 +75,7 @@ const image = {
       </span>
     </span>
   </a>
-  <a href="https://www.last.fm/user/newedia" class="meta target link -my-3.5 self-end text-xs text-fg-3">
+  <a href={credits['on-repeat'].href} class="meta target link -my-3.5 self-end text-xs text-fg-3">
     <span>via last.fm<Arrow>↗</Arrow></span>
   </a>
 </div>
