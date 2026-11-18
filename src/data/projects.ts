@@ -3,7 +3,7 @@ import type { CollectionEntry } from 'astro:content';
 type Project = CollectionEntry<'projects'>;
 
 export const intro =
-  'Things I built, newest first. Rows with a case study open it; the rest go straight to the repo. Work done for an employer is described at the level I am allowed to.';
+  'Things I built, newest first. Rows with a case study open it; the rest go straight to the repo.';
 
 // A body of at least this many words is a case study; a draft's counts only in `astro dev`.
 const CASE_STUDY_WORDS = 500;
