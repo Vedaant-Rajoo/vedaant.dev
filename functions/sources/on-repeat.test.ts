@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { topAlbums } from '../../src/data/now-playing';
-import { load } from './on-repeat';
+import { fetchOnRepeat, load } from './on-repeat';
 
 const key = 'lastfm-test-key';
 const original = { fetch: globalThis.fetch, warn: console.warn, timeout: AbortSignal.timeout };
@@ -55,6 +55,44 @@ test('asks Last.fm for the top album with the key alone, within 2.5 s', async ()
 test('a week with no plays is a value: a null row', async () => {
   lastfmAnswers(() => week([]));
   assert.deepEqual(await load(key), { listening: null });
+});
+
+// src/data/on-repeat.ts reads Last.fm through fetchOnRepeat, then logs its own line and falls back
+// to shelf.json's row, so the reader returns the reason and logs nothing.
+test('fetchOnRepeat uses a 5,000 ms budget and returns safe reasons without logging', async () => {
+  const budgets: number[] = [];
+  AbortSignal.timeout = (ms: number) => {
+    budgets.push(ms);
+    return original.timeout.call(AbortSignal, ms);
+  };
+  lastfmAnswers(() => week([top]));
+  assert.deepEqual(await fetchOnRepeat(key, 5_000), {
+    title: 'UNFORGIVEN',
+    creator: 'LE SSERAFIM',
+    plays: 9,
+  });
+  assert.deepEqual(budgets, [5_000]);
+  // A week with no plays is a value, not a reason: the build shows "—", not shelf.json's row.
+  lastfmAnswers(() => week([]));
+  assert.equal(await fetchOnRepeat(key, 5_000), undefined);
+  const cases: [() => Response, string][] = [
+    [() => new Response('no', { status: 429 }), 'HTTP 429'],
+    [() => Response.json({ error: 29, message: 'Rate limit exceeded' }), 'unexpected body'],
+    [() => new Response('{'), 'SyntaxError'],
+    [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
+    [
+      () => {
+        throw new TypeError(`fetch failed for ${topAlbums(key)}`);
+      },
+      'TypeError',
+    ],
+  ];
+  for (const [answer, reason] of cases) {
+    lastfmAnswers(answer);
+    assert.equal(await fetchOnRepeat(key, 5_000), reason);
+  }
+  assert.equal(await fetchOnRepeat(undefined, 5_000), 'no LASTFM_API_KEY');
+  assert.deepEqual(warnings, []);
 });
 
 test('a missing key is no value, and Last.fm is not asked', async () => {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { currentUser, lastMonth, lastWeek } from '../../src/data/coding';
 import site from '../../src/data/site.json';
-import { load } from './coding';
+import { fetchCoding, load } from './coding';
 
 const key = 'waka-test-token';
 const summaries = lastWeek(site.timeZone);
@@ -238,4 +238,39 @@ test('one 2.5 s timeout covers all three requests and their bodies', async () =>
   assert.deepEqual(budgets, [2_500]);
   assert.equal(requests[0].init?.signal, requests[1].init?.signal);
   assert.equal(requests[0].init?.signal, requests[2].init?.signal);
+});
+
+// src/data/wakatime.ts reads WakaTime through fetchCoding, then logs its own line and falls back to
+// the committed snapshot, so the reader returns the reason and logs nothing.
+test('fetchCoding uses a 5,000 ms budget and returns safe reasons without logging', async () => {
+  const budgets: number[] = [];
+  AbortSignal.timeout = (ms: number) => {
+    budgets.push(ms);
+    return original.timeout.call(AbortSignal, ms);
+  };
+  wakatime({});
+  const value = await fetchCoding(key, 5_000);
+  assert.equal(typeof value === 'object' && value.language, 'TypeScript');
+  assert.deepEqual(budgets, [5_000]);
+  assert.equal(requests[0].init?.signal, requests[2].init?.signal);
+  const cases: [Parameters<typeof wakatime>[0], string][] = [
+    [{ user: () => new Response('no', { status: 401 }) }, 'HTTP 401'],
+    [{ week: () => Response.json({ data: [] }) }, 'unexpected body'],
+    [{ week: () => new Response('{') }, 'SyntaxError'],
+    [{ stats: () => new Response(`"${'x'.repeat(1_048_576)}"`) }, 'RangeError'],
+    [
+      {
+        week: () => {
+          throw new TypeError(`network down, ${key} in the request`);
+        },
+      },
+      'TypeError',
+    ],
+  ];
+  for (const [answers, reason] of cases) {
+    wakatime(answers);
+    assert.equal(await fetchCoding(key, 5_000), reason);
+  }
+  assert.equal(await fetchCoding(undefined, 5_000), 'no WAKATIME_API_KEY');
+  assert.deepEqual(warnings, []);
 });

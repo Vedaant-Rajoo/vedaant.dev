@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { artworkKey } from '../../src/data/artwork';
 import type { NowPlaying } from '../../src/data/now-playing';
+import { fetchNowPlaying } from '../sources/now-playing';
 import { handle } from './now-playing';
 
 const key = 'test-key-0123';
@@ -344,6 +345,39 @@ test('one 2.5 s timeout covers the request and its body', async () => {
     'now-playing: no value from Last.fm (TimeoutError)',
     'now-playing: no value from Last.fm (TimeoutError)',
   ]);
+});
+
+// src/data/lastfm.ts reads Last.fm through fetchNowPlaying, then adds artwork itself, or logs its
+// own line and falls back to the committed snapshot, so the reader returns the reason and logs
+// nothing.
+test('fetchNowPlaying uses a 5,000 ms budget and returns safe reasons without logging', async () => {
+  const timeout = AbortSignal.timeout;
+  const budgets: number[] = [];
+  AbortSignal.timeout = (milliseconds: number) => {
+    budgets.push(milliseconds);
+    return timeout.call(AbortSignal, milliseconds);
+  };
+  try {
+    lastfm(() => recent([track]));
+    const { artwork: _, ...value } = idle;
+    assert.deepEqual(await fetchNowPlaying(key, 5_000), value);
+    assert.deepEqual(budgets, [5_000]);
+    const cases: [Answer, string][] = [
+      [() => new Response('', { status: 503 }), 'HTTP 503'],
+      [() => Response.json({ error: 10, message: 'Invalid API key' }), 'unexpected body'],
+      [() => new Response('<html>'), 'SyntaxError'],
+      [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
+      [() => Promise.reject(new TypeError(`fetch failed: ${requests.at(-1)?.url}`)), 'TypeError'],
+    ];
+    for (const [answer, reason] of cases) {
+      lastfm(answer);
+      assert.equal(await fetchNowPlaying(key, 5_000), reason);
+    }
+    assert.equal(await fetchNowPlaying(undefined, 5_000), 'no LASTFM_API_KEY');
+  } finally {
+    AbortSignal.timeout = timeout;
+  }
+  assert.deepEqual(warnings, []);
 });
 
 test('artwork found within 1.5 s is in the answer and kept for 30 days', async () => {

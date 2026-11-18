@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { graphql } from '../../src/data/contributions';
-import { load } from './contributions';
+import { fetchContributions, load } from './contributions';
 
 const token = 'github_pat_test-token';
 const original = {
@@ -118,6 +118,41 @@ test('asks GitHub once, with the token, within one 3 s signal', async () => {
   assert.equal(init?.method, 'POST');
   assert.equal(init?.signal, signals[0]);
   assert.equal(new Headers(init?.headers).get('authorization'), `Bearer ${token}`);
+});
+
+// src/data/github.ts reads GitHub through fetchContributions, then logs its own line and falls back
+// to the committed snapshot, so the reader returns the reason and logs nothing.
+test('fetchContributions uses a 5,000 ms budget and returns safe reasons without logging', async () => {
+  const budgets: number[] = [];
+  AbortSignal.timeout = (ms: number) => {
+    budgets.push(ms);
+    return original.timeout.call(AbortSignal, ms);
+  };
+  github(calendar());
+  assert.deepEqual(
+    await fetchContributions(token, 5_000),
+    expected('2026-11-04T12:00:00Z', '2025-11-02'),
+  );
+  assert.deepEqual(budgets, [5_000]);
+  const cases: [() => Response, string][] = [
+    [() => new Response('no', { status: 502 }), 'HTTP 502'],
+    [() => Response.json({ errors: [{ type: 'RATE_LIMITED' }] }), 'GraphQL RATE_LIMITED'],
+    [() => Response.json({ data: { user: null } }), 'unexpected body'],
+    [() => new Response('{'), 'SyntaxError'],
+    [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
+    [
+      () => {
+        throw new TypeError(`network down, ${token}`);
+      },
+      'TypeError',
+    ],
+  ];
+  for (const [answer, reason] of cases) {
+    github(answer);
+    assert.equal(await fetchContributions(token, 5_000), reason);
+  }
+  assert.equal(await fetchContributions(undefined, 5_000), 'no CONTRIBUTIONS_TOKEN');
+  assert.deepEqual(warnings, []);
 });
 
 test('days GitHub adds outside the window are dropped', async () => {
