@@ -24,9 +24,8 @@ export default defineConfig({
   // bolder than 400; mono 400 and 500), which took the pair from 52 KB to 36 KB:
   // fonttools varLib.instancer <fontsource file> wght=400:700 (mono: wght=400:500)
   // The fallback stacks are repeated in tokens.css; Astro puts a metric-matched face
-  // before them. All three faces are block: Base.astro's inline script hides the page until
-  // the fonts it uses are ready (at most 3 s), so the first paint is already in them and
-  // nothing re-wraps in view. With JS off the text stays invisible until its font arrives.
+  // before them. All three faces are block; Base.astro also hides the page until its fonts
+  // are ready or 3 s pass. Fonts arriving after that deadline can still shift text.
   fonts: [
     {
       provider: fontProviders.local(),

@@ -68,10 +68,8 @@ const jsonLd =
     {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
         first paint, and its theme-color meta applies whatever the OS prefers. Its font gate waits
         for DOMContentLoaded: read before the @font-face rules and body exist, fonts.ready settles
-        with no faces to wait for. */}
+        with no faces to wait for. Fonts still loading at the 3 s escape can shift text later. */}
     <script is:inline>
-      // The fonts are block, so a page hidden until the ones it uses are ready (at most 3 s) first
-      // paints in them and nothing re-wraps in view. With JS off nothing is hidden.
       {
         const show = () => delete document.documentElement.dataset.fonts;
         document.documentElement.dataset.fonts = 'loading';
