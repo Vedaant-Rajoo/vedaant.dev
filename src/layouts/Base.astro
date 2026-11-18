@@ -66,7 +66,9 @@ const jsonLd =
     <meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)" />
     {/* Inline and before the stylesheet, so a stored light or dark theme is on <html> before
-        first paint, and its theme-color meta applies whatever the OS prefers. */}
+        first paint, and its theme-color meta applies whatever the OS prefers. Its font gate waits
+        for DOMContentLoaded: read before the @font-face rules and body exist, fonts.ready settles
+        with no faces to wait for. */}
     <script is:inline>
       // The fonts are block, so a page hidden until the ones it uses are ready (at most 3 s) first
       // paints in them and nothing re-wraps in view. With JS off nothing is hidden.
@@ -74,7 +76,7 @@ const jsonLd =
         const show = () => delete document.documentElement.dataset.fonts;
         document.documentElement.dataset.fonts = 'loading';
         setTimeout(show, 3000);
-        document.fonts.ready.then(show);
+        document.addEventListener('DOMContentLoaded', () => document.fonts.ready.then(show));
       }
       try {
         const stored = localStorage.getItem('theme');
