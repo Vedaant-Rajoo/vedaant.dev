@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { after, afterEach, beforeEach, test } from 'node:test';
+import { runInNewContext } from 'node:vm';
+import ts from 'typescript';
 import { cells } from '../data/contributions';
-import { shelfFromLive, shelfText } from '../data/shelf-live';
+import * as shelfLive from '../data/shelf-live';
 import { nowFeed } from './now-feed';
 import type { Hub } from './presence-hub';
 
@@ -149,17 +152,43 @@ afterEach(() => {
   Date.now = real.now;
 });
 
+// A widget with an <abbr> around its date, as ShelfRow.astro and ShelfCell.astro build them.
+class Cell extends Widget {
+  abbr = { title: 'build' };
+  querySelector(selector: string) {
+    return selector === 'abbr' ? (this.abbr as unknown as Element) : super.querySelector(selector);
+  }
+}
 const shelfRows = () => [
   new Widget({ widget: 'reading' }, ['tile', 'title', 'sub', 'meta']),
-  new Widget({ widget: 'last-watched' }, ['tile', 'title', 'sub', 'stars', 'rated', 'meta']),
+  new Cell({ widget: 'last-watched' }, ['tile', 'title', 'sub', 'stars', 'rated', 'meta']),
   new Widget({ widget: 'on-repeat' }, ['tile', 'title', 'sub', 'meta']),
 ];
 const titles = () => widgets.map((widget) => widget.holders.title.textContent);
 
+// /shelf's own <script> as it ships, run as the page runs it: once the hub is defined, it adds the
+// rows' feed, whose texts also write last watched's whole day into the row's <abbr>.
+const shelfScript = ts.transpile(
+  readFileSync('src/pages/shelf.astro', 'utf8').split('<script>')[1].split('</script>')[0],
+  { module: ts.ModuleKind.CommonJS },
+);
+async function addShelfFeed() {
+  runInNewContext(shelfScript, {
+    exports: {},
+    require: (name: string) => {
+      assert.equal(name, '../data/shelf-live');
+      return shelfLive;
+    },
+    customElements: { whenDefined: async (name: string) => assert.equal(name, 'presence-hub') },
+    document: { querySelector: (selector: string) => (selector === 'presence-hub' ? hub : null) },
+  });
+  await new Promise((resolve) => real.setTimeout(resolve, 0));
+}
+
 test('/shelf: one /api/activity request for three rows, then not again for a day', async () => {
   widgets = shelfRows();
   hub.connectedCallback();
-  hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  await addShelfFeed();
   answers.push(answer(body()));
   assert.equal(await elapse(), 0);
   assert.deepEqual(requests, ['/api/activity']);
@@ -179,7 +208,7 @@ test('/shelf: one /api/activity request for three rows, then not again for a day
 test('a partial answer updates the rows it has, keeps the others, and is asked for again soon', async () => {
   widgets = shelfRows();
   hub.connectedCallback();
-  hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  await addShelfFeed();
   answers.push(answer(body()));
   await elapse();
   const { reading: _, ...partial } = body({ reading: ' 2', lastWatched: ' 2', listening: ' 2' });
@@ -199,10 +228,60 @@ test('a partial answer updates the rows it has, keeps the others, and is asked f
   assert.equal(titles()[1], 'last watched · \u2068Clueless 2\u2069 (1995)');
 });
 
+test("/shelf: last watched's date and <abbr> take a new day, keep through a bad row, clear for null", async () => {
+  widgets = shelfRows();
+  const watched = widgets[1] as Cell;
+  const shown = () => ({
+    title: watched.holders.title.textContent,
+    meta: watched.holders.meta.textContent,
+    datetime: watched.holders.meta.getAttribute('datetime'),
+    full: watched.abbr.title,
+  });
+  // Each poll is one /api/activity request, for the three rows.
+  const poll = async (value: unknown) => {
+    const before = requests.length;
+    answers.push(answer(value));
+    await elapse();
+    assert.deepEqual(requests.slice(before), ['/api/activity']);
+  };
+  hub.connectedCallback();
+  await addShelfFeed();
+  await poll(body());
+  assert.deepEqual(shown(), {
+    title: 'last watched · \u2068Clueless\u2069 (1995)',
+    meta: '28 Oct',
+    datetime: '2026-10-28',
+    full: '28 October 2026',
+  });
+  await poll({ ...body(), lastWatched: { title: 'Heat', year: 1995, date: '2026-11-01' } });
+  const heat = {
+    title: 'last watched · \u2068Heat\u2069 (1995)',
+    meta: '1 Nov',
+    datetime: '2026-11-01',
+    full: '1 November 2026',
+  };
+  assert.deepEqual(shown(), heat);
+  // Left out, then failing its check (no 30 February): the row keeps all four as reading updates.
+  const { lastWatched: _, ...rest } = body({ ...rows, reading: ' 2' });
+  await poll(rest);
+  assert.equal(titles()[0], 'reading · Dune 2');
+  assert.deepEqual(shown(), heat);
+  await poll({
+    ...body({ ...rows, reading: ' 3' }),
+    lastWatched: { title: 'Ran', year: 1985, date: '2026-02-30' },
+  });
+  assert.equal(titles()[0], 'reading · Dune 3');
+  assert.deepEqual(shown(), heat);
+  // Null is nothing current: the date, its datetime and the whole day all go.
+  await poll({ lastWatched: null });
+  assert.deepEqual(shown(), { title: 'last watched · —', meta: '', datetime: null, full: '' });
+  assert.equal(titles()[0], 'reading · Dune 3');
+});
+
 test('a near-expiry answer from the edge is asked for again when it goes stale', async () => {
   widgets = shelfRows();
   hub.connectedCallback();
-  hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  await addShelfFeed();
   answers.push(answer(body(), 86_400, 86_000));
   await elapse();
   assert.equal(delay(), 400_000);
@@ -218,7 +297,7 @@ test('a near-expiry answer from the edge is asked for again when it goes stale',
 test('failures back off, keep every text, and a hidden page waits until shown', async () => {
   widgets = shelfRows();
   hub.connectedCallback();
-  hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  await addShelfFeed();
   answers.push(
     () => Promise.reject(new TypeError('offline')),
     () => new Response('null', { status: 200 }),
@@ -252,7 +331,7 @@ test('failures back off, keep every text, and a hidden page waits until shown', 
 test('a timer never waits past a day, even after the clock moves back', async () => {
   widgets = shelfRows();
   hub.connectedCallback();
-  hub.add('/api/activity', ['reading', 'last-watched', 'on-repeat'], shelfFromLive, shelfText);
+  await addShelfFeed();
   answers.push(answer(body()));
   await elapse();
   now -= 2 * 86_400_000;
@@ -389,12 +468,6 @@ class Heat extends Widget {
   querySelectorAll(selector: string) {
     assert.equal(selector, '[data-heat] rect');
     return this.squares;
-  }
-}
-class Cell extends Widget {
-  abbr = { title: 'build' };
-  querySelector(selector: string) {
-    return selector === 'abbr' ? (this.abbr as unknown as Element) : super.querySelector(selector);
   }
 }
 const nowCells = () =>
