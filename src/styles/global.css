@@ -110,7 +110,7 @@
     --g-h: calc(var(--g-top) + var(--g-fs) * var(--lh-tight) + var(--sp-unit) * 4);
     --g-hl: calc(var(--fs-lg) * var(--lh-snug));
     --g-n: 1;
-    --g-h1: calc(var(--sp-unit) * 142);
+    --g-h1: calc(var(--sp-unit) * 101);
     --g-h2: 0px;
     --g-h3: 0px;
     --g-p: calc(var(--g-h) + var(--g-hl) * var(--g-n) + var(--sp-unit) * 4);
@@ -120,37 +120,37 @@
     --g-c1: calc(var(--g-c) + var(--sp-unit) * 5.5);
     --g-c2x: calc(var(--sp-unit) * 72);
     --g-c2y: var(--g-c1);
-    --g-c2w: calc(var(--sp-unit) * 84);
+    --g-c2w: calc(var(--sp-unit) * 72);
     --g-c3y: var(--g-c1);
     --g-c3w: 0px;
     --g-ch: calc(var(--sp-unit) * 11);
     --g-r: calc(var(--g-c) + var(--g-ch) + var(--sp-section));
     --g-rp: calc(var(--g-line) + var(--sp-unit) * 7);
   }
-  @media (width < 700px) {
-    :root[data-fonts="loading"][data-ghost~="home"] {
-      --g-c1: calc(var(--g-c) + var(--g-line) / 2);
-      --g-c2x: 0px;
-      --g-c2y: calc(var(--g-c) + var(--g-line) + var(--sp-unit) * 5.5);
-      --g-c2w: min(100%, calc(var(--sp-unit) * 84));
-      --g-ch: calc(var(--g-line) + var(--sp-unit) * 11);
-    }
-  }
   @media (width < 640px) {
     :root[data-fonts="loading"] {
       --g-nav-w: calc(var(--sp-unit) * 68);
     }
   }
-  @media (width < 620px) {
+  @media (width < 622px) {
     :root[data-fonts="loading"][data-ghost~="home"] {
-      --g-n: 2;
-      --g-h1: 100%;
-      --g-h2: 40%;
+      --g-c1: calc(var(--g-c) + var(--g-line) / 2);
+      --g-c2x: 0px;
+      --g-c2y: calc(var(--g-c) + var(--g-line) + var(--sp-unit) * 5.5);
+      --g-c2w: min(100%, calc(var(--sp-unit) * 70));
+      --g-ch: calc(var(--g-line) + var(--sp-unit) * 11);
     }
   }
   @media (width < 480px) {
     :root[data-fonts="loading"][data-ghost~="home"] {
       --g-rp: calc(var(--sp-unit) * 16);
+    }
+  }
+  @media (width < 444px) {
+    :root[data-fonts="loading"][data-ghost~="home"] {
+      --g-n: 2;
+      --g-h1: 100%;
+      --g-h2: calc(var(--sp-unit) * 12);
     }
   }
   @media (width < 370px) {
@@ -160,20 +160,10 @@
       --g-nav-y: calc(var(--sp-unit) * 23.5);
     }
   }
-  @media (width < 360px) {
+  @media (width < 334px) {
     :root[data-fonts="loading"][data-ghost~="home"] {
-      --g-c2w: calc(var(--sp-unit) * 48);
-      --g-c3y: calc(var(--g-c2y) + var(--sp-unit) * 13);
-      --g-c3w: calc(var(--sp-unit) * 26);
-      --g-ch: calc(var(--g-line) + var(--sp-unit) * 24);
-    }
-  }
-  @media (width < 350px) {
-    :root[data-fonts="loading"][data-ghost~="home"] {
-      --g-n: 3;
       --g-h1: 80%;
-      --g-h2: 98%;
-      --g-h3: 16%;
+      --g-h2: 60%;
     }
   }
   :root[data-fonts="loading"]::before,
