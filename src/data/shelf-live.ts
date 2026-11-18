@@ -101,9 +101,7 @@ export const listeningText = (row: OnRepeat | null) => ({
   meta: row ? `${row.plays} ${row.plays === 1 ? 'play' : 'plays'}` : '',
 });
 
-// Each live row's source, by its data-widget, credited as /now's cells credit theirs. Letterboxd
-// and Last.fm link the owner's profile, Last.fm's user page as its API terms (2.7) ask; Hardcover
-// links its home page, as the owner's Hardcover handle is not known.
+// Hardcover keeps its homepage until the owner's public profile URL is known.
 export const credits = {
   reading: { label: 'via hardcover', href: 'https://hardcover.app/' },
   'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/newedia/' },

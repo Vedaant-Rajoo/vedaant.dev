@@ -53,7 +53,7 @@ const jsonLd =
     <meta property="og:description" content={description} />
     {canonical && <meta property="og:url" content={canonical} />}
     <meta property="og:image" content={new URL('/og.png', Astro.site).href} />
-    <meta property="og:image:alt" content={`${site.fullName}, ${site.hero.role}`} />
+    <meta property="og:image:alt" content={site.ogImageAlt} />
     <meta name="twitter:card" content="summary_large_image" />
     {jsonLd && <script is:inline type="application/ld+json" set:html={jsonLd} />}
     {/* The v: mark (the owner's PNG, traced as geometry). The SVG follows the OS scheme; Safari

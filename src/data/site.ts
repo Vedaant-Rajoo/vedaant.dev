@@ -11,6 +11,7 @@ const result = z
     name: z.string().min(1),
     // The full name, for <title>, JSON-LD and the OG image; name stays the nav wordmark.
     fullName: z.string().trim().min(1),
+    ogImageAlt: z.string().trim().min(1),
     hero: z
       .object({
         name: z.string().min(1),
