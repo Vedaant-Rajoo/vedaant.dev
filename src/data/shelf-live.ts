@@ -101,9 +101,8 @@ export const listeningText = (row: OnRepeat | null) => ({
   meta: row ? `${row.plays} ${row.plays === 1 ? 'play' : 'plays'}` : '',
 });
 
-// Hardcover keeps its homepage until the owner's public profile URL is known.
 export const credits = {
-  reading: { label: 'via hardcover', href: 'https://hardcover.app/' },
+  reading: { label: 'via hardcover', href: 'https://hardcover.app/@newedia' },
   'last-watched': { label: 'via letterboxd', href: 'https://letterboxd.com/newedia/' },
   'on-repeat': { label: 'via last.fm', href: 'https://www.last.fm/user/newedia' },
 };
