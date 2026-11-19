@@ -13,7 +13,7 @@ published: "2026-10-23"
 
 I needed a site that says what I do and where I have worked within ten seconds on a phone, keeps my résumé and email within two clicks of every page, and shows what I am building now without becoming a chore. I also wanted it to show how I like to build: measured, text first, and complete with JavaScript turned off.
 
-The design is called Ledger. Separation comes from 1px lines and whitespace instead of cards or shadows. There is no icon set, only text glyphs, and green marks live state and nothing else. The bars were written down before the first commit. LCP at or under 1.8 s on Lighthouse's mobile test, zero layout shift including live-state changes, at most 5 KB of gzipped JavaScript per page, two font requests on first paint, and Lighthouse at 95 or more in all four categories. Zero axe violations, contrast measured in both themes, every animation gone under reduced motion, no horizontal scroll at 320 px, and 44 px targets. No secrets in the build output, a CSP without unsafe-inline for scripts, zero cookies, and a new project live as one file in under five minutes.
+The design is called Ledger. Separation comes from 1px lines and whitespace instead of cards or shadows. There is no icon set, only text glyphs, and green marks live state and nothing else. The bars were written down before the first commit. LCP at or under 1.8 s on Lighthouse's mobile test, zero layout shift including live-state changes, at most 5 KB of gzipped JavaScript per page, two font requests on first paint, and Lighthouse at 95 or more in all four categories. Zero axe violations, contrast measured in both themes, every animation gone under reduced motion, no horizontal scroll at 320 px, and 44 px targets. No secrets in the build output, a CSP without unsafe-inline for scripts, zero cookies, and a new project live as one file in under five minutes. Two of those bars have since moved. `/now` may ship 7 KB of gzipped JavaScript for its live cells, while every other page keeps the 5 KB limit. A page may now make three font requests, and only home preloads the third, the serif word below.
 
 ## My role
 
@@ -68,11 +68,11 @@ Everything: the choices, the content, the code and the checks. The site is built
 
 <dl>
 <dt>chose</dt>
-<dd>one serif word in the hero, loaded with <code>font-display: optional</code></dd>
+<dd>one serif word in the hero, initially loaded with <code>font-display: optional</code></dd>
 <dt>over</dt>
 <dd>no serif at all, which the first roadmap settled on</dd>
 <dt>because</dt>
-<dd>a third font request for one word breaks the two-request budget on first paint. With <code>optional</code> the browser uses the serif only if it is ready at once and never swaps it in later, so a slow font leaves the word in the sans at the same size, and nothing moves.</dd>
+<dd>a third font request for one word would have broken the original two-request budget on first paint. With <code>optional</code> the browser uses the serif only if it is ready at once and never swaps it in later, so a slow font left the word in the sans at the same size, and nothing moved. Optional faces later lost their 100 ms window on first visits, and the fallback re-wrapped the hero. All three faces now use <code>block</code>, home preloads the serif, and a script hides the page until its fonts are ready or 3 s pass.</dd>
 </dl>
 
 ## Architecture
@@ -121,11 +121,11 @@ async function load(): Promise<NowPlaying> {
 
 ## Trade-offs
 
-Static pages remain complete without JavaScript or provider access, while live updates use two cached Functions. Only those endpoints invoke a Function; static requests stay free. Caching reduces provider requests at the cost of freshness: music can be a minute old, and coding and shelf activity are daily snapshots. A failed source keeps its widget's displayed value. Plain Markdown means no components inside prose until MDX is added. The serif word may never appear for a visitor on a slow connection, and that is what `optional` is for. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page well inside its budget.
+Static pages remain complete without JavaScript or provider access, while live updates use two cached Functions. Only those endpoints invoke a Function; static requests stay free. Caching reduces provider requests at the cost of freshness: music can be a minute old, and coding and shelf activity are daily snapshots. A failed source keeps its widget's displayed value. Plain Markdown means no components inside prose until MDX is added. Under `optional` the serif word could go missing on a slow connection. With JavaScript on, a page can stay hidden for up to 3 s while its fonts load, and a font that arrives later may still shift text. Reduced motion removes every animation, the theme reveal and the hero's highlighter swipe included. And the no-framework rule means every live piece is CSS first, then a plain script or a custom element, which is slower to write than dropping in a component, and so far has kept each page inside its budget.
 
 ## Outcome
 
-The repository started on 10 October 2026. Two weeks and 80 commits later it had the home page, `/projects` with two case studies, the writing collection with its first post, `/now` and the 404 page, and every push to `main` deploys to vedaantrajoo.com. An ordinary page ships 4,199 bytes of gzipped JavaScript against the 5,120-byte gate, a page of prose 4,715 and the 404 page 4,364. The stylesheet is about 6.6 KB gzipped and inlined into each page. The three font files total 55,148 bytes of the 90 KB budget, after the serif was cut from the full latin set to the five letters of its one word, 3 KB of 22. The build passes with every remote host unreachable. Fourteen of twenty components and eight of twelve dependencies are in use. On Lighthouse's mobile test every page scores 100 in all four categories, with LCP at 1.36 s (1.51 s on the post) and zero layout shift, and axe finds no violations in either theme. Field numbers come once the site has real visitors. The site lives at vedaantrajoo.com.
+The repository started on 10 October 2026. Two weeks and 80 commits later it had the home page, `/projects` with two case studies, the writing collection with its first post, `/now` and the 404 page, and every push to `main` deploys to vedaantrajoo.com. At launch, an ordinary page shipped 4,199 bytes of gzipped JavaScript against the 5,120-byte gate, a page of prose 4,715 and the 404 page 4,364. The stylesheet was about 6.6 KB gzipped and inlined into each page. The three font files came to 55,148 bytes of the 90 KB budget, after the serif was cut from the full latin set to the five letters of its one word, 3 KB of 22. The build passed with every remote host unreachable. Fourteen of twenty components and eight of twelve dependencies were in use. On Lighthouse's mobile test every page scored 100 in all four categories, with LCP at 1.36 s (1.51 s on the post) and zero layout shift, and axe found no violations in either theme. Field numbers come once the site has real visitors. The site lives at vedaantrajoo.com.
 
 ## Links
 
