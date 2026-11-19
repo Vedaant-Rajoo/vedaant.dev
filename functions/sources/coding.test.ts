@@ -200,9 +200,10 @@ test('an upstream error, a bad body or a thrown fetch is no value', async () => 
       'TypeError',
     ],
   ];
-  for (const [answers, reason] of cases) {
+  for (const [index, [answers, reason]] of cases.entries()) {
     wakatime(answers);
     assert.equal(await load(key), null);
+    assert.equal(warnings.length, index + 1);
     assert.equal(warnings.at(-1), `coding: no value from WakaTime (${reason})`);
   }
   assert.doesNotMatch(warnings.join('\n'), new RegExp(key));
@@ -253,24 +254,15 @@ test('fetchCoding uses a 5,000 ms budget and returns safe reasons without loggin
   assert.equal(typeof value === 'object' && value.language, 'TypeScript');
   assert.deepEqual(budgets, [5_000]);
   assert.equal(requests[0].init?.signal, requests[2].init?.signal);
-  const cases: [Parameters<typeof wakatime>[0], string][] = [
-    [{ user: () => new Response('no', { status: 401 }) }, 'HTTP 401'],
-    [{ week: () => Response.json({ data: [] }) }, 'unexpected body'],
-    [{ week: () => new Response('{') }, 'SyntaxError'],
-    [{ stats: () => new Response(`"${'x'.repeat(1_048_576)}"`) }, 'RangeError'],
-    [
-      {
-        week: () => {
-          throw new TypeError(`network down, ${key} in the request`);
-        },
-      },
-      'TypeError',
-    ],
-  ];
-  for (const [answers, reason] of cases) {
-    wakatime(answers);
-    assert.equal(await fetchCoding(key, 5_000), reason);
-  }
+  // The load tests above pin each reason; these check the limit edge, silence and a safe name.
+  wakatime({ stats: () => new Response(`"${'x'.repeat(1_048_576)}"`) });
+  assert.equal(await fetchCoding(key, 5_000), 'RangeError');
+  wakatime({
+    week: () => {
+      throw new TypeError(`network down, ${key} in the request`);
+    },
+  });
+  assert.equal(await fetchCoding(key, 5_000), 'TypeError');
   assert.equal(await fetchCoding(undefined, 5_000), 'no WAKATIME_API_KEY');
   assert.deepEqual(warnings, []);
 });

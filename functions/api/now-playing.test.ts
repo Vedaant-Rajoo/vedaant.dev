@@ -362,17 +362,11 @@ test('fetchNowPlaying uses a 5,000 ms budget and returns safe reasons without lo
     const { artwork: _, ...value } = idle;
     assert.deepEqual(await fetchNowPlaying(key, 5_000), value);
     assert.deepEqual(budgets, [5_000]);
-    const cases: [Answer, string][] = [
-      [() => new Response('', { status: 503 }), 'HTTP 503'],
-      [() => Response.json({ error: 10, message: 'Invalid API key' }), 'unexpected body'],
-      [() => new Response('<html>'), 'SyntaxError'],
-      [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
-      [() => Promise.reject(new TypeError(`fetch failed: ${requests.at(-1)?.url}`)), 'TypeError'],
-    ];
-    for (const [answer, reason] of cases) {
-      lastfm(answer);
-      assert.equal(await fetchNowPlaying(key, 5_000), reason);
-    }
+    // The endpoint tests above pin each reason; these check the limit edge, silence and a safe name.
+    lastfm(() => new Response(`"${'x'.repeat(65_536)}"`));
+    assert.equal(await fetchNowPlaying(key, 5_000), 'RangeError');
+    lastfm(() => Promise.reject(new TypeError(`fetch failed: ${requests.at(-1)?.url}`)));
+    assert.equal(await fetchNowPlaying(key, 5_000), 'TypeError');
     assert.equal(await fetchNowPlaying(undefined, 5_000), 'no LASTFM_API_KEY');
   } finally {
     AbortSignal.timeout = timeout;

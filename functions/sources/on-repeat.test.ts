@@ -75,22 +75,13 @@ test('fetchOnRepeat uses a 5,000 ms budget and returns safe reasons without logg
   // A week with no plays is a value, not a reason: the build shows "—", not shelf.json's row.
   lastfmAnswers(() => week([]));
   assert.equal(await fetchOnRepeat(key, 5_000), undefined);
-  const cases: [() => Response, string][] = [
-    [() => new Response('no', { status: 429 }), 'HTTP 429'],
-    [() => Response.json({ error: 29, message: 'Rate limit exceeded' }), 'unexpected body'],
-    [() => new Response('{'), 'SyntaxError'],
-    [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
-    [
-      () => {
-        throw new TypeError(`fetch failed for ${topAlbums(key)}`);
-      },
-      'TypeError',
-    ],
-  ];
-  for (const [answer, reason] of cases) {
-    lastfmAnswers(answer);
-    assert.equal(await fetchOnRepeat(key, 5_000), reason);
-  }
+  // The load tests below pin each reason; these check the limit edge, silence and a safe name.
+  lastfmAnswers(() => new Response(`"${'x'.repeat(65_536)}"`));
+  assert.equal(await fetchOnRepeat(key, 5_000), 'RangeError');
+  lastfmAnswers(() => {
+    throw new TypeError(`fetch failed for ${topAlbums(key)}`);
+  });
+  assert.equal(await fetchOnRepeat(key, 5_000), 'TypeError');
   assert.equal(await fetchOnRepeat(undefined, 5_000), 'no LASTFM_API_KEY');
   assert.deepEqual(warnings, []);
 });
@@ -115,9 +106,10 @@ test('an upstream error, a bad or oversized body, or a thrown fetch is no value'
       'TypeError',
     ],
   ];
-  for (const [answer, reason] of cases) {
+  for (const [index, [answer, reason]] of cases.entries()) {
     lastfmAnswers(answer);
     assert.equal(await load(key), null);
+    assert.equal(warnings.length, index + 1);
     assert.equal(warnings.at(-1), `on-repeat: no value from Last.fm (${reason})`);
   }
   assert.doesNotMatch(warnings.join('\n'), new RegExp(key));

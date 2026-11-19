@@ -134,23 +134,13 @@ test('fetchContributions uses a 5,000 ms budget and returns safe reasons without
     expected('2026-11-04T12:00:00Z', '2025-11-02'),
   );
   assert.deepEqual(budgets, [5_000]);
-  const cases: [() => Response, string][] = [
-    [() => new Response('no', { status: 502 }), 'HTTP 502'],
-    [() => Response.json({ errors: [{ type: 'RATE_LIMITED' }] }), 'GraphQL RATE_LIMITED'],
-    [() => Response.json({ data: { user: null } }), 'unexpected body'],
-    [() => new Response('{'), 'SyntaxError'],
-    [() => new Response(`"${'x'.repeat(65_536)}"`), 'RangeError'],
-    [
-      () => {
-        throw new TypeError(`network down, ${token}`);
-      },
-      'TypeError',
-    ],
-  ];
-  for (const [answer, reason] of cases) {
-    github(answer);
-    assert.equal(await fetchContributions(token, 5_000), reason);
-  }
+  // The load tests below pin each reason; these check the limit edge, silence and a safe name.
+  github(() => new Response(`"${'x'.repeat(65_536)}"`));
+  assert.equal(await fetchContributions(token, 5_000), 'RangeError');
+  github(() => {
+    throw new TypeError(`network down, ${token}`);
+  });
+  assert.equal(await fetchContributions(token, 5_000), 'TypeError');
   assert.equal(await fetchContributions(undefined, 5_000), 'no CONTRIBUTIONS_TOKEN');
   assert.deepEqual(warnings, []);
 });
