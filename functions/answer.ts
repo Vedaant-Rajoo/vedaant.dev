@@ -18,8 +18,9 @@ export const headers = {
 };
 
 // The cache key excludes query strings, trailing slashes and visitor headers.
-// Hits retain Date and Expires; Age leaves browsers only the remaining lifetime.
-// Missing Date or expired entries are misses, even if the cache still holds them.
+// A hit restores Date and keeps Expires; Age leaves browsers only the remaining lifetime.
+// Cloudflare can redate a cached hit; recover its creation time from Expires and max-age.
+// Entries missing either, or expired, are misses even if the cache holds them.
 // Access on previews can break cache reads; failed or >0.5 s reads miss to preserve the 5 s budget.
 export async function answer<Env>(
   context: Context<Env>,
@@ -36,10 +37,14 @@ export async function answer<Env>(
   });
   const hit = await Promise.race([cache.match(key).catch(() => undefined), late]);
   clearTimeout(timer);
-  const age = Math.floor((Date.now() - Date.parse(hit?.headers.get('date') ?? '')) / 1000);
-  const lifetime = Number(/max-age=(\d+)/.exec(hit?.headers.get('cache-control') ?? '')?.[1]);
+  const lifetime = Number(
+    /(?:^|,)\s*max-age=(\d+)\s*(?=,|$)/i.exec(hit?.headers.get('cache-control') ?? '')?.[1],
+  );
+  const made = Date.parse(hit?.headers.get('expires') ?? '') - lifetime * 1000;
+  const age = Math.floor((Date.now() - made) / 1000);
   if (hit && age < lifetime) {
     const response = new Response(hit.body, hit);
+    response.headers.set('Date', new Date(made).toUTCString());
     // A clock that moved back gives no negative age.
     response.headers.set('Age', String(Math.max(age, 0)));
     response.headers.set('X-Cache', 'hit');
