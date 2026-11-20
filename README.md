@@ -86,7 +86,7 @@ Content lives in these files, never in components.
 | --- | --- |
 | Project rows and case studies | `src/content/projects/*.md` |
 | Posts and notes | `src/content/writing/*.md` |
-| Now page, city and building row | [src/content/now/now.md](src/content/now/now.md) |
+| Now page, date and intro, and home's city | [src/content/now/now.md](src/content/now/now.md) |
 | Work history | [src/data/work.json](src/data/work.json) |
 | Uses rows | [src/data/uses.json](src/data/uses.json) |
 | Uses date, intro and colophon | [src/content/uses/uses.md](src/content/uses/uses.md) |
@@ -181,7 +181,8 @@ If the origin ever changes, update `site`, the sitemap's `customPages` and
 ### Now, work, uses, shelf and résumé
 
 - `now.md` is the only file read from its directory. Its frontmatter requires a
-  quoted `updated`, `from` (the city) and `building`. The body is unique,
+  quoted `updated` day, `from` (the city in home's presence line) and `summary`,
+  the intro under the heading and the page's description. The body is unique,
   lowercase `## label` sections of paragraphs, at most 400 words in all. Links,
   emphasis, strikethrough, code spans and line breaks work; lists, images and
   code blocks do not, and `bun test` checks that shape. Bump `updated` when you
@@ -677,9 +678,13 @@ Chores:
 Lasting choices: Bun locally, plain Markdown instead of MDX, static Pages with
 Pages Functions for the live values with committed fallbacks, keyless
 artwork and no analytics. Fonts are committed and load through Astro's Fonts
-API. Geist sans and Geist Mono are preloaded with `font-display: optional`, so
-both downloads start while the browser parses the head. A slow first visit may
-keep the fallback fonts throughout; the hero's serif is optional too.
+API with `font-display: block`. Every page preloads Geist sans and Geist Mono;
+only home preloads the hero's serif. An inline script in `<head>` restores the
+stored theme before first paint and sets `data-fonts="loading"`, which hides
+`<body>` and draws the loading ghost (`global.css`). It removes the attribute
+when `document.fonts.ready` resolves, read after `DOMContentLoaded`, or after
+3 s, whichever comes first. A font still loading at 3 s can shift text when it
+arrives.
 CSS is inlined into each page, so there is no `dist/_astro/*.css` to
 compare; compare each page's `<style>` instead.
 

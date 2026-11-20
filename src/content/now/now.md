@@ -1,7 +1,6 @@
 ---
 updated: "2026-11-13"
 from: "Bhilai"
-building: "a Neovim plugin for agentic coding and an existing Markdown writer"
 summary: "What I am focused on at the moment. Overwritten, not appended; the old versions live in Git."
 ---
 

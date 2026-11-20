@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'node:test';
 import { currentUser, lastMonth, lastWeek } from '../../src/data/coding';
 import site from '../../src/data/site.json';
-import { load } from './coding';
+import { fetchCoding, load } from './coding';
 
 const key = 'waka-test-token';
 const summaries = lastWeek(site.timeZone);
@@ -200,9 +200,10 @@ test('an upstream error, a bad body or a thrown fetch is no value', async () => 
       'TypeError',
     ],
   ];
-  for (const [answers, reason] of cases) {
+  for (const [index, [answers, reason]] of cases.entries()) {
     wakatime(answers);
     assert.equal(await load(key), null);
+    assert.equal(warnings.length, index + 1);
     assert.equal(warnings.at(-1), `coding: no value from WakaTime (${reason})`);
   }
   assert.doesNotMatch(warnings.join('\n'), new RegExp(key));
@@ -238,4 +239,30 @@ test('one 2.5 s timeout covers all three requests and their bodies', async () =>
   assert.deepEqual(budgets, [2_500]);
   assert.equal(requests[0].init?.signal, requests[1].init?.signal);
   assert.equal(requests[0].init?.signal, requests[2].init?.signal);
+});
+
+// src/data/wakatime.ts reads WakaTime through fetchCoding, then logs its own line and falls back to
+// the committed snapshot, so the reader returns the reason and logs nothing.
+test('fetchCoding uses a 5,000 ms budget and returns safe reasons without logging', async () => {
+  const budgets: number[] = [];
+  AbortSignal.timeout = (ms: number) => {
+    budgets.push(ms);
+    return original.timeout.call(AbortSignal, ms);
+  };
+  wakatime({});
+  const value = await fetchCoding(key, 5_000);
+  assert.equal(typeof value === 'object' && value.language, 'TypeScript');
+  assert.deepEqual(budgets, [5_000]);
+  assert.equal(requests[0].init?.signal, requests[2].init?.signal);
+  // The load tests above pin each reason; these check the limit edge, silence and a safe name.
+  wakatime({ stats: () => new Response(`"${'x'.repeat(1_048_576)}"`) });
+  assert.equal(await fetchCoding(key, 5_000), 'RangeError');
+  wakatime({
+    week: () => {
+      throw new TypeError(`network down, ${key} in the request`);
+    },
+  });
+  assert.equal(await fetchCoding(key, 5_000), 'TypeError');
+  assert.equal(await fetchCoding(undefined, 5_000), 'no WAKATIME_API_KEY');
+  assert.deepEqual(warnings, []);
 });

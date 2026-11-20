@@ -144,10 +144,11 @@ only names tokens and components; where it differs, the pages win.
 - LCP ≤1.8s on Lighthouse's mobile test; CLS 0, live-state changes included.
   Never animate the LCP element (measure it: a hero line, not the name) except
   by a mark's background swipe, which moves no text. Never animate the name.
-- Load fonts with the Astro Fonts API, not `@fontsource` imports. Every page
-  first paints in its fonts, never a fallback: the faces are
+- Load fonts with the Astro Fonts API, not `@fontsource` imports. The faces are
   `font-display: block`, and the theme restore hides `<body>` until
-  `document.fonts.ready`, at most 3 s, so no text re-wraps in view. Preload
+  `document.fonts.ready` or 3 s, whichever comes first, so a page whose fonts
+  arrive in time first paints in them. The 3 s escape is deliberate; a font
+  arriving after it can shift text. Preload
   Geist sans and Geist Mono on every page, and the hero's one serif word only on
   home; at most 3 font requests and 90 KB total. Keep each weight axis cut to the
   weights the pages render (sans 400 to 700, mono 400 to 500).

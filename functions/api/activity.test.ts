@@ -345,6 +345,55 @@ test('a failed source is left out, the rest answer, and the answer is kept 10 mi
   assert.equal((await get()).headers.get('x-cache'), 'miss');
 });
 
+// The budget signals are ones the test aborts, so the case takes no wall-clock time; a body the
+// signal never reaches fails at the test's timeout instead of hanging.
+test('a stalled WakaTime body ends at its request signal, and the other four answer', {
+  timeout: 1_000,
+}, async () => {
+  const timers = new Map<AbortSignal, AbortController>();
+  AbortSignal.timeout = () => {
+    const timer = new AbortController();
+    timers.set(timer.signal, timer);
+    return timer.signal;
+  };
+  let signal: AbortSignal | null | undefined;
+  let pulled = () => {};
+  const stalled = new Promise<void>((resolve) => {
+    pulled = resolve;
+  });
+  sources({
+    // The headers arrive at once; the body sends nothing until its request's signal errors it.
+    [lastMonth]: (init) => {
+      signal = init?.signal;
+      return new Response(
+        new ReadableStream(
+          {
+            start: (body) => signal?.addEventListener('abort', () => body.error(signal?.reason)),
+            // With no queue, a pull means the Function is reading the body.
+            pull: () => {
+              pulled();
+              return new Promise(() => {});
+            },
+          },
+          { highWaterMark: 0 },
+        ),
+      );
+    },
+  });
+  const pending = get();
+  await stalled;
+  const timer = timers.get(signal as AbortSignal);
+  assert.ok(timer, 'the stalled request carries no budget signal');
+  timer.abort(new DOMException('timed out', 'TimeoutError'));
+  const response = await pending;
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=600, s-maxage=600');
+  assert.equal(response.headers.get('expires'), new Date(now + 600_000).toUTCString());
+  const { coding: _, ...rest } = full;
+  assert.deepEqual(await response.json(), rest);
+  assert.deepEqual(warnings, ['coding: no value from WakaTime (TimeoutError)']);
+});
+
 test('every source failing answers null with no-store, never stored', async () => {
   const down = () => {
     throw new TypeError(`network down, ${env.LASTFM_API_KEY}`);

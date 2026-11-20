@@ -1,6 +1,7 @@
 import { artworkKey, getArtwork } from '../../src/data/artwork';
-import { type NowPlaying, recentTracks, toNowPlaying } from '../../src/data/now-playing';
-import { answer, type Context, read } from '../answer';
+import type { NowPlaying } from '../../src/data/now-playing';
+import { answer, type Context } from '../answer';
+import { load } from '../sources/now-playing';
 
 // Workers add `default` to the global CacheStorage.
 declare const caches: CacheStorage & { default: Cache };
@@ -28,21 +29,6 @@ export const handle = (context: Context<Env>, cache: Cache) =>
     const value = await load(context.env.LASTFM_API_KEY);
     return value && withArtwork(value, context, cache, origin);
   });
-
-async function load(key: string | undefined): Promise<NowPlaying | null> {
-  if (!key) {
-    return fail('no LASTFM_API_KEY');
-  }
-  try {
-    // 2.5 s for the request and its body: with the 1.5 s artwork wait, under the hub's 5 s.
-    const response = await fetch(recentTracks(key), { signal: AbortSignal.timeout(2_500) });
-    const value = response.ok ? toNowPlaying(JSON.parse(await read(response, 65_536))) : null;
-    return value ?? fail(response.ok ? 'unexpected body' : `HTTP ${response.status}`);
-  } catch (error) {
-    // The name only: a fetch error's message can quote the URL, and with it the key.
-    return fail(error instanceof Error ? error.name : 'unknown error');
-  }
-}
 
 // The artwork URL from this data centre's Cache API (30 days), then from the ARTWORK KV namespace
 // when it is bound (every data centre and preview, no expiry), or from a lookup. A slower lookup
@@ -98,9 +84,4 @@ async function withArtwork(value: NowPlaying, context: Context<Env>, cache: Cach
   const artwork = await Promise.race([lookup, late]);
   clearTimeout(timer);
   return { ...value, artwork };
-}
-
-function fail(reason: string) {
-  console.warn(`now-playing: no value from Last.fm (${reason})`);
-  return null;
 }

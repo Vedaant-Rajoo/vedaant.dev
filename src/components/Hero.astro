@@ -11,7 +11,7 @@ const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + ma
 
 <section class="flex flex-col gap-4">
   <h1 class="text-3xl font-semibold">{site.hero.name}</h1>
-  <p class="text-lg">
+  <p class="text-lg text-balance">
     {
       parts.map(([start, end], index) => {
         const Tag = index === 1 ? 'mark' : 'span';
@@ -41,7 +41,7 @@ const parts = [[0, markedAt], [markedAt, markedAt + mark.length], [markedAt + ma
         <span>email<Arrow>→</Arrow></span>
       </a>
       <a href="/uses" class="box">
-        <span>how I work<Arrow>→</Arrow></span>
+        <span>uses<Arrow>→</Arrow></span>
       </a>
     </span>
   </p>

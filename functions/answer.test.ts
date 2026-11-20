@@ -69,31 +69,102 @@ test('a body is kept by the edge and the browser alike, for the seconds its make
   );
 });
 
-test('an entry with no Date, or a Date ahead of the clock, still answers truthfully', async () => {
+test('an entry with no Expires, or made ahead of the clock, still answers truthfully', async () => {
   const { store, cache, context: ctx } = oneEntry();
   const key = 'https://vedaantrajoo.com/api/x';
-  // From before entries carried a Date: its age is unknown, so it is a miss.
+  // Without Expires its age is unknown, so it is a miss.
   store.set(
     key,
-    Response.json({ old: 1 }, { headers: { 'cache-control': 'public, max-age=0, s-maxage=30' } }),
+    Response.json(
+      { old: 1 },
+      {
+        headers: {
+          'cache-control': 'public, max-age=60, s-maxage=60',
+          date: new Date().toUTCString(),
+        },
+      },
+    ),
   );
   const miss = await answer(ctx, cache, '/api/x', 60, async () => ({ value: 1 }));
   assert.equal(miss.headers.get('x-cache'), 'miss');
   assert.deepEqual(await miss.json(), { value: 1 });
   // A clock that moved back gives Age 0, never a negative one.
-  const ahead = new Date(Date.now() + 120_000).toUTCString();
+  const ahead = Date.now() + 120_000;
   store.set(
     key,
     Response.json(
       { value: 2 },
-      { headers: { 'cache-control': 'public, max-age=60, s-maxage=60', date: ahead } },
+      {
+        headers: {
+          'cache-control': 'public, max-age=60, s-maxage=60',
+          expires: new Date(ahead + 60_000).toUTCString(),
+        },
+      },
     ),
   );
   const hit = await answer(ctx, cache, '/api/x', 60, async () => ({ value: 3 }));
   assert.equal(hit.headers.get('x-cache'), 'hit');
   assert.equal(hit.headers.get('age'), '0');
-  assert.equal(hit.headers.get('date'), ahead);
+  assert.equal(hit.headers.get('date'), new Date(ahead).toUTCString());
   assert.deepEqual(await hit.json(), { value: 2 });
+});
+
+test('a cached entry without a complete max-age is a miss', async () => {
+  const { store, cache, context: ctx } = oneEntry();
+  for (const value of [undefined, 'no-cache', 's-maxage=60', 'x-max-age=60', 'max-age=60junk']) {
+    store.set(
+      'https://vedaantrajoo.com/api/x',
+      Response.json(
+        { old: 1 },
+        {
+          headers: {
+            expires: new Date(Date.now() + 60_000).toUTCString(),
+            ...(value ? { 'cache-control': value } : {}),
+          },
+        },
+      ),
+    );
+    const response = await answer(ctx, cache, '/api/x', 60, async () => ({ value: 1 }));
+    assert.equal(response.headers.get('x-cache'), 'miss', value);
+    assert.deepEqual(await response.json(), { value: 1 });
+  }
+});
+
+// Production hits carried a retrieval-time Date and Last-Modified matching Expires minus max-age.
+// The rewrite layer is unverified; this fixture reproduces the observed headers.
+test('a hit the cache dates when read keeps its own Date and Age, and still expires', async () => {
+  const { store, cache, context: ctx } = oneEntry();
+  const clock = Date.now;
+  const readAt = (at: string) => {
+    Date.now = () => Date.parse(at);
+    store.set(
+      'https://vedaantrajoo.com/api/x',
+      Response.json(
+        { value: 1 },
+        {
+          headers: {
+            'cache-control': 'public, max-age=60, s-maxage=60',
+            date: new Date(Date.parse(at)).toUTCString(),
+            expires: 'Thu, 19 Nov 2026 10:46:00 GMT',
+            'last-modified': 'Thu, 19 Nov 2026 10:45:00 GMT',
+          },
+        },
+      ),
+    );
+    return answer(ctx, cache, '/api/x', 60, async () => ({ value: 2 }));
+  };
+  try {
+    const hit = await readAt('2026-11-19T10:45:15.400Z');
+    assert.equal(hit.headers.get('x-cache'), 'hit');
+    assert.equal(hit.headers.get('date'), 'Thu, 19 Nov 2026 10:45:00 GMT');
+    assert.equal(hit.headers.get('age'), '15');
+    assert.deepEqual(await hit.json(), { value: 1 });
+    const late = await readAt('2026-11-19T10:46:02.000Z');
+    assert.equal(late.headers.get('x-cache'), 'miss');
+    assert.deepEqual(await late.json(), { value: 2 });
+  } finally {
+    Date.now = clock;
+  }
 });
 
 // A body that arrives in chunks, with no Content-Length.

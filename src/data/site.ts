@@ -9,8 +9,10 @@ export const https = z.url({ protocol: /^https$/ }).startsWith('https://');
 const result = z
   .object({
     name: z.string().min(1),
-    // The full name, for <title>, JSON-LD and the OG image; name stays the nav wordmark.
+    // The full name, for <title> and JSON-LD; name stays the nav wordmark.
     fullName: z.string().trim().min(1),
+    // The text public/og.png shows, which is static: change both together.
+    ogImageAlt: z.string().trim().min(1),
     hero: z
       .object({
         name: z.string().min(1),
